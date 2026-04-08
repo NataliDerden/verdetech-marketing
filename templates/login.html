@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VerdeTech — Маркетинг</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-logo">
+            <div class="logo-icon">VT</div>
+            <h1>VerdeTech</h1>
+            <p>Цифровой отдел маркетинга</p>
+        </div>
+
+        <form class="login-form" method="POST" action="/login">
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Введите пароль"
+                    autofocus
+                    required
+                >
+            </div>
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+            <button type="submit" class="btn-primary">Войти</button>
+        </form>
+    </div>
+</body>
+</html>

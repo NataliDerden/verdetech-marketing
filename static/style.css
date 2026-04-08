@@ -1,0 +1,411 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --green: #2D7A4F;
+    --green-light: #3a9962;
+    --green-pale: #e8f5ee;
+    --text: #1a1a1a;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+    --white: #ffffff;
+    --radius: 10px;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+
+/* ── LOGIN ─────────────────────────────────────────── */
+
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a4731 0%, #2D7A4F 100%);
+}
+
+.login-container {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.logo-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--green);
+    color: white;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 12px;
+}
+
+.login-logo h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.login-logo p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.form-group input {
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    border-color: var(--green);
+}
+
+.error-message {
+    background: #fff0f0;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+}
+
+/* ── BUTTONS ──────────────────────────────────────── */
+
+.btn-primary {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 13px 24px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+    background: var(--green-light);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── DASHBOARD LAYOUT ─────────────────────────────── */
+
+.dashboard-page {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 240px;
+    min-width: 240px;
+    background: #1a2e24;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar .logo-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.sidebar-title {
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.sidebar-subtitle {
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-label {
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 8px;
+    margin-bottom: 8px;
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.65);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    width: 100%;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,0.07);
+    color: white;
+}
+
+.nav-item.active {
+    background: var(--green);
+    color: white;
+}
+
+.nav-icon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-footer {
+    padding: 16px 20px 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.logout-link {
+    color: rgba(255,255,255,0.4);
+    font-size: 13px;
+    text-decoration: none;
+}
+
+.logout-link:hover {
+    color: rgba(255,255,255,0.7);
+}
+
+/* ── MAIN CONTENT ─────────────────────────────────── */
+
+.main-content {
+    flex: 1;
+    padding: 40px;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.content-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.content-desc {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+/* ── INPUT AREA ───────────────────────────────────── */
+
+.input-area {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.input-area textarea {
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    line-height: 1.6;
+    width: 100%;
+    min-height: 100px;
+}
+
+.input-area textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.input-area .btn-primary {
+    align-self: flex-end;
+    padding: 10px 22px;
+}
+
+/* ── RESULT AREA ──────────────────────────────────── */
+
+.result-area {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-muted);
+    background: var(--bg);
+}
+
+.btn-copy {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-copy:hover {
+    background: var(--green-pale);
+    border-color: var(--green);
+    color: var(--green);
+}
+
+.result-content {
+    padding: 24px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+}
+
+.result-content h1, .result-content h2, .result-content h3 {
+    margin: 16px 0 8px;
+    color: var(--text);
+}
+
+.result-content h3 {
+    font-size: 16px;
+    color: var(--green);
+}
+
+.result-content strong {
+    font-weight: 600;
+}
+
+.result-content p {
+    margin-bottom: 10px;
+}
+
+.list-item {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.list-num {
+    color: var(--green);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── ERROR ────────────────────────────────────────── */
+
+.error-area {
+    background: #fff0f0;
+    border: 1px solid #fca5a5;
+    color: #dc2626;
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+}
+
+/* ── LOADER ───────────────────────────────────────── */
+
+.loader {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
