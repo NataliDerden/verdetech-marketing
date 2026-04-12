@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VerdeTech — Маркетинг</title>
+    <title>Вердэ Ингредиенты — Маркетинг</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="dashboard-page">
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="logo-icon">VT</div>
+            <div class="logo-icon">ВИ</div>
             <div>
-                <div class="sidebar-title">VerdeTech</div>
+                <div class="sidebar-title">Вердэ Ингредиенты</div>
                 <div class="sidebar-subtitle">Email-маркетинг</div>
             </div>
         </div>
@@ -35,7 +35,7 @@
     <main class="main-content">
         <div class="content-header">
             <h2 id="tool-title">Написать письмо</h2>
-            <p id="tool-desc" class="content-desc">Опишите задачу — AI напишет профессиональное письмо для VerdeTech</p>
+            <p id="tool-desc" class="content-desc">Опишите задачу — AI напишет профессиональное письмо для Вердэ Ингредиенты</p>
         </div>
 
         <div class="input-area">
@@ -68,7 +68,7 @@
         let currentTool = '{{ tools.keys() | list | first }}';
 
         const toolDescriptions = {
-            'email_writer': 'Опишите задачу — AI напишет профессиональное письмо для VerdeTech',
+            'email_writer': 'Опишите задачу — AI напишет профессиональное письмо для Вердэ Ингредиенты',
             'campaign_planner': 'Опишите цель кампании — получите готовый план с датами и темами',
             'subject_lines': 'Опишите письмо — получите 10 вариантов темы для A/B тестирования',
             'segment_strategy': 'Опишите вашу базу — получите стратегию сегментации',
