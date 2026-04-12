@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verde Tech — План команды SEO + Директ</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e4e4e7; }
+
+.header { background: #1a1b23; padding: 16px 24px; border-bottom: 1px solid #2a2b35; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.header h1 { font-size: 20px; color: #22c55e; }
+.header .stats { font-size: 14px; color: #71717a; }
+.header a { color: #71717a; text-decoration: none; font-size: 13px; }
+.header a:hover { color: #22c55e; }
+
+.layout { display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 56px); }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 50vh; z-index: 100; display: none; }
+  .chat-panel.open { display: flex; }
+  .mobile-chat-btn { display: block !important; }
+}
+
+.mobile-chat-btn { display: none; position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: #000; border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 24px; cursor: pointer; z-index: 99; box-shadow: 0 4px 12px rgba(34,197,94,0.4); }
+
+/* Tasks */
+.tasks-panel { overflow-y: auto; padding: 20px; }
+.cat-header { font-size: 13px; font-weight: 600; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; margin: 24px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #27272a; }
+.cat-header:first-child { margin-top: 0; }
+
+.task { background: #1a1b23; border: 1px solid #27272a; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+.task:hover { border-color: #3f3f46; }
+.task.done { opacity: 0.4; }
+.task.done .t-title { text-decoration: line-through; }
+
+.t-top { display: flex; align-items: center; gap: 10px; }
+.t-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #3f3f46; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; }
+.t-check.on { background: #22c55e; border-color: #22c55e; }
+.t-check.on::after { content: '✓'; color: #fff; font-size: 12px; font-weight: bold; }
+.t-title { font-size: 15px; font-weight: 600; color: #fafafa; }
+.t-desc { font-size: 13px; color: #a1a1aa; margin: 6px 0 0 30px; line-height: 1.4; }
+.t-meta { display: flex; gap: 6px; margin: 8px 0 0 30px; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.badge.critical { background: #dc2626; color: #fff; }
+.badge.high { background: #f59e0b; color: #000; }
+.badge.medium { background: #3b82f6; color: #fff; }
+.badge.time { background: #27272a; color: #a1a1aa; }
+
+.t-steps { margin: 10px 0 0 30px; display: none; }
+.task.expanded .t-steps { display: block; }
+.step { font-size: 13px; color: #d4d4d8; padding: 5px 0 5px 18px; position: relative; line-height: 1.5; }
+.step::before { content: '→'; position: absolute; left: 0; color: #22c55e; font-weight: bold; }
+.t-help { margin: 10px 0 0 30px; }
+.t-help button { background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+.t-help button:hover { border-color: #22c55e; color: #22c55e; }
+
+/* Chat */
+.chat-panel { background: #1a1b23; border-left: 1px solid #27272a; display: flex; flex-direction: column; }
+.chat-head { padding: 14px 16px; border-bottom: 1px solid #27272a; }
+.chat-head h2 { font-size: 15px; color: #22c55e; }
+.chat-head p { font-size: 12px; color: #71717a; margin-top: 2px; }
+
+.quick-qs { padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 5px; }
+.qq { font-size: 11px; background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 8px; padding: 5px 8px; cursor: pointer; }
+.qq:hover { border-color: #22c55e; color: #22c55e; }
+
+.chat-msgs { flex: 1; overflow-y: auto; padding: 12px 16px; }
+.msg { margin-bottom: 14px; }
+.msg.user .bubble { background: #22c55e; color: #000; border-radius: 14px 14px 4px 14px; margin-left: 30px; }
+.msg.bot .bubble { background: #27272a; color: #e4e4e7; border-radius: 14px 14px 14px 4px; margin-right: 30px; }
+.bubble { padding: 10px 14px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+
+.chat-in { padding: 10px 14px; border-top: 1px solid #27272a; display: flex; gap: 8px; }
+.chat-in input { flex: 1; background: #0f1117; border: 1px solid #3f3f46; border-radius: 10px; padding: 10px 12px; color: #e4e4e7; font-size: 13px; outline: none; }
+.chat-in input:focus { border-color: #22c55e; }
+.chat-in button { background: #22c55e; color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.chat-in button:disabled { opacity: 0.5; }
+.typing { color: #71717a; font-size: 12px; font-style: italic; padding: 6px 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Verde Tech — План команды</h1>
+    <div class="stats" id="stats"></div>
+    <a href="/dashboard">← Маркетинг</a>
+</div>
+
+<div class="layout">
+    <div class="tasks-panel" id="tasksPanel"></div>
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-head">
+            <h2>AI-помощник</h2>
+            <p>Застрял? Спроси — помогу пошагово</p>
+        </div>
+        <div class="quick-qs">
+            <span class="qq" onclick="askQ(this)">Как зайти в WordPress?</span>
+            <span class="qq" onclick="askQ(this)">Как создать кампанию в Директ?</span>
+            <span class="qq" onclick="askQ(this)">Что такое Schema.org?</span>
+            <span class="qq" onclick="askQ(this)">Как написать meta description?</span>
+            <span class="qq" onclick="askQ(this)">Какие минус-слова нужны?</span>
+        </div>
+        <div class="chat-msgs" id="chatMsgs">
+            <div class="msg bot"><div class="bubble">Привет! Я AI-помощник команды Verde Tech. Спрашивай по любому шагу — помогу с SEO, Директом, контентом. Если застрял — опиши проблему.</div></div>
+        </div>
+        <div class="chat-in">
+            <input id="inp" placeholder="Напиши вопрос..." onkeydown="if(event.key==='Enter')send()">
+            <button onclick="send()" id="btn">→</button>
+        </div>
+    </div>
+</div>
+
+<button class="mobile-chat-btn" onclick="document.getElementById('chatPanel').classList.toggle('open')">💬</button>
+
+<script>
+const tasks = {{ tasks | tojson }};
+const saved = JSON.parse(localStorage.getItem('vt_tasks') || '{}');
+
+function render() {
+    const el = document.getElementById('tasksPanel');
+    const cats = {};
+    tasks.forEach(t => { if (!cats[t.cat]) cats[t.cat] = []; cats[t.cat].push(t); });
+
+    let h = '';
+    let done = 0;
+    for (const [cat, items] of Object.entries(cats)) {
+        h += `<div class="cat-header">${cat}</div>`;
+        items.forEach(t => {
+            const isDone = saved[t.id] === 'done';
+            if (isDone) done++;
+            const priLabel = t.pri === 'critical' ? 'Критично' : t.pri === 'high' ? 'Важно' : 'Средне';
+            h += `<div class="task ${isDone ? 'done' : ''}" id="t${t.id}" onclick="expand(${t.id})">
+                <div class="t-top">
+                    <div class="t-check ${isDone ? 'on' : ''}" onclick="event.stopPropagation();toggle(${t.id})"></div>
+                    <div class="t-title">${t.title}</div>
+                </div>
+                <div class="t-desc">${t.desc}</div>
+                <div class="t-meta">
+                    <span class="badge ${t.pri}">${priLabel}</span>
+                    <span class="badge time">${t.time}</span>
+                </div>
+                <div class="t-steps">
+                    ${t.steps.map(s => `<div class="step">${s}</div>`).join('')}
+                    <div class="t-help"><button onclick="event.stopPropagation();askHelp('${t.title.replace(/'/g,"\\'")}')">Помощь с этим шагом</button></div>
+                </div>
+            </div>`;
+        });
+    }
+    el.innerHTML = h;
+    document.getElementById('stats').textContent = `Выполнено: ${done} / ${tasks.length}`;
+}
+
+function expand(id) { document.getElementById('t'+id).classList.toggle('expanded'); }
+
+function toggle(id) {
+    saved[id] = saved[id] === 'done' ? null : 'done';
+    localStorage.setItem('vt_tasks', JSON.stringify(saved));
+    render();
+}
+
+function askHelp(title) {
+    document.getElementById('inp').value = `Помоги с задачей: ${title}. Дай пошаговую инструкцию.`;
+    send();
+    // On mobile open chat
+    document.getElementById('chatPanel').classList.add('open');
+}
+
+async function send() {
+    const inp = document.getElementById('inp');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    inp.value = '';
+    addMsg(msg, 'user');
+    document.getElementById('btn').disabled = true;
+
+    const typ = document.createElement('div');
+    typ.className = 'typing';
+    typ.textContent = 'Думаю...';
+    document.getElementById('chatMsgs').appendChild(typ);
+    scroll();
+
+    try {
+        const r = await fetch('/api/team-chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: msg})
+        });
+        const d = await r.json();
+        typ.remove();
+        addMsg(d.reply || d.error || 'Ошибка', 'bot');
+    } catch(e) {
+        typ.remove();
+        addMsg('Ошибка соединения', 'bot');
+    }
+    document.getElementById('btn').disabled = false;
+}
+
+function askQ(el) { document.getElementById('inp').value = el.textContent; send(); }
+
+function addMsg(text, role) {
+    const d = document.createElement('div');
+    d.className = `msg ${role}`;
+    d.innerHTML = `<div class="bubble">${text}</div>`;
+    document.getElementById('chatMsgs').appendChild(d);
+    scroll();
+}
+
+function scroll() { const c = document.getElementById('chatMsgs'); c.scrollTop = c.scrollHeight; }
+
+render();
+</script>
+</body>
+</html>
