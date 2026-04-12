@@ -148,7 +148,9 @@ function render() {
         });
     }
     el.innerHTML = h;
-    document.getElementById('stats').textContent = `Выполнено: ${done} / ${tasks.length}`;
+    const totalHours = tasks.reduce((s, t) => s + parseFloat(t.time) || 0, 0);
+    const doneHours = tasks.filter(t => saved[t.id] === 'done').reduce((s, t) => s + parseFloat(t.time) || 0, 0);
+    document.getElementById('stats').textContent = `Задачи: ${done}/${tasks.length} | Часы: ${doneHours.toFixed(1)}/${totalHours.toFixed(1)} ч`;
 }
 
 function expand(id) { document.getElementById('t'+id).classList.toggle('expanded'); }
