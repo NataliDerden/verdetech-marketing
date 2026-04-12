@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 .claude/
 sessions/
+*.jpg
+*.png
+лиды битрикс/
