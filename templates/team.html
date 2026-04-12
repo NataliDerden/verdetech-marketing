@@ -82,6 +82,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .chat-in button { background: #22c55e; color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; font-size: 14px; }
 .chat-in button:disabled { opacity: 0.5; }
 .typing { color: #71717a; font-size: 12px; font-style: italic; padding: 6px 14px; }
+
+/* Praise overlay */
+.praise-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s; }
+.praise-card { background: #1a1b23; border: 2px solid #22c55e; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; animation: popIn 0.4s; }
+.praise-emoji { font-size: 64px; margin-bottom: 16px; }
+.praise-title { font-size: 22px; font-weight: 700; color: #22c55e; margin-bottom: 8px; }
+.praise-text { font-size: 15px; color: #a1a1aa; line-height: 1.5; margin-bottom: 20px; }
+.praise-stats { font-size: 13px; color: #71717a; margin-bottom: 20px; }
+.praise-bar { background: #27272a; border-radius: 8px; height: 8px; margin: 8px 0; overflow: hidden; }
+.praise-fill { background: #22c55e; height: 100%; border-radius: 8px; transition: width 0.5s; }
+.praise-btn { background: #22c55e; color: #000; border: none; border-radius: 10px; padding: 10px 24px; font-weight: 600; font-size: 15px; cursor: pointer; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
 </head>
 <body>
@@ -174,10 +187,53 @@ function render() {
 
 function expand(id) { document.getElementById('t'+id).classList.toggle('expanded'); }
 
+const praises = [
+    {emoji: '🎉', title: 'Отлично!', texts: ['Задача выполнена! Так держать!', 'Вы на шаг ближе к лидерству на рынке!']},
+    {emoji: '🔥', title: 'Огонь!', texts: ['Круто! Одной задачей меньше!', 'Конкуренты не успевают за вами!']},
+    {emoji: '💪', title: 'Мощно!', texts: ['Ещё одна задача закрыта!', 'Продолжайте — результат уже близко!']},
+    {emoji: '⭐', title: 'Супер!', texts: ['Задача сделана! Вы молодцы!', 'Каждый шаг приближает к цели!']},
+    {emoji: '🚀', title: 'Ракета!', texts: ['Вы летите вперёд!', 'Скоро Вердэ Ингредиенты будет в топе!']},
+];
+
+function showPraise(taskTitle) {
+    const doneCount = Object.values(saved).filter(v => v === 'done').length;
+    const total = tasks.length;
+    const pct = Math.round(doneCount / total * 100);
+    const p = praises[Math.floor(Math.random() * praises.length)];
+    const txt = p.texts[Math.floor(Math.random() * p.texts.length)];
+
+    let milestone = '';
+    if (pct >= 100) milestone = '🏆 ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ! Вы — команда мечты!';
+    else if (pct >= 75) milestone = '🎯 Больше 75% готово — финишная прямая!';
+    else if (pct >= 50) milestone = '⚡ Половина пути пройдена!';
+    else if (pct >= 25) milestone = '👏 Четверть задач уже сделана!';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'praise-overlay';
+    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+    overlay.innerHTML = `<div class="praise-card">
+        <div class="praise-emoji">${p.emoji}</div>
+        <div class="praise-title">${p.title}</div>
+        <div class="praise-text">${txt}</div>
+        <div class="praise-stats">
+            Выполнено: ${doneCount} из ${total} задач (${pct}%)
+            <div class="praise-bar"><div class="praise-fill" style="width:${pct}%"></div></div>
+            ${milestone ? '<div style="margin-top:12px;color:#22c55e;font-weight:600;">' + milestone + '</div>' : ''}
+        </div>
+        <button class="praise-btn" onclick="this.closest('.praise-overlay').remove()">Продолжить</button>
+    </div>`;
+    document.body.appendChild(overlay);
+}
+
 function toggle(id) {
-    saved[id] = saved[id] === 'done' ? null : 'done';
+    const wasDone = saved[id] === 'done';
+    saved[id] = wasDone ? null : 'done';
     localStorage.setItem('vt_tasks', JSON.stringify(saved));
     render();
+    if (!wasDone) {
+        const task = tasks.find(t => t.id === id);
+        showPraise(task ? task.title : '');
+    }
 }
 
 function askHelp(title) {
