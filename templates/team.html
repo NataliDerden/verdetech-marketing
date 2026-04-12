@@ -109,8 +109,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <div class="chat-msgs" id="chatMsgs">
             <div class="msg bot"><div class="bubble">Привет! Я AI-помощник команды Verde Tech. Спрашивай по любому шагу — помогу с SEO, Директом, контентом. Если застрял — опиши проблему.</div></div>
         </div>
+        <div id="imgPreview" style="display:none; padding:8px 16px;">
+            <div style="position:relative; display:inline-block;">
+                <img id="previewImg" style="max-height:120px; border-radius:8px; border:1px solid #3f3f46;">
+                <button onclick="clearImage()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;">✕</button>
+            </div>
+        </div>
         <div class="chat-in">
-            <input id="inp" placeholder="Напиши вопрос..." onkeydown="if(event.key==='Enter')send()">
+            <label style="cursor:pointer;display:flex;align-items:center;padding:8px;color:#71717a;font-size:20px;" title="Прикрепить скриншот">
+                <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)" style="display:none;">📎
+            </label>
+            <input id="inp" placeholder="Напиши вопрос или прикрепи скрин..." onkeydown="if(event.key==='Enter')send()">
             <button onclick="send()" id="btn">→</button>
         </div>
     </div>
@@ -178,25 +187,57 @@ function askHelp(title) {
     document.getElementById('chatPanel').classList.add('open');
 }
 
+let pendingImage = null;
+
+function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        pendingImage = e.target.result;
+        document.getElementById('previewImg').src = pendingImage;
+        document.getElementById('imgPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+
+function clearImage() {
+    pendingImage = null;
+    document.getElementById('imgPreview').style.display = 'none';
+}
+
 async function send() {
     const inp = document.getElementById('inp');
     const msg = inp.value.trim();
-    if (!msg) return;
+    if (!msg && !pendingImage) return;
     inp.value = '';
-    addMsg(msg, 'user');
+
+    if (pendingImage) {
+        const imgEl = document.createElement('div');
+        imgEl.className = 'msg user';
+        imgEl.innerHTML = `<div class="bubble"><img src="${pendingImage}" style="max-width:200px;border-radius:8px;"><br>${msg || 'Помоги разобраться со скриншотом'}</div>`;
+        document.getElementById('chatMsgs').appendChild(imgEl);
+    } else {
+        addMsg(msg, 'user');
+    }
+
     document.getElementById('btn').disabled = true;
 
     const typ = document.createElement('div');
     typ.className = 'typing';
-    typ.textContent = 'Думаю...';
+    typ.textContent = 'Анализирую...';
     document.getElementById('chatMsgs').appendChild(typ);
     scroll();
+
+    const body = {message: msg};
+    if (pendingImage) body.image = pendingImage;
 
     try {
         const r = await fetch('/api/team-chat', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({message: msg})
+            body: JSON.stringify(body)
         });
         const d = await r.json();
         typ.remove();
@@ -206,6 +247,7 @@ async function send() {
         addMsg('Ошибка соединения', 'bot');
     }
     document.getElementById('btn').disabled = false;
+    clearImage();
 }
 
 function askQ(el) { document.getElementById('inp').value = el.textContent; send(); }
@@ -219,6 +261,45 @@ function addMsg(text, role) {
 }
 
 function scroll() { const c = document.getElementById('chatMsgs'); c.scrollTop = c.scrollHeight; }
+
+// Paste from clipboard (Ctrl+V)
+document.addEventListener('paste', function(e) {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            const file = items[i].getAsFile();
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                pendingImage = ev.target.result;
+                document.getElementById('previewImg').src = pendingImage;
+                document.getElementById('imgPreview').style.display = 'block';
+                document.getElementById('inp').focus();
+            };
+            reader.readAsDataURL(file);
+            break;
+        }
+    }
+});
+
+// Drag & drop
+const chatPanel = document.getElementById('chatPanel');
+chatPanel.addEventListener('dragover', function(e) { e.preventDefault(); chatPanel.style.borderColor = '#22c55e'; });
+chatPanel.addEventListener('dragleave', function() { chatPanel.style.borderColor = '#27272a'; });
+chatPanel.addEventListener('drop', function(e) {
+    e.preventDefault();
+    chatPanel.style.borderColor = '#27272a';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            pendingImage = ev.target.result;
+            document.getElementById('previewImg').src = pendingImage;
+            document.getElementById('imgPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
 render();
 </script>

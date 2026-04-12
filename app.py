@@ -328,9 +328,19 @@ def team_dashboard():
 def team_chat():
     data = request.get_json()
     user_message = data.get('message', '').strip()
+    image_data = data.get('image', None)
 
-    if not user_message:
+    if not user_message and not image_data:
         return jsonify({'error': 'Введите вопрос'}), 400
+
+    # Build message content
+    if image_data:
+        user_content = [
+            {"type": "text", "text": user_message or "Посмотри на скриншот и помоги разобраться. Что тут не так и что делать?"},
+            {"type": "image_url", "image_url": {"url": image_data}}
+        ]
+    else:
+        user_content = user_message
 
     try:
         response = requests.post(
@@ -343,11 +353,11 @@ def team_chat():
                 'model': 'anthropic/claude-sonnet-4',
                 'messages': [
                     {'role': 'system', 'content': TEAM_SYSTEM_PROMPT},
-                    {'role': 'user', 'content': user_message},
+                    {'role': 'user', 'content': user_content},
                 ],
                 'max_tokens': 2000,
             },
-            timeout=60,
+            timeout=90,
         )
         response.raise_for_status()
         result = response.json()
