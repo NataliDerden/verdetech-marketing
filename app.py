@@ -7,6 +7,7 @@ import os
 load_dotenv()
 
 app = Flask(__name__)
+# v3: 21 tasks with Bitrix24 automation
 app.secret_key = os.environ.get('SECRET_KEY', 'verdetech-secret-key-2025')
 
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
