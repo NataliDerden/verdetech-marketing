@@ -262,8 +262,15 @@ TEAM_TASKS = [
 ]
 
 
-@app.route('/team')
+@app.route('/team', methods=['GET', 'POST'])
 def team_dashboard():
+    if request.method == 'POST':
+        if request.form.get('password') == MARKETER_PASSWORD:
+            session['team_logged_in'] = True
+            return redirect(url_for('team_dashboard'))
+        return render_template('team_login.html', error='Неверный пароль')
+    if not session.get('team_logged_in'):
+        return render_template('team_login.html', error=None)
     return render_template('team.html', tasks=TEAM_TASKS)
 
 
