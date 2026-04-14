@@ -8,354 +8,350 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e4e4e7; }
 
-.header { background: #1a1b23; padding: 16px 24px; border-bottom: 1px solid #2a2b35; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-.header h1 { font-size: 20px; color: #22c55e; }
-.header .stats { font-size: 14px; color: #71717a; }
+.header { background: #1a1b23; padding: 14px 24px; border-bottom: 1px solid #2a2b35; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.header h1 { font-size: 18px; color: #22c55e; }
+.header .stats { font-size: 13px; color: #71717a; }
 .header a { color: #71717a; text-decoration: none; font-size: 13px; }
-.header a:hover { color: #22c55e; }
 
-.layout { display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 56px); }
+.layout { display: grid; grid-template-columns: 1fr 400px; height: calc(100vh - 50px); }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
-  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 50vh; z-index: 100; display: none; }
+  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 55vh; z-index: 100; display: none; }
   .chat-panel.open { display: flex; }
   .mobile-chat-btn { display: block !important; }
 }
-
 .mobile-chat-btn { display: none; position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: #000; border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 24px; cursor: pointer; z-index: 99; box-shadow: 0 4px 12px rgba(34,197,94,0.4); }
 
-/* Tasks */
-.tasks-panel { overflow-y: auto; padding: 20px; }
-.cat-header { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 24px 0 10px; padding: 8px 12px; border-radius: 8px; }
-.cat-header.seo { background: #1a2e1a; color: #4ade80; border-left: 3px solid #22c55e; }
-.cat-header.direct { background: #2e2a1a; color: #facc15; border-left: 3px solid #eab308; }
-.cat-header.content { background: #1a1a2e; color: #818cf8; border-left: 3px solid #6366f1; }
-.cat-header.analytics { background: #2e1a2a; color: #f472b6; border-left: 3px solid #ec4899; }
-.cat-header.bitrix { background: #1a2a2e; color: #22d3ee; border-left: 3px solid #06b6d4; }
-.cat-header:first-child { margin-top: 0; }
+/* TASKS */
+.tasks-panel { overflow-y: auto; padding: 16px 20px; }
 
-.task { background: #1a1b23; border: 1px solid #27272a; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-.task:hover { border-color: #3f3f46; }
-.task.done { opacity: 0.4; }
+/* Collapsible category blocks */
+.cat-block { margin-bottom: 16px; border-radius: 10px; overflow: hidden; border: 1px solid #27272a; }
+.cat-header { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+.cat-header .cat-toggle { transition: transform 0.2s; font-size: 12px; }
+.cat-block.collapsed .cat-toggle { transform: rotate(-90deg); }
+.cat-block.collapsed .cat-tasks { display: none; }
+.cat-header .cat-stats { font-size: 11px; opacity: 0.7; font-weight: 400; }
+.cat-header.seo { background: #1a2e1a; color: #4ade80; }
+.cat-header.direct { background: #2e2a1a; color: #facc15; }
+.cat-header.content { background: #1a1a2e; color: #818cf8; }
+.cat-header.analytics { background: #2e1a2a; color: #f472b6; }
+.cat-header.bitrix { background: #1a2a2e; color: #22d3ee; }
+.cat-tasks { background: #13141b; }
+
+.task { background: #1a1b23; border-bottom: 1px solid #1f2029; padding: 12px 14px; cursor: pointer; transition: background 0.15s; }
+.task:last-child { border-bottom: none; }
+.task:hover { background: #1f2029; }
+.task.done { opacity: 0.35; }
 .task.done .t-title { text-decoration: line-through; }
 
 .t-top { display: flex; align-items: center; gap: 10px; }
-.t-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #3f3f46; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; }
+.t-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #3f3f46; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; }
 .t-check.on { background: #22c55e; border-color: #22c55e; }
-.t-check.on::after { content: '✓'; color: #fff; font-size: 12px; font-weight: bold; }
-.t-title { font-size: 15px; font-weight: 600; color: #fafafa; }
-.t-desc { font-size: 13px; color: #a1a1aa; margin: 6px 0 0 30px; line-height: 1.4; }
-.t-meta { display: flex; gap: 6px; margin: 8px 0 0 30px; }
-.badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.t-check.on::after { content: '✓'; color: #fff; font-size: 11px; font-weight: bold; }
+.t-title { font-size: 14px; font-weight: 600; color: #fafafa; flex: 1; }
+.t-time { font-size: 11px; color: #52525b; flex-shrink: 0; }
+.t-desc { font-size: 12px; color: #71717a; margin: 4px 0 0 28px; line-height: 1.4; }
+.t-meta { display: flex; gap: 5px; margin: 6px 0 0 28px; }
+.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
 .badge.critical { background: #dc2626; color: #fff; }
 .badge.high { background: #f59e0b; color: #000; }
 .badge.medium { background: #3b82f6; color: #fff; }
-.badge.time { background: #27272a; color: #a1a1aa; }
 
-.t-steps { margin: 10px 0 0 30px; display: none; }
+.t-steps { margin: 8px 0 0 28px; display: none; }
 .task.expanded .t-steps { display: block; }
-.step { font-size: 13px; color: #d4d4d8; padding: 5px 0 5px 18px; position: relative; line-height: 1.5; }
-.step::before { content: '→'; position: absolute; left: 0; color: #22c55e; font-weight: bold; }
-.t-help { margin: 10px 0 0 30px; }
-.t-help button { background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
-.t-help button:hover { border-color: #22c55e; color: #22c55e; }
+.step { font-size: 12px; color: #a1a1aa; padding: 4px 0 4px 16px; position: relative; line-height: 1.5; }
+.step::before { content: '→'; position: absolute; left: 0; color: #22c55e; }
+.t-actions { margin-top: 8px; display: flex; gap: 6px; }
+.t-actions button { background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
+.t-actions button:hover { border-color: #22c55e; color: #22c55e; }
 
-/* Chat */
+/* Pinned task in chat */
+.pinned-task { background: #0f1117; border: 1px solid #3f3f46; border-radius: 8px; margin: 8px 12px; padding: 8px 12px; font-size: 12px; display: none; }
+.pinned-task.visible { display: flex; align-items: center; justify-content: space-between; }
+.pinned-task .pin-title { color: #22c55e; font-weight: 600; flex: 1; }
+.pinned-task .pin-close { background: none; border: none; color: #52525b; cursor: pointer; font-size: 14px; padding: 0 4px; }
+
+/* CHAT */
 .chat-panel { background: #1a1b23; border-left: 1px solid #27272a; display: flex; flex-direction: column; }
-.chat-head { padding: 14px 16px; border-bottom: 1px solid #27272a; }
-.chat-head h2 { font-size: 15px; color: #22c55e; }
-.chat-head p { font-size: 12px; color: #71717a; margin-top: 2px; }
-
-.quick-qs { padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 5px; }
-.qq { font-size: 11px; background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 8px; padding: 5px 8px; cursor: pointer; }
+.chat-head { padding: 12px 14px; border-bottom: 1px solid #27272a; }
+.chat-head h2 { font-size: 14px; color: #22c55e; }
+.chat-head p { font-size: 11px; color: #52525b; margin-top: 2px; }
+.quick-qs { padding: 6px 12px; display: flex; flex-wrap: wrap; gap: 4px; }
+.qq { font-size: 10px; background: #27272a; color: #71717a; border: 1px solid #3f3f46; border-radius: 6px; padding: 4px 7px; cursor: pointer; }
 .qq:hover { border-color: #22c55e; color: #22c55e; }
-
-.chat-msgs { flex: 1; overflow-y: auto; padding: 12px 16px; }
-.msg { margin-bottom: 14px; }
-.msg.user .bubble { background: #22c55e; color: #000; border-radius: 14px 14px 4px 14px; margin-left: 30px; }
-.msg.bot .bubble { background: #27272a; color: #e4e4e7; border-radius: 14px 14px 14px 4px; margin-right: 30px; }
-.bubble { padding: 10px 14px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
-
-.chat-in { padding: 10px 14px; border-top: 1px solid #27272a; display: flex; gap: 8px; }
-.chat-in input { flex: 1; background: #0f1117; border: 1px solid #3f3f46; border-radius: 10px; padding: 10px 12px; color: #e4e4e7; font-size: 13px; outline: none; }
+.chat-msgs { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.msg { margin-bottom: 12px; }
+.msg.user .bubble { background: #22c55e; color: #000; border-radius: 12px 12px 4px 12px; margin-left: 30px; }
+.msg.bot .bubble { background: #27272a; color: #e4e4e7; border-radius: 12px 12px 12px 4px; margin-right: 20px; }
+.bubble { padding: 8px 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+.chat-in { padding: 8px 12px; border-top: 1px solid #27272a; display: flex; gap: 6px; }
+.chat-in input { flex: 1; background: #0f1117; border: 1px solid #3f3f46; border-radius: 8px; padding: 9px 10px; color: #e4e4e7; font-size: 13px; outline: none; }
 .chat-in input:focus { border-color: #22c55e; }
-.chat-in button { background: #22c55e; color: #000; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; font-size: 14px; }
-.chat-in button:disabled { opacity: 0.5; }
-.typing { color: #71717a; font-size: 12px; font-style: italic; padding: 6px 14px; }
+.chat-in button { background: #22c55e; color: #000; border: none; border-radius: 8px; padding: 9px 14px; font-weight: 600; cursor: pointer; }
+.chat-in button:disabled { opacity: 0.4; }
+.typing { color: #52525b; font-size: 12px; font-style: italic; padding: 4px 12px; }
 
-/* Praise overlay */
-.praise-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s; }
-.praise-card { background: #1a1b23; border: 2px solid #22c55e; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; animation: popIn 0.4s; }
-.praise-emoji { font-size: 64px; margin-bottom: 16px; }
-.praise-title { font-size: 22px; font-weight: 700; color: #22c55e; margin-bottom: 8px; }
-.praise-text { font-size: 15px; color: #a1a1aa; line-height: 1.5; margin-bottom: 20px; }
-.praise-stats { font-size: 13px; color: #71717a; margin-bottom: 20px; }
-.praise-bar { background: #27272a; border-radius: 8px; height: 8px; margin: 8px 0; overflow: hidden; }
-.praise-fill { background: #22c55e; height: 100%; border-radius: 8px; transition: width 0.5s; }
-.praise-btn { background: #22c55e; color: #000; border: none; border-radius: 10px; padding: 10px 24px; font-weight: 600; font-size: 15px; cursor: pointer; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+/* Praise */
+.praise-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s; }
+.praise-card { background: #1a1b23; border: 2px solid #22c55e; border-radius: 20px; padding: 36px; text-align: center; max-width: 380px; animation: popIn 0.4s; }
+.praise-emoji { font-size: 56px; margin-bottom: 12px; }
+.praise-title { font-size: 20px; font-weight: 700; color: #22c55e; margin-bottom: 6px; }
+.praise-text { font-size: 14px; color: #a1a1aa; line-height: 1.4; margin-bottom: 16px; }
+.praise-stats { font-size: 12px; color: #52525b; margin-bottom: 16px; }
+.praise-bar { background: #27272a; border-radius: 6px; height: 6px; margin: 6px 0; overflow: hidden; }
+.praise-fill { background: #22c55e; height: 100%; border-radius: 6px; transition: width 0.5s; }
+.praise-btn { background: #22c55e; color: #000; border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600; font-size: 14px; cursor: pointer; }
+@keyframes fadeIn { from {opacity:0} to {opacity:1} }
+@keyframes popIn { from {transform:scale(0.85);opacity:0} to {transform:scale(1);opacity:1} }
 </style>
 </head>
 <body>
-
 <div class="header">
     <h1>Вердэ Ингредиенты — План команды</h1>
     <div class="stats" id="stats"></div>
     <a href="/dashboard">← Маркетинг</a>
 </div>
-
 <div class="layout">
     <div class="tasks-panel" id="tasksPanel"></div>
     <div class="chat-panel" id="chatPanel">
         <div class="chat-head">
-            <h2>AI-помощник</h2>
-            <p>Застрял? Спроси — помогу пошагово</p>
+            <h2>AI-помощник Вердэ</h2>
+            <p>Знает всё о компании, SEO, Директе, Битрикс24</p>
+        </div>
+        <div class="pinned-task" id="pinnedTask">
+            <span class="pin-title" id="pinTitle"></span>
+            <button class="pin-close" onclick="unpinTask()">✕</button>
         </div>
         <div class="quick-qs">
             <span class="qq" onclick="askQ(this)">Как зайти в WordPress?</span>
-            <span class="qq" onclick="askQ(this)">Как создать кампанию в Директ?</span>
-            <span class="qq" onclick="askQ(this)">Что такое Schema.org?</span>
+            <span class="qq" onclick="askQ(this)">Как создать кампанию в Директе?</span>
+            <span class="qq" onclick="askQ(this)">Как настроить робота в Битрикс24?</span>
             <span class="qq" onclick="askQ(this)">Как написать meta description?</span>
-            <span class="qq" onclick="askQ(this)">Какие минус-слова нужны?</span>
+            <span class="qq" onclick="askQ(this)">Дай текст объявления для рассолов</span>
+            <span class="qq" onclick="askQ(this)">Какие минус-слова добавить?</span>
         </div>
         <div class="chat-msgs" id="chatMsgs">
-            <div class="msg bot"><div class="bubble">Привет! Я AI-помощник команды Вердэ Ингредиенты. Спрашивай по любому шагу — помогу с SEO, Директом, контентом. Если застрял — опиши проблему.</div></div>
+            <div class="msg bot"><div class="bubble">Привет! Я AI-помощник команды Вердэ Ингредиенты.
+
+Я знаю:
+— Весь каталог и продукцию компании
+— SEO-стратегию и семантику из Wordstat
+— Тексты объявлений для Директа
+— Шаблоны писем L1-L6, D1-D15 для Битрикс24
+— Конкурентов и их слабые стороны
+
+Нажмите «Помощь» на любой задаче или спросите напрямую.</div></div>
         </div>
-        <div id="imgPreview" style="display:none; padding:8px 16px;">
+        <div id="imgPreview" style="display:none; padding:6px 12px;">
             <div style="position:relative; display:inline-block;">
-                <img id="previewImg" style="max-height:120px; border-radius:8px; border:1px solid #3f3f46;">
-                <button onclick="clearImage()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;">✕</button>
+                <img id="previewImg" style="max-height:100px; border-radius:6px; border:1px solid #3f3f46;">
+                <button onclick="clearImage()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;">✕</button>
             </div>
         </div>
         <div class="chat-in">
-            <label style="cursor:pointer;display:flex;align-items:center;padding:8px;color:#71717a;font-size:20px;" title="Прикрепить скриншот">
+            <label style="cursor:pointer;display:flex;align-items:center;padding:6px;color:#52525b;font-size:18px;" title="Прикрепить скриншот">
                 <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)" style="display:none;">📎
             </label>
-            <input id="inp" placeholder="Напиши вопрос или прикрепи скрин..." onkeydown="if(event.key==='Enter')send()">
+            <input id="inp" placeholder="Вопрос или скриншот..." onkeydown="if(event.key==='Enter')send()">
             <button onclick="send()" id="btn">→</button>
         </div>
     </div>
 </div>
-
 <button class="mobile-chat-btn" onclick="document.getElementById('chatPanel').classList.toggle('open')">💬</button>
 
 <script>
 const tasks = {{ tasks | tojson }};
 const saved = JSON.parse(localStorage.getItem('vt_tasks') || '{}');
+const collapsed = JSON.parse(localStorage.getItem('vt_collapsed') || '{}');
+let pinnedTaskId = null;
 
 function render() {
     const el = document.getElementById('tasksPanel');
     const cats = {};
-    tasks.forEach(t => { if (!cats[t.cat]) cats[t.cat] = []; cats[t.cat].push(t); });
+    const catOrder = [];
+    tasks.forEach(t => {
+        if (!cats[t.cat]) { cats[t.cat] = []; catOrder.push(t.cat); }
+        cats[t.cat].push(t);
+    });
 
     let h = '';
     let done = 0;
-    for (const [cat, items] of Object.entries(cats)) {
+    for (const cat of catOrder) {
+        const items = cats[cat];
         let catClass = 'seo';
         if (cat.includes('Директ')) catClass = 'direct';
         else if (cat.includes('Контент')) catClass = 'content';
         else if (cat.includes('Аналитика')) catClass = 'analytics';
         else if (cat.includes('Битрикс')) catClass = 'bitrix';
-        h += `<div class="cat-header ${catClass}">${cat}</div>`;
+
+        const catDone = items.filter(t => saved[t.id] === 'done').length;
+        done += catDone;
+        const isCollapsed = collapsed[cat] === true;
+
+        h += `<div class="cat-block ${isCollapsed ? 'collapsed' : ''}">`;
+        h += `<div class="cat-header ${catClass}" onclick="toggleCat('${cat.replace(/'/g,"\\'")}')">
+            <span><span class="cat-toggle">▼</span> ${cat}</span>
+            <span class="cat-stats">${catDone}/${items.length}</span>
+        </div>`;
+        h += `<div class="cat-tasks">`;
         items.forEach(t => {
             const isDone = saved[t.id] === 'done';
-            if (isDone) done++;
             const priLabel = t.pri === 'critical' ? 'Критично' : t.pri === 'high' ? 'Важно' : 'Средне';
             h += `<div class="task ${isDone ? 'done' : ''}" id="t${t.id}" onclick="expand(${t.id})">
                 <div class="t-top">
                     <div class="t-check ${isDone ? 'on' : ''}" onclick="event.stopPropagation();toggle(${t.id})"></div>
                     <div class="t-title">${t.title}</div>
+                    <div class="t-time">${t.time}</div>
                 </div>
                 <div class="t-desc">${t.desc}</div>
                 <div class="t-meta">
                     <span class="badge ${t.pri}">${priLabel}</span>
-                    <span class="badge time">${t.time}</span>
                 </div>
                 <div class="t-steps">
                     ${t.steps.map(s => `<div class="step">${s}</div>`).join('')}
-                    <div class="t-help"><button onclick="event.stopPropagation();askHelp('${t.title.replace(/'/g,"\\'")}')">Помощь с этим шагом</button></div>
+                    <div class="t-actions">
+                        <button onclick="event.stopPropagation();askHelp(${t.id})">Помощь</button>
+                        <button onclick="event.stopPropagation();pinTask(${t.id})">Обсудить в чате</button>
+                    </div>
                 </div>
             </div>`;
         });
+        h += `</div></div>`;
     }
     el.innerHTML = h;
-    const totalHours = tasks.reduce((s, t) => s + parseFloat(t.time) || 0, 0);
-    const doneHours = tasks.filter(t => saved[t.id] === 'done').reduce((s, t) => s + parseFloat(t.time) || 0, 0);
-    document.getElementById('stats').textContent = `Задачи: ${done}/${tasks.length} | Часы: ${doneHours.toFixed(1)}/${totalHours.toFixed(1)} ч`;
+    const totalH = tasks.reduce((s,t) => s + (parseFloat(t.time)||0), 0);
+    const doneH = tasks.filter(t => saved[t.id]==='done').reduce((s,t) => s + (parseFloat(t.time)||0), 0);
+    document.getElementById('stats').textContent = `${done}/${tasks.length} задач | ${doneH.toFixed(1)}/${totalH.toFixed(1)} ч`;
+}
+
+function toggleCat(cat) {
+    collapsed[cat] = !collapsed[cat];
+    localStorage.setItem('vt_collapsed', JSON.stringify(collapsed));
+    render();
 }
 
 function expand(id) { document.getElementById('t'+id).classList.toggle('expanded'); }
 
-const praises = [
-    {emoji: '🎉', title: 'Отлично!', texts: ['Задача выполнена! Так держать!', 'Вы на шаг ближе к лидерству на рынке!']},
-    {emoji: '🔥', title: 'Огонь!', texts: ['Круто! Одной задачей меньше!', 'Конкуренты не успевают за вами!']},
-    {emoji: '💪', title: 'Мощно!', texts: ['Ещё одна задача закрыта!', 'Продолжайте — результат уже близко!']},
-    {emoji: '⭐', title: 'Супер!', texts: ['Задача сделана! Вы молодцы!', 'Каждый шаг приближает к цели!']},
-    {emoji: '🚀', title: 'Ракета!', texts: ['Вы летите вперёд!', 'Скоро Вердэ Ингредиенты будет в топе!']},
-];
-
-function showPraise(taskTitle) {
-    const doneCount = Object.values(saved).filter(v => v === 'done').length;
-    const total = tasks.length;
-    const pct = Math.round(doneCount / total * 100);
-    const p = praises[Math.floor(Math.random() * praises.length)];
-    const txt = p.texts[Math.floor(Math.random() * p.texts.length)];
-
-    let milestone = '';
-    if (pct >= 100) milestone = '🏆 ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ! Вы — команда мечты!';
-    else if (pct >= 75) milestone = '🎯 Больше 75% готово — финишная прямая!';
-    else if (pct >= 50) milestone = '⚡ Половина пути пройдена!';
-    else if (pct >= 25) milestone = '👏 Четверть задач уже сделана!';
-
-    const overlay = document.createElement('div');
-    overlay.className = 'praise-overlay';
-    overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-    overlay.innerHTML = `<div class="praise-card">
-        <div class="praise-emoji">${p.emoji}</div>
-        <div class="praise-title">${p.title}</div>
-        <div class="praise-text">${txt}</div>
-        <div class="praise-stats">
-            Выполнено: ${doneCount} из ${total} задач (${pct}%)
-            <div class="praise-bar"><div class="praise-fill" style="width:${pct}%"></div></div>
-            ${milestone ? '<div style="margin-top:12px;color:#22c55e;font-weight:600;">' + milestone + '</div>' : ''}
-        </div>
-        <button class="praise-btn" onclick="this.closest('.praise-overlay').remove()">Продолжить</button>
-    </div>`;
-    document.body.appendChild(overlay);
-}
-
-function toggle(id) {
-    const wasDone = saved[id] === 'done';
-    saved[id] = wasDone ? null : 'done';
-    localStorage.setItem('vt_tasks', JSON.stringify(saved));
-    render();
-    if (!wasDone) {
-        const task = tasks.find(t => t.id === id);
-        showPraise(task ? task.title : '');
-    }
-}
-
-function askHelp(title) {
-    document.getElementById('inp').value = `Помоги с задачей: ${title}. Дай пошаговую инструкцию.`;
-    send();
-    // On mobile open chat
+function pinTask(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    pinnedTaskId = id;
+    document.getElementById('pinTitle').textContent = task.title;
+    document.getElementById('pinnedTask').classList.add('visible');
+    document.getElementById('inp').value = `Помоги с задачей "${task.title}". Вот шаги: ${task.steps.join('; ')}. Объясни подробно каждый шаг.`;
+    document.getElementById('inp').focus();
     document.getElementById('chatPanel').classList.add('open');
 }
 
+function unpinTask() {
+    pinnedTaskId = null;
+    document.getElementById('pinnedTask').classList.remove('visible');
+}
+
+function askHelp(id) {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    pinnedTaskId = id;
+    document.getElementById('pinTitle').textContent = task.title;
+    document.getElementById('pinnedTask').classList.add('visible');
+    document.getElementById('inp').value = `Помоги с задачей: ${task.title}. Дай пошаговую инструкцию — максимально подробно, как для новичка.`;
+    send();
+    document.getElementById('chatPanel').classList.add('open');
+}
+
+const praises = [
+    {emoji:'🎉',title:'Отлично!',texts:['Задача выполнена! Так держать!','Вы на шаг ближе к лидерству!']},
+    {emoji:'🔥',title:'Огонь!',texts:['Круто! Одной задачей меньше!','Конкуренты не успевают!']},
+    {emoji:'💪',title:'Мощно!',texts:['Ещё одна закрыта!','Результат уже близко!']},
+    {emoji:'⭐',title:'Супер!',texts:['Вы молодцы!','Каждый шаг приближает к цели!']},
+    {emoji:'🚀',title:'Ракета!',texts:['Вы летите вперёд!','Скоро Вердэ будет в топе!']},
+];
+
+function showPraise() {
+    const doneCount = Object.values(saved).filter(v=>v==='done').length;
+    const total = tasks.length;
+    const pct = Math.round(doneCount/total*100);
+    const p = praises[Math.floor(Math.random()*praises.length)];
+    const txt = p.texts[Math.floor(Math.random()*p.texts.length)];
+    let ms = '';
+    if(pct>=100) ms='🏆 ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ!';
+    else if(pct>=75) ms='🎯 Больше 75% — финишная прямая!';
+    else if(pct>=50) ms='⚡ Половина пути!';
+    else if(pct>=25) ms='👏 Четверть уже сделана!';
+    const o = document.createElement('div');
+    o.className='praise-overlay';
+    o.onclick=function(e){if(e.target===o)o.remove()};
+    o.innerHTML=`<div class="praise-card"><div class="praise-emoji">${p.emoji}</div><div class="praise-title">${p.title}</div><div class="praise-text">${txt}</div><div class="praise-stats">${doneCount}/${total} (${pct}%)<div class="praise-bar"><div class="praise-fill" style="width:${pct}%"></div></div>${ms?'<div style="margin-top:10px;color:#22c55e;font-weight:600">'+ms+'</div>':''}</div><button class="praise-btn" onclick="this.closest('.praise-overlay').remove()">Продолжить</button></div>`;
+    document.body.appendChild(o);
+}
+
+function toggle(id) {
+    const was = saved[id]==='done';
+    saved[id] = was ? null : 'done';
+    localStorage.setItem('vt_tasks', JSON.stringify(saved));
+    render();
+    if(!was) showPraise();
+}
+
 let pendingImage = null;
-
 function handleFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        pendingImage = e.target.result;
-        document.getElementById('previewImg').src = pendingImage;
-        document.getElementById('imgPreview').style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-    input.value = '';
+    const file = input.files[0]; if(!file) return;
+    const r = new FileReader();
+    r.onload = e => { pendingImage=e.target.result; document.getElementById('previewImg').src=pendingImage; document.getElementById('imgPreview').style.display='block'; };
+    r.readAsDataURL(file); input.value='';
 }
-
-function clearImage() {
-    pendingImage = null;
-    document.getElementById('imgPreview').style.display = 'none';
-}
+function clearImage() { pendingImage=null; document.getElementById('imgPreview').style.display='none'; }
 
 async function send() {
     const inp = document.getElementById('inp');
     const msg = inp.value.trim();
-    if (!msg && !pendingImage) return;
-    inp.value = '';
-
-    if (pendingImage) {
-        const imgEl = document.createElement('div');
-        imgEl.className = 'msg user';
-        imgEl.innerHTML = `<div class="bubble"><img src="${pendingImage}" style="max-width:200px;border-radius:8px;"><br>${msg || 'Помоги разобраться со скриншотом'}</div>`;
-        document.getElementById('chatMsgs').appendChild(imgEl);
-    } else {
-        addMsg(msg, 'user');
-    }
-
-    document.getElementById('btn').disabled = true;
-
-    const typ = document.createElement('div');
-    typ.className = 'typing';
-    typ.textContent = 'Анализирую...';
-    document.getElementById('chatMsgs').appendChild(typ);
-    scroll();
+    if(!msg && !pendingImage) return;
+    inp.value='';
+    if(pendingImage) {
+        const el=document.createElement('div'); el.className='msg user';
+        el.innerHTML=`<div class="bubble"><img src="${pendingImage}" style="max-width:180px;border-radius:6px;"><br>${msg||'Помоги разобраться'}</div>`;
+        document.getElementById('chatMsgs').appendChild(el);
+    } else { addMsg(msg,'user'); }
+    document.getElementById('btn').disabled=true;
+    const typ=document.createElement('div'); typ.className='typing'; typ.textContent='Думаю...';
+    document.getElementById('chatMsgs').appendChild(typ); scroll();
 
     const body = {message: msg};
-    if (pendingImage) body.image = pendingImage;
+    if(pendingImage) body.image = pendingImage;
+    if(pinnedTaskId) body.taskId = pinnedTaskId;
 
     try {
-        const r = await fetch('/api/team-chat', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(body)
-        });
-        const d = await r.json();
-        typ.remove();
-        addMsg(d.reply || d.error || 'Ошибка', 'bot');
-    } catch(e) {
-        typ.remove();
-        addMsg('Ошибка соединения', 'bot');
-    }
-    document.getElementById('btn').disabled = false;
-    clearImage();
+        const r = await fetch('/api/team-chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+        const d = await r.json(); typ.remove();
+        addMsg(d.reply||d.error||'Ошибка','bot');
+    } catch(e) { typ.remove(); addMsg('Ошибка соединения','bot'); }
+    document.getElementById('btn').disabled=false; clearImage();
 }
 
-function askQ(el) { document.getElementById('inp').value = el.textContent; send(); }
-
-function addMsg(text, role) {
-    const d = document.createElement('div');
-    d.className = `msg ${role}`;
-    d.innerHTML = `<div class="bubble">${text}</div>`;
-    document.getElementById('chatMsgs').appendChild(d);
-    scroll();
+function askQ(el) { document.getElementById('inp').value=el.textContent; send(); }
+function addMsg(text,role) {
+    const d=document.createElement('div'); d.className=`msg ${role}`;
+    d.innerHTML=`<div class="bubble">${text}</div>`;
+    document.getElementById('chatMsgs').appendChild(d); scroll();
 }
+function scroll() { const c=document.getElementById('chatMsgs'); c.scrollTop=c.scrollHeight; }
 
-function scroll() { const c = document.getElementById('chatMsgs'); c.scrollTop = c.scrollHeight; }
-
-// Paste from clipboard (Ctrl+V)
-document.addEventListener('paste', function(e) {
-    const items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
+document.addEventListener('paste', e => {
+    for(let i=0;i<e.clipboardData.items.length;i++) {
+        if(e.clipboardData.items[i].type.indexOf('image')!==-1) {
             e.preventDefault();
-            const file = items[i].getAsFile();
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                pendingImage = ev.target.result;
-                document.getElementById('previewImg').src = pendingImage;
-                document.getElementById('imgPreview').style.display = 'block';
-                document.getElementById('inp').focus();
-            };
-            reader.readAsDataURL(file);
-            break;
+            const r=new FileReader();
+            r.onload=ev=>{pendingImage=ev.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';document.getElementById('inp').focus();};
+            r.readAsDataURL(e.clipboardData.items[i].getAsFile()); break;
         }
     }
 });
 
-// Drag & drop
-const chatPanel = document.getElementById('chatPanel');
-chatPanel.addEventListener('dragover', function(e) { e.preventDefault(); chatPanel.style.borderColor = '#22c55e'; });
-chatPanel.addEventListener('dragleave', function() { chatPanel.style.borderColor = '#27272a'; });
-chatPanel.addEventListener('drop', function(e) {
-    e.preventDefault();
-    chatPanel.style.borderColor = '#27272a';
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            pendingImage = ev.target.result;
-            document.getElementById('previewImg').src = pendingImage;
-            document.getElementById('imgPreview').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    }
-});
+const cp=document.getElementById('chatPanel');
+cp.addEventListener('dragover',e=>{e.preventDefault();cp.style.borderColor='#22c55e';});
+cp.addEventListener('dragleave',()=>{cp.style.borderColor='#27272a';});
+cp.addEventListener('drop',e=>{e.preventDefault();cp.style.borderColor='#27272a';const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){const r=new FileReader();r.onload=ev=>{pendingImage=ev.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';};r.readAsDataURL(f);}});
 
 render();
 </script>
