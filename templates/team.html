@@ -8,10 +8,34 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e4e4e7; }
 
-.header { background: #1a1b23; padding: 14px 24px; border-bottom: 1px solid #2a2b35; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.header { background: #1a1b23; padding: 12px 24px; border-bottom: 1px solid #2a2b35; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .header h1 { font-size: 18px; color: #22c55e; }
-.header .stats { font-size: 13px; color: #71717a; }
 .header a { color: #71717a; text-decoration: none; font-size: 13px; }
+
+/* Progress dashboard */
+.progress-panel { background: #1a1b23; border-bottom: 1px solid #2a2b35; padding: 14px 24px; }
+.progress-top { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+.progress-pct { font-size: 32px; font-weight: 800; color: #22c55e; line-height: 1; }
+.progress-label { font-size: 13px; color: #71717a; }
+.progress-label b { color: #e4e4e7; }
+.progress-main-bar { background: #27272a; border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 12px; }
+.progress-main-fill { height: 100%; border-radius: 8px; transition: width 0.6s ease; background: linear-gradient(90deg, #22c55e, #4ade80); }
+.progress-cats { display: flex; gap: 8px; flex-wrap: wrap; }
+.progress-cat { background: #13141b; border: 1px solid #27272a; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 120px; }
+.progress-cat-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.progress-cat-name.seo { color: #4ade80; }
+.progress-cat-name.direct { color: #facc15; }
+.progress-cat-name.bitrix { color: #22d3ee; }
+.progress-cat-name.content { color: #818cf8; }
+.progress-cat-name.analytics { color: #f472b6; }
+.progress-cat-bar { background: #27272a; border-radius: 4px; height: 4px; overflow: hidden; margin-top: 4px; }
+.progress-cat-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.progress-cat-fill.seo { background: #22c55e; }
+.progress-cat-fill.direct { background: #eab308; }
+.progress-cat-fill.bitrix { background: #06b6d4; }
+.progress-cat-fill.content { background: #6366f1; }
+.progress-cat-fill.analytics { background: #ec4899; }
+.progress-cat-nums { font-size: 12px; color: #a1a1aa; display: flex; justify-content: space-between; }
 
 .layout { display: grid; grid-template-columns: 1fr 400px; height: calc(100vh - 50px); }
 @media (max-width: 900px) {
@@ -109,10 +133,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <body>
 <div class="header">
     <h1>Вердэ Ингредиенты — План команды</h1>
-    <div class="stats" id="stats"></div>
     <a href="/dashboard">← Маркетинг</a>
 </div>
-<div class="layout">
+<div class="progress-panel" id="progressPanel"></div>
+<div class="layout" style="height: calc(100vh - 160px)">
     <div class="tasks-panel" id="tasksPanel"></div>
     <div class="chat-panel" id="chatPanel">
         <div class="chat-head">
@@ -220,9 +244,53 @@ function render() {
         h += `</div></div>`;
     }
     el.innerHTML = h;
+
+    // Progress panel
+    const total = tasks.length;
+    const pct = total ? Math.round(done/total*100) : 0;
     const totalH = tasks.reduce((s,t) => s + (parseFloat(t.time)||0), 0);
     const doneH = tasks.filter(t => saved[t.id]==='done').reduce((s,t) => s + (parseFloat(t.time)||0), 0);
-    document.getElementById('stats').textContent = `${done}/${tasks.length} задач | ${doneH.toFixed(1)}/${totalH.toFixed(1)} ч`;
+
+    // Group stats by category type
+    const catGroups = {seo: {name:'SEO', done:0, total:0}, direct: {name:'Директ', done:0, total:0}, bitrix: {name:'Битрикс24', done:0, total:0}, content: {name:'Контент', done:0, total:0}, analytics: {name:'Аналитика', done:0, total:0}};
+    tasks.forEach(t => {
+        let g = 'seo';
+        if(t.cat.includes('Директ')) g='direct';
+        else if(t.cat.includes('Битрикс')) g='bitrix';
+        else if(t.cat.includes('Контент')) g='content';
+        else if(t.cat.includes('Аналитика')) g='analytics';
+        catGroups[g].total++;
+        if(saved[t.id]==='done') catGroups[g].done++;
+    });
+
+    let statusText = '';
+    if(pct === 0) statusText = 'Начинаем! Выберите первую задачу';
+    else if(pct < 25) statusText = 'Хорошее начало! Продолжайте';
+    else if(pct < 50) statusText = 'Отличный прогресс!';
+    else if(pct < 75) statusText = 'Больше половины — вы молодцы!';
+    else if(pct < 100) statusText = 'Финишная прямая!';
+    else statusText = 'Все задачи выполнены!';
+
+    let pg = `<div class="progress-top">
+        <div class="progress-pct">${pct}%</div>
+        <div>
+            <div class="progress-label"><b>${done}</b> из <b>${total}</b> задач выполнено</div>
+            <div class="progress-label">${doneH.toFixed(1)} из ${totalH.toFixed(1)} ч | ${statusText}</div>
+        </div>
+    </div>
+    <div class="progress-main-bar"><div class="progress-main-fill" style="width:${pct}%"></div></div>
+    <div class="progress-cats">`;
+    for(const [key, g] of Object.entries(catGroups)) {
+        if(g.total === 0) continue;
+        const cp = Math.round(g.done/g.total*100);
+        pg += `<div class="progress-cat">
+            <div class="progress-cat-name ${key}">${g.name}</div>
+            <div class="progress-cat-nums"><span>${g.done}/${g.total}</span><span>${cp}%</span></div>
+            <div class="progress-cat-bar"><div class="progress-cat-fill ${key}" style="width:${cp}%"></div></div>
+        </div>`;
+    }
+    pg += '</div>';
+    document.getElementById('progressPanel').innerHTML = pg;
 }
 
 function toggleCat(cat) {
