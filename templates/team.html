@@ -6,126 +6,131 @@
 <title>Вердэ Ингредиенты — План команды SEO + Директ</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e4e4e7; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
 
-.header { background: #1a1b23; padding: 12px 24px; border-bottom: 1px solid #2a2b35; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-.header h1 { font-size: 18px; color: #22c55e; }
-.header a { color: #71717a; text-decoration: none; font-size: 13px; }
+/* HEADER */
+.header { background: #fff; padding: 12px 24px; border-bottom: 1px solid #e5e5ea; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.header h1 { font-size: 18px; color: #1a7f37; }
+.header a { color: #86868b; text-decoration: none; font-size: 13px; }
 
-/* Progress dashboard */
-.progress-panel { background: #1a1b23; border-bottom: 1px solid #2a2b35; padding: 14px 24px; }
+/* PROGRESS */
+.progress-panel { background: #fff; border-bottom: 1px solid #e5e5ea; padding: 14px 24px; }
 .progress-top { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
-.progress-pct { font-size: 32px; font-weight: 800; color: #22c55e; line-height: 1; }
-.progress-label { font-size: 13px; color: #71717a; }
-.progress-label b { color: #e4e4e7; }
-.progress-main-bar { background: #27272a; border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 12px; }
-.progress-main-fill { height: 100%; border-radius: 8px; transition: width 0.6s ease; background: linear-gradient(90deg, #22c55e, #4ade80); }
+.progress-pct { font-size: 32px; font-weight: 800; color: #1a7f37; line-height: 1; }
+.progress-label { font-size: 13px; color: #86868b; }
+.progress-label b { color: #1d1d1f; }
+.progress-main-bar { background: #e5e5ea; border-radius: 8px; height: 10px; overflow: hidden; margin-bottom: 12px; }
+.progress-main-fill { height: 100%; border-radius: 8px; transition: width 0.6s ease; background: linear-gradient(90deg, #1a7f37, #34d058); }
 .progress-cats { display: flex; gap: 8px; flex-wrap: wrap; }
-.progress-cat { background: #13141b; border: 1px solid #27272a; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 120px; }
-.progress-cat-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.progress-cat-name.seo { color: #4ade80; }
-.progress-cat-name.direct { color: #facc15; }
-.progress-cat-name.bitrix { color: #22d3ee; }
-.progress-cat-name.content { color: #818cf8; }
-.progress-cat-name.analytics { color: #f472b6; }
-.progress-cat-bar { background: #27272a; border-radius: 4px; height: 4px; overflow: hidden; margin-top: 4px; }
+.progress-cat { background: #f9f9f9; border: 1px solid #e5e5ea; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 110px; }
+.progress-cat-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+.progress-cat-name.seo { color: #1a7f37; }
+.progress-cat-name.direct { color: #b45309; }
+.progress-cat-name.bitrix { color: #0e7490; }
+.progress-cat-name.content { color: #6d28d9; }
+.progress-cat-name.analytics { color: #be185d; }
+.progress-cat-bar { background: #e5e5ea; border-radius: 4px; height: 4px; overflow: hidden; margin-top: 4px; }
 .progress-cat-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
-.progress-cat-fill.seo { background: #22c55e; }
-.progress-cat-fill.direct { background: #eab308; }
-.progress-cat-fill.bitrix { background: #06b6d4; }
-.progress-cat-fill.content { background: #6366f1; }
-.progress-cat-fill.analytics { background: #ec4899; }
-.progress-cat-nums { font-size: 12px; color: #a1a1aa; display: flex; justify-content: space-between; }
+.progress-cat-fill.seo { background: #1a7f37; }
+.progress-cat-fill.direct { background: #d97706; }
+.progress-cat-fill.bitrix { background: #0891b2; }
+.progress-cat-fill.content { background: #7c3aed; }
+.progress-cat-fill.analytics { background: #db2777; }
+.progress-cat-nums { font-size: 12px; color: #86868b; display: flex; justify-content: space-between; }
 
-.layout { display: grid; grid-template-columns: 1fr 400px; height: calc(100vh - 50px); }
+/* LAYOUT */
+.layout { display: grid; grid-template-columns: 1fr 420px; height: calc(100vh - 160px); }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }
-  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 55vh; z-index: 100; display: none; }
+  .chat-panel { position: fixed; bottom: 0; left: 0; right: 0; height: 55vh; z-index: 100; display: none; border-top: 2px solid #1a7f37; }
   .chat-panel.open { display: flex; }
   .mobile-chat-btn { display: block !important; }
 }
-.mobile-chat-btn { display: none; position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: #000; border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 24px; cursor: pointer; z-index: 99; box-shadow: 0 4px 12px rgba(34,197,94,0.4); }
+.mobile-chat-btn { display: none; position: fixed; bottom: 20px; right: 20px; background: #1a7f37; color: #fff; border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 24px; cursor: pointer; z-index: 99; box-shadow: 0 4px 12px rgba(26,127,55,0.4); }
 
 /* TASKS */
 .tasks-panel { overflow-y: auto; padding: 16px 20px; }
-
-/* Collapsible category blocks */
-.cat-block { margin-bottom: 16px; border-radius: 10px; overflow: hidden; border: 1px solid #27272a; }
+.cat-block { margin-bottom: 12px; border-radius: 10px; overflow: hidden; border: 1px solid #e5e5ea; background: #fff; }
 .cat-header { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
-.cat-header .cat-toggle { transition: transform 0.2s; font-size: 12px; }
+.cat-header .cat-toggle { transition: transform 0.2s; font-size: 12px; margin-right: 6px; }
 .cat-block.collapsed .cat-toggle { transform: rotate(-90deg); }
 .cat-block.collapsed .cat-tasks { display: none; }
 .cat-header .cat-stats { font-size: 11px; opacity: 0.7; font-weight: 400; }
-.cat-header.seo { background: #1a2e1a; color: #4ade80; }
-.cat-header.direct { background: #2e2a1a; color: #facc15; }
-.cat-header.content { background: #1a1a2e; color: #818cf8; }
-.cat-header.analytics { background: #2e1a2a; color: #f472b6; }
-.cat-header.bitrix { background: #1a2a2e; color: #22d3ee; }
-.cat-tasks { background: #13141b; }
+.cat-header.seo { background: #dcfce7; color: #166534; }
+.cat-header.direct { background: #fef9c3; color: #854d0e; }
+.cat-header.content { background: #ede9fe; color: #5b21b6; }
+.cat-header.analytics { background: #fce7f3; color: #9d174d; }
+.cat-header.bitrix { background: #cffafe; color: #155e75; }
 
-.task { background: #1a1b23; border-bottom: 1px solid #1f2029; padding: 12px 14px; cursor: pointer; transition: background 0.15s; }
+.task { background: #fff; border-bottom: 1px solid #f0f0f0; padding: 12px 14px; transition: background 0.15s; }
 .task:last-child { border-bottom: none; }
-.task:hover { background: #1f2029; }
-.task.done { opacity: 0.35; }
+.task:hover { background: #f9fafb; }
+.task.done { opacity: 0.4; }
 .task.done .t-title { text-decoration: line-through; }
 
 .t-top { display: flex; align-items: center; gap: 10px; }
-.t-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #3f3f46; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; }
-.t-check.on { background: #22c55e; border-color: #22c55e; }
+.t-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer; }
+.t-check.on { background: #1a7f37; border-color: #1a7f37; }
 .t-check.on::after { content: '✓'; color: #fff; font-size: 11px; font-weight: bold; }
-.t-title { font-size: 14px; font-weight: 600; color: #fafafa; flex: 1; }
-.t-time { font-size: 11px; color: #52525b; flex-shrink: 0; }
-.t-desc { font-size: 12px; color: #71717a; margin: 4px 0 0 28px; line-height: 1.4; }
+.t-title { font-size: 14px; font-weight: 600; color: #1d1d1f; flex: 1; cursor: pointer; }
+.t-time { font-size: 11px; color: #86868b; flex-shrink: 0; }
+.t-desc { font-size: 12px; color: #6e6e73; margin: 4px 0 0 28px; line-height: 1.4; }
 .t-meta { display: flex; gap: 5px; margin: 6px 0 0 28px; }
-.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500; }
-.badge.critical { background: #dc2626; color: #fff; }
-.badge.high { background: #f59e0b; color: #000; }
-.badge.medium { background: #3b82f6; color: #fff; }
+.badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+.badge.critical { background: #fecaca; color: #991b1b; }
+.badge.high { background: #fef3c7; color: #92400e; }
+.badge.medium { background: #dbeafe; color: #1e40af; }
 
-.t-steps { margin: 8px 0 0 28px; display: none; }
+.t-steps { margin: 8px 0 0 28px; display: none; background: #f9fafb; border-radius: 8px; padding: 10px 12px; }
 .task.expanded .t-steps { display: block; }
-.step { font-size: 12px; color: #a1a1aa; padding: 4px 0 4px 16px; position: relative; line-height: 1.5; }
-.step::before { content: '→'; position: absolute; left: 0; color: #22c55e; }
+.step { font-size: 12px; color: #374151; padding: 4px 0 4px 16px; position: relative; line-height: 1.5; }
+.step::before { content: '→'; position: absolute; left: 0; color: #1a7f37; font-weight: bold; }
 .t-actions { margin-top: 8px; display: flex; gap: 6px; }
-.t-actions button { background: #27272a; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
-.t-actions button:hover { border-color: #22c55e; color: #22c55e; }
+.t-actions button { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
+.t-actions button:hover { border-color: #1a7f37; color: #1a7f37; }
 
-/* Pinned task in chat */
-.pinned-task { background: #0f1117; border: 1px solid #3f3f46; border-radius: 8px; margin: 8px 12px; padding: 8px 12px; font-size: 12px; display: none; }
+/* PINNED TASK */
+.pinned-task { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; margin: 8px 12px; padding: 8px 12px; font-size: 12px; display: none; }
 .pinned-task.visible { display: flex; align-items: center; justify-content: space-between; }
-.pinned-task .pin-title { color: #22c55e; font-weight: 600; flex: 1; }
-.pinned-task .pin-close { background: none; border: none; color: #52525b; cursor: pointer; font-size: 14px; padding: 0 4px; }
+.pinned-task .pin-title { color: #166534; font-weight: 600; flex: 1; }
+.pinned-task .pin-close { background: none; border: none; color: #86868b; cursor: pointer; font-size: 14px; padding: 0 4px; }
 
 /* CHAT */
-.chat-panel { background: #1a1b23; border-left: 1px solid #27272a; display: flex; flex-direction: column; }
-.chat-head { padding: 12px 14px; border-bottom: 1px solid #27272a; }
-.chat-head h2 { font-size: 14px; color: #22c55e; }
-.chat-head p { font-size: 11px; color: #52525b; margin-top: 2px; }
+.chat-panel { background: #fff; border-left: 1px solid #e5e5ea; display: flex; flex-direction: column; position: relative; min-width: 320px; }
+/* Resizable chat */
+.chat-resize { position: absolute; left: -3px; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 10; }
+.chat-resize:hover { background: rgba(26,127,55,0.2); }
+.chat-head { padding: 12px 14px; border-bottom: 1px solid #e5e5ea; display: flex; align-items: center; justify-content: space-between; }
+.chat-head div h2 { font-size: 14px; color: #1a7f37; }
+.chat-head div p { font-size: 11px; color: #86868b; margin-top: 2px; }
+.chat-expand-btn { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; color: #374151; }
+.chat-expand-btn:hover { border-color: #1a7f37; }
 .quick-qs { padding: 6px 12px; display: flex; flex-wrap: wrap; gap: 4px; }
-.qq { font-size: 10px; background: #27272a; color: #71717a; border: 1px solid #3f3f46; border-radius: 6px; padding: 4px 7px; cursor: pointer; }
-.qq:hover { border-color: #22c55e; color: #22c55e; }
+.qq { font-size: 10px; background: #f3f4f6; color: #6e6e73; border: 1px solid #e5e5ea; border-radius: 6px; padding: 4px 7px; cursor: pointer; }
+.qq:hover { border-color: #1a7f37; color: #166534; }
 .chat-msgs { flex: 1; overflow-y: auto; padding: 10px 14px; }
 .msg { margin-bottom: 12px; }
-.msg.user .bubble { background: #22c55e; color: #000; border-radius: 12px 12px 4px 12px; margin-left: 30px; }
-.msg.bot .bubble { background: #27272a; color: #e4e4e7; border-radius: 12px 12px 12px 4px; margin-right: 20px; }
+.msg.user .bubble { background: #1a7f37; color: #fff; border-radius: 12px 12px 4px 12px; margin-left: 30px; }
+.msg.bot .bubble { background: #f3f4f6; color: #1d1d1f; border-radius: 12px 12px 12px 4px; margin-right: 20px; }
 .bubble { padding: 8px 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
-.chat-in { padding: 8px 12px; border-top: 1px solid #27272a; display: flex; gap: 6px; }
-.chat-in input { flex: 1; background: #0f1117; border: 1px solid #3f3f46; border-radius: 8px; padding: 9px 10px; color: #e4e4e7; font-size: 13px; outline: none; }
-.chat-in input:focus { border-color: #22c55e; }
-.chat-in button { background: #22c55e; color: #000; border: none; border-radius: 8px; padding: 9px 14px; font-weight: 600; cursor: pointer; }
-.chat-in button:disabled { opacity: 0.4; }
-.typing { color: #52525b; font-size: 12px; font-style: italic; padding: 4px 12px; }
 
-/* Praise */
-.praise-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s; }
-.praise-card { background: #1a1b23; border: 2px solid #22c55e; border-radius: 20px; padding: 36px; text-align: center; max-width: 380px; animation: popIn 0.4s; }
+.chat-in { padding: 8px 12px; border-top: 1px solid #e5e5ea; display: flex; gap: 6px; align-items: flex-end; }
+.chat-in textarea { flex: 1; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 10px; color: #1d1d1f; font-size: 13px; outline: none; font-family: inherit; resize: none; min-height: 38px; max-height: 150px; overflow-y: auto; }
+.chat-in textarea:focus { border-color: #1a7f37; }
+.chat-in button { background: #1a7f37; color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font-weight: 600; cursor: pointer; height: 38px; }
+.chat-in button:disabled { opacity: 0.4; }
+.typing { color: #86868b; font-size: 12px; font-style: italic; padding: 4px 12px; }
+
+/* PRAISE */
+.praise-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s; }
+.praise-card { background: #fff; border: 2px solid #1a7f37; border-radius: 20px; padding: 36px; text-align: center; max-width: 380px; animation: popIn 0.4s; }
 .praise-emoji { font-size: 56px; margin-bottom: 12px; }
-.praise-title { font-size: 20px; font-weight: 700; color: #22c55e; margin-bottom: 6px; }
-.praise-text { font-size: 14px; color: #a1a1aa; line-height: 1.4; margin-bottom: 16px; }
-.praise-stats { font-size: 12px; color: #52525b; margin-bottom: 16px; }
-.praise-bar { background: #27272a; border-radius: 6px; height: 6px; margin: 6px 0; overflow: hidden; }
-.praise-fill { background: #22c55e; height: 100%; border-radius: 6px; transition: width 0.5s; }
-.praise-btn { background: #22c55e; color: #000; border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.praise-title { font-size: 20px; font-weight: 700; color: #1a7f37; margin-bottom: 6px; }
+.praise-text { font-size: 14px; color: #6e6e73; line-height: 1.4; margin-bottom: 16px; }
+.praise-stats { font-size: 12px; color: #86868b; margin-bottom: 16px; }
+.praise-bar { background: #e5e5ea; border-radius: 6px; height: 6px; margin: 6px 0; overflow: hidden; }
+.praise-fill { background: #1a7f37; height: 100%; border-radius: 6px; transition: width 0.5s; }
+.praise-btn { background: #1a7f37; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600; font-size: 14px; cursor: pointer; }
 @keyframes fadeIn { from {opacity:0} to {opacity:1} }
 @keyframes popIn { from {transform:scale(0.85);opacity:0} to {transform:scale(1);opacity:1} }
 </style>
@@ -136,12 +141,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <a href="/dashboard">← Маркетинг</a>
 </div>
 <div class="progress-panel" id="progressPanel"></div>
-<div class="layout" style="height: calc(100vh - 160px)">
+<div class="layout" id="mainLayout">
     <div class="tasks-panel" id="tasksPanel"></div>
     <div class="chat-panel" id="chatPanel">
+        <div class="chat-resize" id="chatResize"></div>
         <div class="chat-head">
-            <h2>AI-помощник Вердэ</h2>
-            <p>Знает всё о компании, SEO, Директе, Битрикс24</p>
+            <div>
+                <h2>AI-помощник Вердэ</h2>
+                <p>Знает всё о компании, SEO, Директе, Битрикс24</p>
+            </div>
+            <button class="chat-expand-btn" onclick="toggleChatWidth()" title="Расширить/сузить">⇔</button>
         </div>
         <div class="pinned-task" id="pinnedTask">
             <span class="pin-title" id="pinTitle"></span>
@@ -151,7 +160,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
             <span class="qq" onclick="askQ(this)">Как зайти в WordPress?</span>
             <span class="qq" onclick="askQ(this)">Как создать кампанию в Директе?</span>
             <span class="qq" onclick="askQ(this)">Как настроить робота в Битрикс24?</span>
-            <span class="qq" onclick="askQ(this)">Как написать meta description?</span>
             <span class="qq" onclick="askQ(this)">Дай текст объявления для рассолов</span>
             <span class="qq" onclick="askQ(this)">Какие минус-слова добавить?</span>
         </div>
@@ -169,15 +177,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         </div>
         <div id="imgPreview" style="display:none; padding:6px 12px;">
             <div style="position:relative; display:inline-block;">
-                <img id="previewImg" style="max-height:100px; border-radius:6px; border:1px solid #3f3f46;">
+                <img id="previewImg" style="max-height:100px; border-radius:6px; border:1px solid #d1d5db;">
                 <button onclick="clearImage()" style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;">✕</button>
             </div>
         </div>
         <div class="chat-in">
-            <label style="cursor:pointer;display:flex;align-items:center;padding:6px;color:#52525b;font-size:18px;" title="Прикрепить скриншот">
+            <label style="cursor:pointer;display:flex;align-items:center;padding:6px;color:#86868b;font-size:18px;" title="Прикрепить скриншот">
                 <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)" style="display:none;">📎
             </label>
-            <input id="inp" placeholder="Вопрос или скриншот..." onkeydown="if(event.key==='Enter')send()">
+            <textarea id="inp" placeholder="Вопрос или скриншот..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}" oninput="autoGrow(this)"></textarea>
             <button onclick="send()" id="btn">→</button>
         </div>
     </div>
@@ -189,6 +197,33 @@ const tasks = {{ tasks | tojson }};
 const saved = JSON.parse(localStorage.getItem('vt_tasks') || '{}');
 const collapsed = JSON.parse(localStorage.getItem('vt_collapsed') || '{}');
 let pinnedTaskId = null;
+
+// Auto-grow textarea
+function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+}
+
+// Chat resize
+let chatExpanded = false;
+function toggleChatWidth() {
+    chatExpanded = !chatExpanded;
+    document.getElementById('mainLayout').style.gridTemplateColumns = chatExpanded ? '1fr 600px' : '1fr 420px';
+}
+
+// Drag resize
+const resizer = document.getElementById('chatResize');
+let isResizing = false;
+resizer.addEventListener('mousedown', e => { isResizing = true; document.body.style.cursor = 'col-resize'; e.preventDefault(); });
+document.addEventListener('mousemove', e => {
+    if (!isResizing) return;
+    const layout = document.getElementById('mainLayout');
+    const chatW = window.innerWidth - e.clientX;
+    if (chatW >= 300 && chatW <= 800) {
+        layout.style.gridTemplateColumns = `1fr ${chatW}px`;
+    }
+});
+document.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = ''; });
 
 function render() {
     const el = document.getElementById('tasksPanel');
@@ -214,7 +249,7 @@ function render() {
         const isCollapsed = collapsed[cat] === true;
 
         h += `<div class="cat-block ${isCollapsed ? 'collapsed' : ''}">`;
-        h += `<div class="cat-header ${catClass}" onclick="toggleCat('${cat.replace(/'/g,"\\'")}')">
+        h += `<div class="cat-header ${catClass}" onclick="event.stopPropagation();toggleCat('${cat.replace(/'/g,"\\'")}')">
             <span><span class="cat-toggle">▼</span> ${cat}</span>
             <span class="cat-stats">${catDone}/${items.length}</span>
         </div>`;
@@ -222,10 +257,10 @@ function render() {
         items.forEach(t => {
             const isDone = saved[t.id] === 'done';
             const priLabel = t.pri === 'critical' ? 'Критично' : t.pri === 'high' ? 'Важно' : 'Средне';
-            h += `<div class="task ${isDone ? 'done' : ''}" id="t${t.id}" onclick="expand(${t.id})">
+            h += `<div class="task ${isDone ? 'done' : ''}" id="t${t.id}">
                 <div class="t-top">
                     <div class="t-check ${isDone ? 'on' : ''}" onclick="event.stopPropagation();toggle(${t.id})"></div>
-                    <div class="t-title">${t.title}</div>
+                    <div class="t-title" onclick="expand(${t.id})">${t.title}</div>
                     <div class="t-time">${t.time}</div>
                 </div>
                 <div class="t-desc">${t.desc}</div>
@@ -245,181 +280,87 @@ function render() {
     }
     el.innerHTML = h;
 
-    // Progress panel
+    // Progress
     const total = tasks.length;
     const pct = total ? Math.round(done/total*100) : 0;
     const totalH = tasks.reduce((s,t) => s + (parseFloat(t.time)||0), 0);
     const doneH = tasks.filter(t => saved[t.id]==='done').reduce((s,t) => s + (parseFloat(t.time)||0), 0);
-
-    // Group stats by category type
-    const catGroups = {seo: {name:'SEO', done:0, total:0}, direct: {name:'Директ', done:0, total:0}, bitrix: {name:'Битрикс24', done:0, total:0}, content: {name:'Контент', done:0, total:0}, analytics: {name:'Аналитика', done:0, total:0}};
+    const catGroups = {seo:{name:'SEO',done:0,total:0}, direct:{name:'Директ',done:0,total:0}, bitrix:{name:'Битрикс24',done:0,total:0}, content:{name:'Контент',done:0,total:0}, analytics:{name:'Аналитика',done:0,total:0}};
     tasks.forEach(t => {
-        let g = 'seo';
-        if(t.cat.includes('Директ')) g='direct';
-        else if(t.cat.includes('Битрикс')) g='bitrix';
-        else if(t.cat.includes('Контент')) g='content';
-        else if(t.cat.includes('Аналитика')) g='analytics';
-        catGroups[g].total++;
-        if(saved[t.id]==='done') catGroups[g].done++;
+        let g='seo'; if(t.cat.includes('Директ'))g='direct'; else if(t.cat.includes('Битрикс'))g='bitrix'; else if(t.cat.includes('Контент'))g='content'; else if(t.cat.includes('Аналитика'))g='analytics';
+        catGroups[g].total++; if(saved[t.id]==='done') catGroups[g].done++;
     });
-
-    let statusText = '';
-    if(pct === 0) statusText = 'Начинаем! Выберите первую задачу';
-    else if(pct < 25) statusText = 'Хорошее начало! Продолжайте';
-    else if(pct < 50) statusText = 'Отличный прогресс!';
-    else if(pct < 75) statusText = 'Больше половины — вы молодцы!';
-    else if(pct < 100) statusText = 'Финишная прямая!';
-    else statusText = 'Все задачи выполнены!';
-
-    let pg = `<div class="progress-top">
-        <div class="progress-pct">${pct}%</div>
-        <div>
-            <div class="progress-label"><b>${done}</b> из <b>${total}</b> задач выполнено</div>
-            <div class="progress-label">${doneH.toFixed(1)} из ${totalH.toFixed(1)} ч | ${statusText}</div>
-        </div>
-    </div>
-    <div class="progress-main-bar"><div class="progress-main-fill" style="width:${pct}%"></div></div>
-    <div class="progress-cats">`;
-    for(const [key, g] of Object.entries(catGroups)) {
-        if(g.total === 0) continue;
-        const cp = Math.round(g.done/g.total*100);
-        pg += `<div class="progress-cat">
-            <div class="progress-cat-name ${key}">${g.name}</div>
-            <div class="progress-cat-nums"><span>${g.done}/${g.total}</span><span>${cp}%</span></div>
-            <div class="progress-cat-bar"><div class="progress-cat-fill ${key}" style="width:${cp}%"></div></div>
-        </div>`;
-    }
-    pg += '</div>';
-    document.getElementById('progressPanel').innerHTML = pg;
+    let st=''; if(pct===0)st='Начинаем! Выберите задачу'; else if(pct<25)st='Хорошее начало!'; else if(pct<50)st='Отличный прогресс!'; else if(pct<75)st='Больше половины!'; else if(pct<100)st='Финишная прямая!'; else st='Все выполнено!';
+    let pg=`<div class="progress-top"><div class="progress-pct">${pct}%</div><div><div class="progress-label"><b>${done}</b> из <b>${total}</b> задач</div><div class="progress-label">${doneH.toFixed(1)}/${totalH.toFixed(1)} ч | ${st}</div></div></div><div class="progress-main-bar"><div class="progress-main-fill" style="width:${pct}%"></div></div><div class="progress-cats">`;
+    for(const[k,g] of Object.entries(catGroups)){if(!g.total)continue;const cp=Math.round(g.done/g.total*100);pg+=`<div class="progress-cat"><div class="progress-cat-name ${k}">${g.name}</div><div class="progress-cat-nums"><span>${g.done}/${g.total}</span><span>${cp}%</span></div><div class="progress-cat-bar"><div class="progress-cat-fill ${k}" style="width:${cp}%"></div></div></div>`;}
+    pg+='</div>'; document.getElementById('progressPanel').innerHTML=pg;
 }
 
-function toggleCat(cat) {
-    collapsed[cat] = !collapsed[cat];
-    localStorage.setItem('vt_collapsed', JSON.stringify(collapsed));
-    render();
-}
-
+function toggleCat(cat) { collapsed[cat]=!collapsed[cat]; localStorage.setItem('vt_collapsed',JSON.stringify(collapsed)); render(); }
 function expand(id) { document.getElementById('t'+id).classList.toggle('expanded'); }
 
 function pinTask(id) {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
-    pinnedTaskId = id;
-    document.getElementById('pinTitle').textContent = task.title;
+    const task=tasks.find(t=>t.id===id); if(!task)return;
+    pinnedTaskId=id;
+    document.getElementById('pinTitle').textContent=task.title;
     document.getElementById('pinnedTask').classList.add('visible');
-    document.getElementById('inp').value = `Помоги с задачей "${task.title}". Вот шаги: ${task.steps.join('; ')}. Объясни подробно каждый шаг.`;
-    document.getElementById('inp').focus();
+    const ta=document.getElementById('inp');
+    ta.value=`Помоги с задачей "${task.title}". Вот шаги: ${task.steps.join('; ')}. Объясни подробно.`;
+    ta.focus(); autoGrow(ta);
     document.getElementById('chatPanel').classList.add('open');
 }
-
-function unpinTask() {
-    pinnedTaskId = null;
-    document.getElementById('pinnedTask').classList.remove('visible');
-}
+function unpinTask() { pinnedTaskId=null; document.getElementById('pinnedTask').classList.remove('visible'); }
 
 function askHelp(id) {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
-    pinnedTaskId = id;
-    document.getElementById('pinTitle').textContent = task.title;
+    const task=tasks.find(t=>t.id===id); if(!task)return;
+    pinnedTaskId=id;
+    document.getElementById('pinTitle').textContent=task.title;
     document.getElementById('pinnedTask').classList.add('visible');
-    document.getElementById('inp').value = `Помоги с задачей: ${task.title}. Дай пошаговую инструкцию — максимально подробно, как для новичка.`;
-    send();
-    document.getElementById('chatPanel').classList.add('open');
+    document.getElementById('inp').value=`Помоги с задачей: ${task.title}. Дай пошаговую инструкцию.`;
+    send(); document.getElementById('chatPanel').classList.add('open');
 }
 
-const praises = [
-    {emoji:'🎉',title:'Отлично!',texts:['Задача выполнена! Так держать!','Вы на шаг ближе к лидерству!']},
-    {emoji:'🔥',title:'Огонь!',texts:['Круто! Одной задачей меньше!','Конкуренты не успевают!']},
+const praises=[
+    {emoji:'🎉',title:'Отлично!',texts:['Задача выполнена!','На шаг ближе к лидерству!']},
+    {emoji:'🔥',title:'Огонь!',texts:['Одной задачей меньше!','Конкуренты не успевают!']},
     {emoji:'💪',title:'Мощно!',texts:['Ещё одна закрыта!','Результат уже близко!']},
-    {emoji:'⭐',title:'Супер!',texts:['Вы молодцы!','Каждый шаг приближает к цели!']},
-    {emoji:'🚀',title:'Ракета!',texts:['Вы летите вперёд!','Скоро Вердэ будет в топе!']},
+    {emoji:'⭐',title:'Супер!',texts:['Вы молодцы!','Каждый шаг к цели!']},
+    {emoji:'🚀',title:'Ракета!',texts:['Вы летите вперёд!','Вердэ скоро в топе!']},
 ];
-
 function showPraise() {
-    const doneCount = Object.values(saved).filter(v=>v==='done').length;
-    const total = tasks.length;
-    const pct = Math.round(doneCount/total*100);
-    const p = praises[Math.floor(Math.random()*praises.length)];
-    const txt = p.texts[Math.floor(Math.random()*p.texts.length)];
-    let ms = '';
-    if(pct>=100) ms='🏆 ВСЕ ЗАДАЧИ ВЫПОЛНЕНЫ!';
-    else if(pct>=75) ms='🎯 Больше 75% — финишная прямая!';
-    else if(pct>=50) ms='⚡ Половина пути!';
-    else if(pct>=25) ms='👏 Четверть уже сделана!';
-    const o = document.createElement('div');
-    o.className='praise-overlay';
-    o.onclick=function(e){if(e.target===o)o.remove()};
-    o.innerHTML=`<div class="praise-card"><div class="praise-emoji">${p.emoji}</div><div class="praise-title">${p.title}</div><div class="praise-text">${txt}</div><div class="praise-stats">${doneCount}/${total} (${pct}%)<div class="praise-bar"><div class="praise-fill" style="width:${pct}%"></div></div>${ms?'<div style="margin-top:10px;color:#22c55e;font-weight:600">'+ms+'</div>':''}</div><button class="praise-btn" onclick="this.closest('.praise-overlay').remove()">Продолжить</button></div>`;
+    const dc=Object.values(saved).filter(v=>v==='done').length, tot=tasks.length, pc=Math.round(dc/tot*100);
+    const p=praises[Math.floor(Math.random()*praises.length)], tx=p.texts[Math.floor(Math.random()*p.texts.length)];
+    let ms=''; if(pc>=100)ms='🏆 ВСЕ ВЫПОЛНЕНО!'; else if(pc>=75)ms='🎯 Финишная прямая!'; else if(pc>=50)ms='⚡ Половина!'; else if(pc>=25)ms='👏 Четверть сделана!';
+    const o=document.createElement('div');o.className='praise-overlay';o.onclick=e=>{if(e.target===o)o.remove()};
+    o.innerHTML=`<div class="praise-card"><div class="praise-emoji">${p.emoji}</div><div class="praise-title">${p.title}</div><div class="praise-text">${tx}</div><div class="praise-stats">${dc}/${tot} (${pc}%)<div class="praise-bar"><div class="praise-fill" style="width:${pc}%"></div></div>${ms?'<div style="margin-top:10px;color:#1a7f37;font-weight:600">'+ms+'</div>':''}</div><button class="praise-btn" onclick="this.closest('.praise-overlay').remove()">Продолжить</button></div>`;
     document.body.appendChild(o);
 }
+function toggle(id) { const w=saved[id]==='done'; saved[id]=w?null:'done'; localStorage.setItem('vt_tasks',JSON.stringify(saved)); render(); if(!w)showPraise(); }
 
-function toggle(id) {
-    const was = saved[id]==='done';
-    saved[id] = was ? null : 'done';
-    localStorage.setItem('vt_tasks', JSON.stringify(saved));
-    render();
-    if(!was) showPraise();
-}
+let pendingImage=null;
+function handleFile(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{pendingImage=e.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';};r.readAsDataURL(f);i.value='';}
+function clearImage(){pendingImage=null;document.getElementById('imgPreview').style.display='none';}
 
-let pendingImage = null;
-function handleFile(input) {
-    const file = input.files[0]; if(!file) return;
-    const r = new FileReader();
-    r.onload = e => { pendingImage=e.target.result; document.getElementById('previewImg').src=pendingImage; document.getElementById('imgPreview').style.display='block'; };
-    r.readAsDataURL(file); input.value='';
-}
-function clearImage() { pendingImage=null; document.getElementById('imgPreview').style.display='none'; }
-
-async function send() {
-    const inp = document.getElementById('inp');
-    const msg = inp.value.trim();
-    if(!msg && !pendingImage) return;
-    inp.value='';
-    if(pendingImage) {
-        const el=document.createElement('div'); el.className='msg user';
-        el.innerHTML=`<div class="bubble"><img src="${pendingImage}" style="max-width:180px;border-radius:6px;"><br>${msg||'Помоги разобраться'}</div>`;
-        document.getElementById('chatMsgs').appendChild(el);
-    } else { addMsg(msg,'user'); }
+async function send(){
+    const ta=document.getElementById('inp'), msg=ta.value.trim();
+    if(!msg&&!pendingImage)return; ta.value=''; ta.style.height='38px';
+    if(pendingImage){const el=document.createElement('div');el.className='msg user';el.innerHTML=`<div class="bubble"><img src="${pendingImage}" style="max-width:180px;border-radius:6px;"><br>${msg||'Помоги разобраться'}</div>`;document.getElementById('chatMsgs').appendChild(el);}
+    else{addMsg(msg,'user');}
     document.getElementById('btn').disabled=true;
-    const typ=document.createElement('div'); typ.className='typing'; typ.textContent='Думаю...';
-    document.getElementById('chatMsgs').appendChild(typ); scroll();
-
-    const body = {message: msg};
-    if(pendingImage) body.image = pendingImage;
-    if(pinnedTaskId) body.taskId = pinnedTaskId;
-
-    try {
-        const r = await fetch('/api/team-chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-        const d = await r.json(); typ.remove();
-        addMsg(d.reply||d.error||'Ошибка','bot');
-    } catch(e) { typ.remove(); addMsg('Ошибка соединения','bot'); }
-    document.getElementById('btn').disabled=false; clearImage();
+    const tp=document.createElement('div');tp.className='typing';tp.textContent='Думаю...';document.getElementById('chatMsgs').appendChild(tp);scroll();
+    const body={message:msg}; if(pendingImage)body.image=pendingImage; if(pinnedTaskId)body.taskId=pinnedTaskId;
+    try{const r=await fetch('/api/team-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();tp.remove();addMsg(d.reply||d.error||'Ошибка','bot');}
+    catch(e){tp.remove();addMsg('Ошибка соединения','bot');}
+    document.getElementById('btn').disabled=false;clearImage();
 }
+function askQ(el){document.getElementById('inp').value=el.textContent;send();}
+function addMsg(t,r){const d=document.createElement('div');d.className=`msg ${r}`;d.innerHTML=`<div class="bubble">${t}</div>`;document.getElementById('chatMsgs').appendChild(d);scroll();}
+function scroll(){const c=document.getElementById('chatMsgs');c.scrollTop=c.scrollHeight;}
 
-function askQ(el) { document.getElementById('inp').value=el.textContent; send(); }
-function addMsg(text,role) {
-    const d=document.createElement('div'); d.className=`msg ${role}`;
-    d.innerHTML=`<div class="bubble">${text}</div>`;
-    document.getElementById('chatMsgs').appendChild(d); scroll();
-}
-function scroll() { const c=document.getElementById('chatMsgs'); c.scrollTop=c.scrollHeight; }
-
-document.addEventListener('paste', e => {
-    for(let i=0;i<e.clipboardData.items.length;i++) {
-        if(e.clipboardData.items[i].type.indexOf('image')!==-1) {
-            e.preventDefault();
-            const r=new FileReader();
-            r.onload=ev=>{pendingImage=ev.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';document.getElementById('inp').focus();};
-            r.readAsDataURL(e.clipboardData.items[i].getAsFile()); break;
-        }
-    }
-});
-
+document.addEventListener('paste',e=>{for(let i=0;i<e.clipboardData.items.length;i++){if(e.clipboardData.items[i].type.indexOf('image')!==-1){e.preventDefault();const r=new FileReader();r.onload=ev=>{pendingImage=ev.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';document.getElementById('inp').focus();};r.readAsDataURL(e.clipboardData.items[i].getAsFile());break;}}});
 const cp=document.getElementById('chatPanel');
-cp.addEventListener('dragover',e=>{e.preventDefault();cp.style.borderColor='#22c55e';});
-cp.addEventListener('dragleave',()=>{cp.style.borderColor='#27272a';});
-cp.addEventListener('drop',e=>{e.preventDefault();cp.style.borderColor='#27272a';const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){const r=new FileReader();r.onload=ev=>{pendingImage=ev.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';};r.readAsDataURL(f);}});
+cp.addEventListener('dragover',e=>{e.preventDefault();});
+cp.addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){const r=new FileReader();r.onload=ev=>{pendingImage=ev.target.result;document.getElementById('previewImg').src=pendingImage;document.getElementById('imgPreview').style.display='block';};r.readAsDataURL(f);}});
 
 render();
 </script>
