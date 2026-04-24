@@ -447,6 +447,33 @@
       </div>
     </div>
 
+    <!-- ───── ВОРОНКА: ЗВОНКИ → РУБЛИ ───── -->
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px 32px; margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Математика воронки · Неделя <span id="funnelWeekNum">1</span></div>
+          <h2 style="font-size:20px; font-weight:700; color:var(--ink);">Как звонки превращаются в рубли</h2>
+        </div>
+        <div style="font-size:12px; color:var(--muted);">Средний чек: <b style="color:var(--ink);">290 000 ₽</b></div>
+      </div>
+
+      <!-- Воронка-цепочка -->
+      <div id="funnelChain" style="display:flex; align-items:stretch; gap:0; margin-bottom:24px; overflow-x:auto; padding-bottom:4px;"></div>
+
+      <!-- Итоги: прогноз / цель / статус -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;" id="funnelSummary"></div>
+
+      <!-- Bitrix placeholder -->
+      <div style="margin-top:20px; padding:16px 20px; background:var(--hair); border-radius:10px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <div style="font-size:22px; flex-shrink:0;">🔗</div>
+        <div style="flex:1; min-width:200px;">
+          <div style="font-size:13px; font-weight:700; color:var(--ink);">Bitrix24 — pipeline в реальном времени</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:3px;">После подключения webhook здесь автоматически: суммы по стадиям, горячие лиды недели, прогноз закрытия. Сейчас — расчётные показатели по плановым KPI.</div>
+        </div>
+        <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; white-space:nowrap; background:var(--line); padding:6px 12px; border-radius:6px;">Ожидание webhook</div>
+      </div>
+    </div>
+
     <!-- ───── KPI недели ───── -->
     <div class="panel-title">KPI недели <span id="metricsWeekLabel" style="color:var(--green-dark);">1</span></div>
     <div class="panel-sub">Что измеряем каждую пятницу. Цифры — это цель, не потолок.</div>
@@ -701,6 +728,85 @@ function renderMetrics() {
   if (weekLabel) weekLabel.textContent = selectedWeek;
 
   renderTracker();
+  renderFunnel();
+}
+
+// ───────── ВОРОНКА: ЗВОНКИ → РУБЛИ ─────────
+const AVG_DEAL   = 290000;  // средний чек ₽
+const CONV_TM    = 0.05;    // касание → встреча
+const CONV_MK    = 0.75;    // встреча → КП
+const CONV_KD    = 0.20;    // КП → сделка
+const BASE_MRR   = 17;      // текущий run-rate, М₽/мес
+
+function renderFunnel() {
+  const wIdx = Math.max(selectedWeek - 1, 0);
+  const touches  = KPI_TARGETS.cold_touches?.target_per_week?.[wIdx] || 0;
+  const meetings = Math.round(touches * CONV_TM);
+  const kp       = Math.round(meetings * CONV_MK);
+  const deals    = +(kp * CONV_KD).toFixed(1);
+  const revWeekK = Math.round(deals * AVG_DEAL / 1000);
+  const revMonthM = +(deals * 4 * AVG_DEAL / 1e6).toFixed(1);
+
+  const fwn = document.getElementById('funnelWeekNum');
+  if (fwn) fwn.textContent = selectedWeek;
+
+  // ── Цепочка ──
+  const steps = [
+    { label: 'Касания',  value: touches,      unit: 'шт/нед',  conv: null,    bg: '#eff6ff', col: '#3b82f6' },
+    { label: 'Встречи',  value: meetings,     unit: 'шт/нед',  conv: '5 %',   bg: '#f5f3ff', col: '#8b5cf6' },
+    { label: 'КП',       value: kp,           unit: 'шт/нед',  conv: '75 %',  bg: '#fffbeb', col: '#f59e0b' },
+    { label: 'Сделки',   value: deals,        unit: 'шт/нед',  conv: '20 %',  bg: '#ecfdf5', col: '#10b981' },
+    { label: 'Выручка',  value: revWeekK+'K ₽', unit: '/нед',  conv: '290К',  bg: '#f0fff4', col: '#0FBF00' },
+  ];
+  const chainEl = document.getElementById('funnelChain');
+  if (chainEl) chainEl.innerHTML = steps.map((s, i) => `
+    ${i > 0 ? `<div style="display:flex;align-items:center;padding:0 6px;flex-shrink:0;">
+      <div style="text-align:center;">
+        <div style="font-size:20px;color:var(--faint);">→</div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;">${s.conv}</div>
+      </div></div>` : ''}
+    <div style="background:${s.bg};border:1.5px solid ${s.col}30;border-radius:12px;padding:16px 18px;min-width:105px;text-align:center;flex:1;">
+      <div style="font-size:10px;font-weight:700;color:${s.col};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">${s.label}</div>
+      <div style="font-size:26px;font-weight:700;color:var(--ink);line-height:1;">${s.value}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${s.unit}</div>
+    </div>
+  `).join('');
+
+  // ── Итоговые карточки ──
+  const projMonthly  = +(BASE_MRR + revMonthM + 2).toFixed(1);   // +2М QBR/expansion
+  const targetMonthly = 41.7;
+  const pct = Math.min(Math.round(projMonthly / targetMonthly * 100), 100);
+  const onTrack = projMonthly >= targetMonthly * 0.9;
+  const gapM = +(targetMonthly - BASE_MRR).toFixed(1);
+  const neededTouches = Math.round(gapM * 1e6 / AVG_DEAL / 4 / CONV_KD / CONV_MK / CONV_TM);
+
+  const summaryEl = document.getElementById('funnelSummary');
+  if (summaryEl) summaryEl.innerHTML = `
+    <div style="background:var(--hair);border-radius:10px;padding:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Прогноз месяца</div>
+      <div style="font-size:26px;font-weight:700;color:var(--ink);">${projMonthly}М ₽</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">${BASE_MRR}М база + ${revMonthM}М новые + ~2М QBR</div>
+      <div style="margin-top:10px;height:5px;background:var(--line);border-radius:99px;overflow:hidden;">
+        <div style="height:100%;background:${pct >= 90 ? 'var(--green)' : '#f59e0b'};width:${pct}%;transition:width 0.5s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${pct}% от цели 41.7М</div>
+    </div>
+    <div style="background:var(--hair);border-radius:10px;padding:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Нужно только холодными</div>
+      <div style="font-size:26px;font-weight:700;color:var(--ink);">${neededTouches}<span style="font-size:14px;font-weight:400;"> каc/нед</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">чтобы закрыть +${gapM}М/мес без QBR и ABM</div>
+      <div style="font-size:11px;color:var(--faint);margin-top:6px;font-style:italic;">→ реально только в связке с expansion</div>
+    </div>
+    <div style="background:${onTrack ? 'var(--green-soft)' : '#fffbeb'};border:1px solid ${onTrack ? 'var(--green)' : '#f59e0b'}40;border-radius:10px;padding:16px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;">Статус плана</div>
+      <div style="font-size:22px;font-weight:700;color:${onTrack ? 'var(--green-dark)' : '#d97706'};">${onTrack ? '✓ В графике' : '⚠ Добавить ABM'}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;">
+        ${onTrack
+          ? `${touches} касаний → ${projMonthly}М/мес → на пути к 500М`
+          : `Холодных недостаточно: QBR expansion и ABM ТОП-20 критичны`}
+      </div>
+    </div>
+  `;
 }
 
 // ───────── 250 → 500M TRACKER ─────────
