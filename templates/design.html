@@ -133,6 +133,7 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
     <h1>🎨 Дизайн-хаб Verde Tech</h1>
     <div class="header-links">
         <a href="/team">← Задачи команды</a>
+        <a href="/sales">Команда продаж</a>
         <a href="/dashboard">Маркетинг</a>
     </div>
 </div>
@@ -179,6 +180,16 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
                     <option>HoReCa</option>
                     <option>Готовая еда / полуфабрикаты</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label>👥 Роль клиента</label>
+                <select name="customer_role">
+                    <option value="producer" selected>Производитель</option>
+                    <option value="horeca">HoReCa (сеть / ресторан)</option>
+                    <option value="packer">Фасовщик</option>
+                    <option value="distributor">Трейдер / Дистрибьютор</option>
+                </select>
+                <small>Влияет на логику КП: дистру не предлагаем прямые поставки, фасовщику — другие условия.</small>
             </div>
             <div class="form-group">
                 <label>💬 Задача клиента <span style="color:#0FBF00;">★</span></label>
@@ -270,17 +281,6 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
                     </span>
                 </label>
             </div>
-            <div class="form-group" style="margin-bottom:8px;">
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; user-select:none;">
-                    <input type="checkbox" id="includePriceListToggle" name="include_pricelist" value="1"
-                           style="margin-top:3px; accent-color:#0FBF00; width:16px; height:16px; flex-shrink:0;">
-                    <span>
-                        <span style="font-weight:600; font-size:13px;">Приложить прайс-лист</span><br>
-                        <span style="font-size:11px; color:#888; line-height:1.4;">Добавляет слайд с полными ценами по категории продукта. Для горячих сделок и запросов на ассортимент.</span>
-                    </span>
-                </label>
-            </div>
-
             <button type="button" class="btn-generate" id="generateBtn" onclick="generateKP(event)">⚡ Сгенерировать КП</button>
         </form>
 
@@ -908,8 +908,7 @@ async function generateKP(e) {
     }
     data.objections = objections;
     // Чекбоксы — явно выставляем bool (FormData не включает непроставленные)
-    data.include_prices    = document.getElementById('includePricesToggle')?.checked    || false;
-    data.include_pricelist = document.getElementById('includePriceListToggle')?.checked || false;
+    data.include_prices = document.getElementById('includePricesToggle')?.checked || false;
     // Если точный объём не введён, но выбран масштаб — используем оценку масштаба
     if (!data.volume && data.volume_scale) { data.volume = data.volume_scale; }
     const btn = document.getElementById('generateBtn');

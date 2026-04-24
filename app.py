@@ -798,6 +798,35 @@ def design_hub():
     return resp
 
 
+@app.route('/sales', methods=['GET', 'POST'])
+def sales_hub():
+    """Хаб продаж — план 12 недель для директора, РОП, активных менеджеров и АМ."""
+    if request.method == 'POST' and request.form.get('password'):
+        if request.form.get('password') == MARKETER_PASSWORD:
+            session['team_logged_in'] = True
+            return redirect(url_for('sales_hub'))
+        return render_template('team_login.html', error='Неверный пароль')
+
+    if not session.get('team_logged_in'):
+        return render_template('team_login.html', error=None)
+
+    try:
+        from sales_data import ROLES as SALES_ROLES, WEEKS as SALES_WEEKS, KPI_TARGETS as SALES_KPI, SCRIPTS as SALES_SCRIPTS
+    except Exception as e:
+        return f'Ошибка загрузки плана продаж: {e}', 500
+
+    resp = app.make_response(render_template(
+        'sales.html',
+        roles=SALES_ROLES,
+        weeks=SALES_WEEKS,
+        kpi_targets=SALES_KPI,
+        scripts=SALES_SCRIPTS,
+    ))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    return resp
+
+
 BITRIX_WEBHOOK_URL = os.environ.get('BITRIX_WEBHOOK_URL', '')
 # Формат: https://<ваш-портал>.bitrix24.ru/rest/<user_id>/<secret>/
 # Битрикс → Разработчикам → Другое → Входящий вебхук. Выбрать права: crm (чтение сделок, запись активностей).
@@ -1077,6 +1106,13 @@ def generate_kp():
     # Дополнительные поля из формы (продающие)
     situation = data.get('situation', '').strip()
     deal_stage = data.get('deal_stage', 'warm').strip()  # cold/warm/negotiation/reactivation
+    customer_role = data.get('customer_role', 'producer').strip()  # producer/horeca/packer/distributor
+    role_label = {
+        'producer':    'Производитель (прямые поставки сырья на его производство)',
+        'horeca':      'HoReCa — ресторан / сеть общепита (готовые смеси, приправы, соусы, маринады)',
+        'packer':      'Фасовщик — покупает оптом и фасует под своим брендом',
+        'distributor': 'Трейдер / Дистрибьютор — перепродаёт конечным клиентам. ВАЖНО: НЕ предлагать прямые поставки конечникам. Говорить только про условия для дистра: объёмы, маржа, эксклюзив по региону, маркетинговая поддержка.',
+    }.get(customer_role, 'Производитель')
     objections = data.get('objections', [])  # список из чекбоксов
     if isinstance(objections, str):
         objections = [o.strip() for o in objections.split(',') if o.strip()]
@@ -1142,6 +1178,7 @@ SALES ENABLEMENT:
 Объём производства: {str(volume) + ' тонн/год' if volume else 'НЕ УКАЗАН (менеджер не знает точно — НЕ упоминай конкретные цифры объёма, говори в общих терминах: "при ваших объёмах", "на вашей линейке". В тексте КП можешь предложить уточнить это на первой встрече)'}
 Ситуация клиента (что рассказал менеджер): {situation or '(не указана, выведи самостоятельно исходя из отрасли и продукта)'}
 Стадия сделки: {deal_stage} ({'холодный лид' if deal_stage=='cold' else 'тёплый' if deal_stage=='warm' else 'на согласовании' if deal_stage=='negotiation' else 'реактивация'})
+Роль клиента: {role_label}
 {"Возражения, уже прозвучавшие от клиента: " + ', '.join(objections) if objections else ""}
 {"Дополнительный акцент от менеджера: " + custom_benefit if custom_benefit else ""}
 

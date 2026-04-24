@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verde Tech · Команда продаж</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0B0C; --body: #27272A; --muted: #71717A; --faint: #A1A1AA;
+    --line: #E4E4E7; --hair: #F1F1F3; --paper: #FAFAF9; --cream: #F6F3EC;
+    --green: #0FBF00; --green-dark: #088800; --green-soft: #f0fff4;
+    --white: #FFFFFF; --accent-yellow: #fffbea; --danger: #dc2626;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Onest', sans-serif; background: #f5f5f7; color: var(--body); font-size: 14px; line-height: 1.55; }
+
+  /* ═══ HEADER ═══ */
+  .top-bar {
+    background: #fff; border-bottom: 1px solid var(--line);
+    padding: 14px 28px; display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .top-bar-left { display: flex; align-items: center; gap: 16px; }
+  .top-bar-left h1 { font-size: 17px; font-weight: 700; color: var(--ink); }
+  .top-bar-left h1 span { color: var(--green); }
+  .top-bar-right { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--muted); }
+  .top-bar-right a { color: var(--muted); text-decoration: none; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; transition: all 0.15s; }
+  .top-bar-right a:hover { color: var(--green-dark); border-color: var(--green); }
+  .current-week-badge {
+    background: var(--green-soft); color: var(--green-dark); padding: 6px 12px; border-radius: 6px;
+    font-weight: 600; font-size: 12px;
+  }
+
+  /* ═══ TABS ═══ */
+  .tabs {
+    background: #fff; border-bottom: 1px solid var(--line); padding: 0 28px;
+    display: flex; gap: 0; overflow-x: auto; position: sticky; top: 57px; z-index: 49;
+  }
+  .tab {
+    padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
+
+  /* ═══ LAYOUT ═══ */
+  .content { padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+  .panel-title { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .panel-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+
+  /* ═══ ROLE SELECTOR ═══ */
+  .role-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 32px; }
+  .role-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .role-card:hover { border-color: var(--green); transform: translateY(-1px); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .role-card.active { border-color: var(--green); background: var(--green-soft); }
+  .role-card h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .role-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .role-card .role-pick-btn {
+    display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 700;
+    color: var(--green-dark); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  /* ═══ WEEK VIEW ═══ */
+  .week-header {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; margin-bottom: 18px;
+  }
+  .week-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+  .week-num { font-size: 11px; font-weight: 700; color: var(--green-dark); letter-spacing: 0.18em; text-transform: uppercase; }
+  .week-title { font-size: 22px; font-weight: 700; color: var(--ink); }
+  .week-dates { font-size: 13px; color: var(--muted); }
+  .week-goal { font-size: 14px; color: var(--body); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair); }
+  .week-goal b { color: var(--ink); }
+  .week-focus { font-size: 12px; color: var(--faint); font-style: italic; margin-top: 6px; }
+
+  .week-nav { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .week-nav-btn {
+    padding: 6px 12px; background: #fff; border: 1px solid var(--line); border-radius: 6px;
+    font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .week-nav-btn:hover { border-color: var(--green); color: var(--green-dark); }
+  .week-nav-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* ═══ TASKS ═══ */
+  .task-list { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px 0; margin-bottom: 16px; }
+  .task-section-header {
+    padding: 14px 20px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    font-weight: 700; color: var(--faint);
+  }
+  .task-item {
+    padding: 12px 20px; border-bottom: 1px solid var(--hair); display: flex; align-items: flex-start; gap: 12px;
+    transition: background 0.15s; cursor: pointer;
+  }
+  .task-item:last-child { border-bottom: none; }
+  .task-item:hover { background: var(--paper); }
+  .task-item.completed { opacity: 0.55; }
+  .task-item.completed .task-text { text-decoration: line-through; }
+  .task-checkbox {
+    width: 18px; height: 18px; border: 2px solid var(--line); border-radius: 4px;
+    flex-shrink: 0; margin-top: 2px; cursor: pointer; position: relative;
+    transition: all 0.15s;
+  }
+  .task-item:hover .task-checkbox { border-color: var(--green); }
+  .task-checkbox.checked { background: var(--green); border-color: var(--green); }
+  .task-checkbox.checked::after {
+    content: '✓'; color: #fff; font-size: 13px; font-weight: 700;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  }
+  .task-day {
+    background: var(--cream); color: var(--ink); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px;
+    flex-shrink: 0; margin-top: 1px; min-width: 60px; text-align: center;
+  }
+  .task-content { flex: 1; }
+  .task-text { font-size: 13.5px; font-weight: 500; color: var(--ink); line-height: 1.5; }
+  .task-hint { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+
+  /* ═══ FRIDAY CHECKPOINT ═══ */
+  .checkpoint {
+    background: var(--accent-yellow); border: 1px solid #f0c000; border-left: 4px solid #f0c000;
+    border-radius: 8px; padding: 16px 20px; margin-top: 16px;
+  }
+  .checkpoint h4 { font-size: 14px; font-weight: 700; color: #7a6000; margin-bottom: 10px; }
+  .checkpoint ul { list-style: none; }
+  .checkpoint li {
+    font-size: 13px; color: #7a6000; padding: 4px 0; padding-left: 22px; position: relative;
+  }
+  .checkpoint li::before {
+    content: '☐'; position: absolute; left: 0; color: #b07e00; font-size: 16px; top: 2px;
+  }
+
+  /* ═══ PROGRESS ═══ */
+  .progress-bar {
+    background: var(--hair); border-radius: 99px; height: 6px; overflow: hidden; margin-top: 10px;
+  }
+  .progress-fill {
+    height: 100%; background: var(--green); border-radius: 99px; transition: width 0.4s;
+  }
+  .progress-text { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* ═══ MAP (12 недель) ═══ */
+  .map-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px;
+  }
+  .map-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px;
+    cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .map-card:hover { border-color: var(--green); transform: translateY(-1px); box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .map-card.current { border-color: var(--green); background: var(--green-soft); }
+  .map-card .map-num {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--green-dark); margin-bottom: 4px;
+  }
+  .map-card h4 { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+  .map-card .map-dates { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .map-card .map-goal { font-size: 12px; color: var(--body); line-height: 1.5; }
+
+  /* ═══ METRICS ═══ */
+  .metrics-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-bottom: 24px;
+  }
+  .metric-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px;
+  }
+  .metric-card .metric-name {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--faint); font-weight: 700; margin-bottom: 8px;
+  }
+  .metric-card .metric-target { font-size: 28px; font-weight: 700; color: var(--ink); line-height: 1; }
+  .metric-card .metric-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* ═══ SCRIPTS ═══ */
+  .script-category {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px;
+  }
+  .script-cat-header {
+    padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid transparent;
+  }
+  .script-cat-header h3 { font-size: 15px; font-weight: 700; color: var(--ink); }
+  .script-cat-header .toggle { font-size: 16px; color: var(--muted); transition: transform 0.2s; }
+  .script-category.open .toggle { transform: rotate(180deg); }
+  .script-category.open .script-cat-header { border-bottom-color: var(--hair); }
+  .script-items { padding: 0; display: none; }
+  .script-category.open .script-items { display: block; }
+  .script-item { padding: 16px 20px; border-bottom: 1px solid var(--hair); }
+  .script-item:last-child { border-bottom: none; }
+  .script-item h4 { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+  .script-item pre {
+    white-space: pre-wrap; font-family: 'Onest', sans-serif; font-size: 13px; line-height: 1.6;
+    color: var(--body); background: var(--paper); padding: 14px 16px; border-radius: 6px;
+    border-left: 3px solid var(--green); margin-top: 4px;
+  }
+  .script-item .content-text {
+    font-size: 13px; line-height: 1.6; color: var(--body);
+  }
+  .copy-btn {
+    float: right; background: var(--ink); color: #fff; border: none; padding: 4px 10px;
+    font-size: 11px; font-weight: 600; border-radius: 4px; cursor: pointer;
+  }
+  .copy-btn:hover { background: var(--green-dark); }
+
+  /* ═══ PAGE CONTENT ═══ */
+  .page-content { display: none; }
+  .page-content.active { display: block; }
+
+  /* ═══ RESPONSIVE ═══ */
+  @media (max-width: 768px) {
+    .top-bar { padding: 12px 16px; }
+    .top-bar-left h1 { font-size: 14px; }
+    .tabs { padding: 0 12px; }
+    .tab { padding: 12px 12px; font-size: 12px; }
+    .content { padding: 16px; }
+    .panel-title { font-size: 18px; }
+    .role-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <h1>Verde Tech · <span>Команда продаж</span></h1>
+    <span class="current-week-badge" id="currentWeekBadge">Неделя 1</span>
+  </div>
+  <div class="top-bar-right">
+    <span id="currentRoleIndicator">Роль не выбрана</span>
+    <a href="/design">← в /design</a>
+  </div>
+</div>
+
+<!-- ═══════════ TABS ═══════════ -->
+<div class="tabs">
+  <div class="tab active" data-tab="my-week">Моя неделя</div>
+  <div class="tab" data-tab="map">Карта 12 недель</div>
+  <div class="tab" data-tab="metrics">Метрики</div>
+  <div class="tab" data-tab="scripts">Скрипты и материалы</div>
+</div>
+
+<!-- ═══════════ PAGE: MY WEEK ═══════════ -->
+<div class="page-content active" id="page-my-week">
+  <div class="content">
+
+    <div id="roleSelector">
+      <div class="panel-title">Выбери свою роль</div>
+      <div class="panel-sub">План на неделю будет показан именно для тебя. Выбор сохранится в браузере.</div>
+      <div class="role-cards" id="roleCards"></div>
+    </div>
+
+    <div id="weeklyTasksView" style="display:none;">
+      <div class="week-nav" id="weekNav"></div>
+      <div class="week-header" id="weekHeader"></div>
+      <div class="task-list" id="taskList"></div>
+      <div id="fridayCheckpoint"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: MAP 12 WEEKS ═══════════ -->
+<div class="page-content" id="page-map">
+  <div class="content">
+    <div class="panel-title">Карта 12 недель</div>
+    <div class="panel-sub">Путь от 250М до 500М. Клик по неделе — посмотреть задачи.</div>
+    <div class="map-grid" id="mapGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: METRICS ═══════════ -->
+<div class="page-content" id="page-metrics">
+  <div class="content">
+
+    <!-- ───── ТРЕК 250 → 500 ───── -->
+    <div style="background:linear-gradient(135deg, #fff 0%, #f0fff4 100%); border:1px solid var(--line); border-radius:14px; padding:28px 32px; margin-bottom:24px; box-shadow:0 2px 20px rgba(0,0,0,0.04);">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green-dark); margin-bottom:4px;">Путь к цели</div>
+          <h2 style="font-size:28px; font-weight:700; color:var(--ink); line-height:1.1;">250M → 500M за 12 месяцев</h2>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--faint);">Ожидаемая выручка на неделе <span id="trackerWeekNum">1</span></div>
+          <div style="font-size:32px; font-weight:700; color:var(--green-dark);" id="trackerCurrentRR">250M</div>
+          <div style="font-size:12px; color:var(--muted);" id="trackerPct">+0% / 50% пути</div>
+        </div>
+      </div>
+
+      <!-- Горизонтальный трек -->
+      <div style="position:relative; margin:40px 0 30px;">
+        <!-- Линия -->
+        <div style="position:relative; height:14px; background:var(--hair); border-radius:99px; overflow:visible;">
+          <div id="trackerFillBar" style="height:100%; background:linear-gradient(90deg, var(--green) 0%, var(--green-dark) 100%); border-radius:99px; width:0%; transition:width 0.6s ease;"></div>
+          <!-- Маркер -->
+          <div id="trackerMarker" style="position:absolute; top:-8px; left:0%; transform:translateX(-50%); transition:left 0.6s ease;">
+            <div style="width:30px; height:30px; background:var(--white); border:4px solid var(--green-dark); border-radius:50%; box-shadow:0 2px 10px rgba(15,191,0,0.3);"></div>
+          </div>
+        </div>
+        <!-- Точки пути -->
+        <div style="position:relative; display:flex; justify-content:space-between; margin-top:18px; font-size:11px; color:var(--muted);">
+          <div style="text-align:center;">
+            <div style="font-weight:700; color:var(--ink);">Сейчас</div>
+            <div style="margin-top:2px;">250M</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:700; color:var(--ink);">Мес 3</div>
+            <div style="margin-top:2px;">320M run-rate</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:700; color:var(--ink);">Мес 6</div>
+            <div style="margin-top:2px;">400M run-rate</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:700; color:var(--ink);">Мес 9</div>
+            <div style="margin-top:2px;">460M run-rate</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-weight:700; color:var(--green-dark);">Мес 12</div>
+            <div style="margin-top:2px; color:var(--green-dark);"><b>500M</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Разбивка по источникам +250M -->
+      <div style="margin-top:28px; padding-top:24px; border-top:1px solid var(--hair);">
+        <div style="font-size:12px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--faint); margin-bottom:14px;">Откуда +250M: разбивка по источникам</div>
+        <div id="sourceBreakdown" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px;"></div>
+      </div>
+
+      <!-- Калькулятор темпа -->
+      <div style="margin-top:20px; padding:16px 20px; background:rgba(15,191,0,0.06); border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="font-size:13px; color:var(--body);">
+          <b>Недельная скорость:</b> для 500M к концу года нужно прирастать на
+          <span style="font-weight:700; color:var(--green-dark); font-size:15px;">~4.8M/нед</span> закрытыми сделками или
+          <span style="font-weight:700; color:var(--green-dark); font-size:15px;">~20M/мес</span> в pipeline.
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── KPI недели ───── -->
+    <div class="panel-title">KPI недели <span id="metricsWeekLabel" style="color:var(--green-dark);">1</span></div>
+    <div class="panel-sub">Что измеряем каждую пятницу. Цифры — это цель, не потолок.</div>
+    <div class="metrics-grid" id="metricsGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: SCRIPTS ═══════════ -->
+<div class="page-content" id="page-scripts">
+  <div class="content">
+    <div class="panel-title">Скрипты и материалы</div>
+    <div class="panel-sub">Позиционирование, холодные шаблоны, работа с возражениями, Халяль-брифинг, инструкции по КП-генератору.</div>
+    <div id="scriptsContainer"></div>
+  </div>
+</div>
+
+<!-- ═══════════ DATA ═══════════ -->
+<script>
+const ROLES = {{ roles | tojson }};
+const WEEKS = {{ weeks | tojson }};
+const KPI_TARGETS = {{ kpi_targets | tojson }};
+const SCRIPTS = {{ scripts | tojson }};
+
+// ───────── STATE ─────────
+let selectedRole = localStorage.getItem('verdeSalesRole') || null;
+let selectedWeek = parseInt(localStorage.getItem('verdeSalesWeek') || '1');
+let completedTasks = JSON.parse(localStorage.getItem('verdeSalesCompleted') || '{}');
+
+// ───────── INIT ─────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderRoleCards();
+  renderWeekNav();
+  renderCurrentWeekBadge();
+  renderMap();
+  renderMetrics();
+  renderScripts();
+  setupTabs();
+
+  if (selectedRole) {
+    updateRoleIndicator();
+    showWeeklyTasks();
+  }
+});
+
+// ───────── TABS ─────────
+function setupTabs() {
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('page-' + target).classList.add('active');
+    });
+  });
+}
+
+// ───────── ROLE CARDS ─────────
+function renderRoleCards() {
+  const cardsHtml = ROLES.map(r => `
+    <div class="role-card ${r.id === selectedRole ? 'active' : ''}" data-role-id="${r.id}" onclick="selectRole('${r.id}')">
+      <h3>${r.name}</h3>
+      <p>${r.scope}</p>
+      <div class="role-pick-btn">${r.id === selectedRole ? 'Выбрано ✓' : 'Выбрать роль →'}</div>
+    </div>
+  `).join('');
+  document.getElementById('roleCards').innerHTML = cardsHtml;
+}
+
+function selectRole(roleId) {
+  selectedRole = roleId;
+  localStorage.setItem('verdeSalesRole', roleId);
+  renderRoleCards();
+  updateRoleIndicator();
+  showWeeklyTasks();
+}
+
+function updateRoleIndicator() {
+  const role = ROLES.find(r => r.id === selectedRole);
+  document.getElementById('currentRoleIndicator').textContent = role ? role.name : 'Роль не выбрана';
+}
+
+// ───────── WEEK NAV ─────────
+function renderWeekNav() {
+  const navHtml = WEEKS.map(w => `
+    <button class="week-nav-btn ${w.num === selectedWeek ? 'active' : ''}" onclick="selectWeek(${w.num})">
+      Неделя ${w.num}
+    </button>
+  `).join('');
+  document.getElementById('weekNav').innerHTML = navHtml;
+}
+
+function selectWeek(num) {
+  selectedWeek = num;
+  localStorage.setItem('verdeSalesWeek', num);
+  renderWeekNav();
+  renderCurrentWeekBadge();
+  if (selectedRole) renderWeekView();
+}
+
+function renderCurrentWeekBadge() {
+  const w = WEEKS.find(w => w.num === selectedWeek);
+  if (w) document.getElementById('currentWeekBadge').textContent = `Неделя ${w.num} · ${w.title}`;
+}
+
+// ───────── WEEKLY TASKS ─────────
+function showWeeklyTasks() {
+  document.getElementById('roleSelector').style.display = 'none';
+  document.getElementById('weeklyTasksView').style.display = 'block';
+  renderWeekView();
+}
+
+function renderWeekView() {
+  const week = WEEKS.find(w => w.num === selectedWeek);
+  if (!week) return;
+
+  // Header
+  document.getElementById('weekHeader').innerHTML = `
+    <div class="week-header-top">
+      <div>
+        <div class="week-num">Неделя ${week.num} · ${week.dates}</div>
+        <div class="week-title">${week.title}</div>
+      </div>
+      <button onclick="backToRoleSelect()" style="background:none; border:1px solid var(--line); padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer;">Сменить роль</button>
+    </div>
+    <div class="week-goal"><b>Цель недели:</b> ${week.goal}</div>
+    ${week.focus ? `<div class="week-focus">${week.focus}</div>` : ''}
+  `;
+
+  // Tasks for this role
+  const tasks = (week.tasks && week.tasks[selectedRole]) || [];
+  const taskKey = (i) => `${selectedWeek}_${selectedRole}_${i}`;
+
+  let taskHtml = `<div class="task-section-header">Твои задачи на неделю · ${tasks.length} шт</div>`;
+
+  if (tasks.length === 0) {
+    taskHtml += `<div style="padding:30px 20px; text-align:center; color:var(--faint); font-size:13px;">У твоей роли на эту неделю задач не запланировано. Отдохни или подтяни хвосты.</div>`;
+  } else {
+    taskHtml += tasks.map((t, i) => {
+      const key = taskKey(i);
+      const done = completedTasks[key] ? 'checked' : '';
+      const completedClass = completedTasks[key] ? 'completed' : '';
+      return `
+        <div class="task-item ${completedClass}" onclick="toggleTask('${key}')">
+          <div class="task-checkbox ${done}"></div>
+          <div class="task-day">${t.day}</div>
+          <div class="task-content">
+            <div class="task-text">${t.task}</div>
+            ${t.hint ? `<div class="task-hint">${t.hint}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Progress
+    const total = tasks.length;
+    const doneCount = tasks.filter((_, i) => completedTasks[taskKey(i)]).length;
+    const pct = Math.round((doneCount / total) * 100);
+    taskHtml += `
+      <div style="padding:12px 20px; background:var(--paper); border-top:1px solid var(--hair);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; color:var(--muted);">Прогресс недели</span>
+          <span style="font-size:13px; font-weight:700; color:var(--ink);">${doneCount}/${total} · ${pct}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }
+  document.getElementById('taskList').innerHTML = taskHtml;
+
+  // Friday checkpoint
+  if (week.friday_checkpoint && week.friday_checkpoint.length) {
+    document.getElementById('fridayCheckpoint').innerHTML = `
+      <div class="checkpoint">
+        <h4>Пятничный чекпоинт недели</h4>
+        <ul>${week.friday_checkpoint.map(c => `<li>${c}</li>`).join('')}</ul>
+      </div>
+    `;
+  } else {
+    document.getElementById('fridayCheckpoint').innerHTML = '';
+  }
+}
+
+function toggleTask(key) {
+  completedTasks[key] = !completedTasks[key];
+  localStorage.setItem('verdeSalesCompleted', JSON.stringify(completedTasks));
+  renderWeekView();
+}
+
+function backToRoleSelect() {
+  document.getElementById('roleSelector').style.display = 'block';
+  document.getElementById('weeklyTasksView').style.display = 'none';
+}
+
+// ───────── MAP 12 WEEKS ─────────
+function renderMap() {
+  const html = WEEKS.map(w => `
+    <div class="map-card ${w.num === selectedWeek ? 'current' : ''}" onclick="jumpToWeek(${w.num})">
+      <div class="map-num">Неделя ${w.num} · ${w.dates}</div>
+      <h4>${w.title}</h4>
+      <div class="map-goal">${w.goal}</div>
+    </div>
+  `).join('');
+  document.getElementById('mapGrid').innerHTML = html;
+}
+
+function jumpToWeek(num) {
+  selectWeek(num);
+  document.querySelector('.tab[data-tab="my-week"]').click();
+  if (!selectedRole) {
+    alert('Сначала выбери роль на вкладке «Моя неделя»');
+  }
+}
+
+// ───────── METRICS ─────────
+function renderMetrics() {
+  const wIdx = selectedWeek - 1;
+
+  // KPI cards
+  const html = Object.entries(KPI_TARGETS).map(([k, v]) => {
+    const target = v.target_per_week[wIdx] || 0;
+    return `
+      <div class="metric-card">
+        <div class="metric-name">${v.name}</div>
+        <div class="metric-target">${target}</div>
+        <div class="metric-sub">Цель на неделю ${selectedWeek}</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('metricsGrid').innerHTML = html;
+
+  const weekLabel = document.getElementById('metricsWeekLabel');
+  if (weekLabel) weekLabel.textContent = selectedWeek;
+
+  renderTracker();
+}
+
+// ───────── 250 → 500M TRACKER ─────────
+// Траектория run-rate по неделям (MVP-модель)
+// Нед 1 = 250M (base), равномерный прирост до 400M к нед 12, затем до 500M к нед 52
+const RR_TRAJECTORY = [
+  250, 252, 255, 260, 265, 272, 280, 290, 300, 310, 320, 330   // недели 1-12: +80M (разгон)
+];
+
+// +250M sources with estimated week-12 contribution %
+const SOURCES = [
+  { name: "Кросс-сейл рассолов без фосфатов (мясо, действующие)",  target: 80, week12pct: 25, color: "#0FBF00" },
+  { name: "Халяль-upsell экспортёрам",                              target: 40, week12pct: 15, color: "#088800" },
+  { name: "Мясные полуфабрикаты (волна +228%)",                     target: 40, week12pct: 20, color: "#34d058" },
+  { name: "Ароматизаторы в снеки/instant/pet food (новый рынок)",   target: 40, week12pct: 10, color: "#16a34a" },
+  { name: "Витаминное обогащение молочки/напитков",                 target: 30, week12pct: 10, color: "#15803d" },
+  { name: "ABM expansion ТОП-20",                                    target: 20, week12pct: 40, color: "#166534" },
+];
+
+function renderTracker() {
+  const wIdx = Math.min(selectedWeek - 1, RR_TRAJECTORY.length - 1);
+  const currentRR = RR_TRAJECTORY[wIdx] || 250;
+  const delta = currentRR - 250;
+  const pathPct = Math.round((delta / 250) * 100);  // % от 250 до 500
+  const barPct = Math.min(Math.max(pathPct, 2), 100);
+
+  const badge = document.getElementById('trackerWeekNum');
+  if (badge) badge.textContent = selectedWeek;
+
+  const curEl = document.getElementById('trackerCurrentRR');
+  if (curEl) curEl.textContent = currentRR + 'M';
+
+  const pctEl = document.getElementById('trackerPct');
+  if (pctEl) pctEl.textContent = `+${delta}M / ${pathPct}% пути`;
+
+  const fill = document.getElementById('trackerFillBar');
+  if (fill) fill.style.width = barPct + '%';
+
+  const marker = document.getElementById('trackerMarker');
+  if (marker) marker.style.left = barPct + '%';
+
+  // Source breakdown
+  const srcHtml = SOURCES.map(s => {
+    // Прогресс по источнику на текущей неделе (линейная оценка 0 → week12pct от target)
+    const weekProgressPct = Math.min((selectedWeek / 12) * s.week12pct, 100);
+    const mlnDone = Math.round((s.target * weekProgressPct) / 100 * 10) / 10;
+    return `
+      <div style="background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 14px;">
+        <div style="font-size:12px; font-weight:600; color:var(--ink); margin-bottom:6px; line-height:1.4;">${s.name}</div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+          <span style="font-size:11px; color:var(--muted);">цель +${s.target}M</span>
+          <span style="font-size:13px; font-weight:700; color:${s.color};">${mlnDone}M</span>
+        </div>
+        <div style="height:5px; background:var(--hair); border-radius:99px; overflow:hidden;">
+          <div style="height:100%; background:${s.color}; width:${weekProgressPct}%; transition:width 0.5s;"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  const sbEl = document.getElementById('sourceBreakdown');
+  if (sbEl) sbEl.innerHTML = srcHtml;
+}
+
+// ───────── SCRIPTS ─────────
+function renderScripts() {
+  const html = SCRIPTS.map((cat, ci) => `
+    <div class="script-category" data-cat="${ci}">
+      <div class="script-cat-header" onclick="toggleScriptCat(${ci})">
+        <h3>${cat.category}</h3>
+        <span class="toggle">▼</span>
+      </div>
+      <div class="script-items">
+        ${cat.items.map((it, ii) => `
+          <div class="script-item">
+            <button class="copy-btn" onclick="copyScript(${ci}, ${ii})">Копировать</button>
+            <h4>${it.title}</h4>
+            ${it.content.includes('\\n') || it.content.length > 200
+              ? `<pre id="script-${ci}-${ii}">${escapeHtml(it.content)}</pre>`
+              : `<div class="content-text" id="script-${ci}-${ii}">${escapeHtml(it.content)}</div>`
+            }
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('scriptsContainer').innerHTML = html;
+}
+
+function toggleScriptCat(ci) {
+  document.querySelector(`.script-category[data-cat="${ci}"]`).classList.toggle('open');
+}
+
+function copyScript(ci, ii) {
+  const el = document.getElementById(`script-${ci}-${ii}`);
+  const text = el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    event.target.textContent = 'Скопировано!';
+    setTimeout(() => { event.target.textContent = 'Копировать'; }, 1500);
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+
+</body>
+</html>
