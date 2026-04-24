@@ -139,13 +139,9 @@ def format_price(price_entry: dict) -> dict:
 
 
 def _make_display(bulk: str, small: str) -> str:
-    """Короткая строка для слайда: 'от X руб/кг · мешком от Y руб/кг'"""
-    parts = []
-    if small:
-        parts.append(f'от {small} ₽/кг')
-    if bulk and bulk != small:
-        parts.append(f'мешком (20+ кг) — {bulk} ₽/кг')
-    return ' · '.join(parts) if parts else ''
+    """Одна цена — за мешок без НДС (bulk), fallback на small если bulk пуст."""
+    price = bulk or small
+    return f'{price} ₽/кг' if price else ''
 
 
 def get_category_pricelist(category: str = '') -> list:

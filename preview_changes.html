@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Превью изменений — прайс-лист в КП</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0B0C; --body: #27272A; --muted: #71717A; --faint: #A1A1AA;
+    --line: #E4E4E7; --hair: #F1F1F3; --paper: #FAFAF9; --cream: #F6F3EC;
+    --green: #0FBF00; --green-dark: #088800; --white: #FFFFFF;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Onest', sans-serif; background:#D8D8DB; color:var(--body); font-size:14px; line-height:1.55; padding:32px 20px; }
+
+  .section-label {
+    font-size:11px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase;
+    color:#fff; background:#555; padding:6px 14px; border-radius:4px 4px 0 0;
+    display:inline-block; margin-bottom:0;
+  }
+  .panel {
+    background:#fff; border-radius:0 6px 6px 6px; padding:28px 32px;
+    box-shadow:0 2px 20px rgba(0,0,0,0.08); margin-bottom:40px; max-width:680px;
+  }
+  .panel h3 { font-size:16px; font-weight:700; margin-bottom:20px; color:var(--ink); }
+
+  /* ─── форма ─── */
+  .form-group { margin-bottom:10px; }
+  .form-group label.checkbox-label {
+    display:flex; align-items:flex-start; gap:10px; cursor:pointer; user-select:none;
+    padding:12px 14px; border:1px solid var(--line); border-radius:4px;
+    transition:background 0.15s;
+  }
+  .form-group label.checkbox-label:hover { background:var(--paper); }
+  .form-group input[type=checkbox] { margin-top:3px; accent-color:#0FBF00; width:16px; height:16px; flex-shrink:0; }
+  .form-group .cb-title { font-weight:600; font-size:13px; color:var(--ink); }
+  .form-group .cb-hint { font-size:11px; color:#888; line-height:1.4; margin-top:2px; }
+  .new-badge { display:inline-block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; background:#0FBF00; color:#fff; padding:2px 7px; border-radius:99px; margin-left:8px; vertical-align:middle; }
+
+  /* ─── КП слайд ─── */
+  .slide {
+    background:var(--white); border-radius:6px;
+    box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 24px 50px -25px rgba(0,0,0,0.12);
+    overflow:hidden; max-width:860px;
+  }
+  .slide-inner { padding:44px 60px 40px; }
+  .slide-footer {
+    padding:12px 60px; border-top:1px solid var(--hair);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:10px; color:var(--faint); letter-spacing:0.12em; text-transform:uppercase; font-weight:500;
+  }
+  .eyebrow {
+    font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.22em;
+    color:var(--green); margin-bottom:12px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before { content:''; display:inline-block; width:16px; height:1px; background:var(--green); }
+  h2 { font-size:22px; font-weight:700; line-height:1.25; letter-spacing:-0.012em; color:var(--ink); }
+  .lead { font-size:15px; line-height:1.58; color:var(--body); max-width:620px; margin-top:8px; }
+
+  /* таблица прайса */
+  .price-list-table { width:100%; border-collapse:collapse; margin-top:24px; }
+  .price-list-table th {
+    font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--faint);
+    font-weight:600; padding:0 16px 10px 0; border-bottom:1px solid var(--ink); text-align:left;
+  }
+  .price-list-table th.price-col { text-align:right; }
+  .price-list-table td { padding:9px 16px 9px 0; border-bottom:1px solid var(--hair); font-size:12px; color:var(--body); }
+  .price-list-table tr:last-child td { border-bottom:none; }
+  .price-list-table td:first-child { color:var(--ink); font-weight:500; }
+  .price-list-table td.price-val {
+    text-align:right; font-family:'Instrument Serif', Georgia, serif;
+    font-size:14px; color:var(--ink); white-space:nowrap;
+  }
+  .price-list-table td.price-na { text-align:right; color:var(--faint); font-size:11px; }
+  .price-disclaimer { margin-top:20px; font-size:10px; color:var(--faint); line-height:1.5; font-style:italic; }
+
+  .arrow-row { text-align:center; padding:16px 0; font-size:28px; color:var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ ФОРМА ═══════════════════════════════════════ -->
+<div class="section-label">1. Форма генератора КП — что изменилось</div>
+<div class="panel">
+  <h3>Внизу формы появились два чекбокса</h3>
+
+  <div class="form-group">
+    <label class="checkbox-label">
+      <input type="checkbox" checked>
+      <span>
+        <span class="cb-title">Добавить ориентировочные цены в КП</span>
+        <div class="cb-hint">Включай для тёплых и горячих сделок. Для холодных — сначала зацепи продуктом, цены отдай на встрече.</div>
+      </span>
+    </label>
+  </div>
+
+  <div class="form-group">
+    <label class="checkbox-label" style="border-color:#0FBF00; background:#f7fff5;">
+      <input type="checkbox" checked>
+      <span>
+        <span class="cb-title">Приложить прайс-лист <span class="new-badge">новое</span></span>
+        <div class="cb-hint">Добавляет слайд с полными ценами по категории продукта. Для горячих сделок и запросов на ассортимент.</div>
+      </span>
+    </label>
+  </div>
+
+  <div style="margin-top:16px; padding:12px 16px; background:#fffbea; border-radius:4px; font-size:12px; color:#7a6000; border-left:3px solid #f0c000;">
+    <b>Как работает прайс-лист:</b> Система сама определяет категорию основного продукта и показывает все позиции из этой категории с ценами. Например, для «КПД для колбасных изделий» — все колбасные КПД из прайса.
+  </div>
+</div>
+
+<div class="arrow-row">↓</div>
+
+<!-- ═══════════════════════════════════════ КП ═══════════════════════════════════════ -->
+<div class="section-label">2. Последний слайд КП — новый слайд «Прайс-лист»</div>
+<div style="max-width:860px; margin-top:0;">
+<div class="slide">
+  <div class="slide-inner">
+    <div class="eyebrow">Приложение · Прайс-лист</div>
+    <h2>Цены на продукцию Verde Tech · Комплексные пищевые добавки</h2>
+    <p class="lead">Все цены — без НДС. Тарное место — мешок 20–25 кг. Итоговая цена уточняется у менеджера.</p>
+
+    <table class="price-list-table">
+      <thead>
+        <tr>
+          <th>Продукт</th>
+          <th class="price-col">Менее тарного места, ₽/кг</th>
+          <th class="price-col">Тарное место (20+ кг), ₽/кг</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>КПД Колбасная Классика Премиум</td>
+          <td class="price-val">184.50</td>
+          <td class="price-val">162.00</td>
+        </tr>
+        <tr>
+          <td>КПД Сосисочная Нежная</td>
+          <td class="price-val">197.30</td>
+          <td class="price-val">175.80</td>
+        </tr>
+        <tr>
+          <td>КПД Ветчинная Традиция</td>
+          <td class="price-val">210.00</td>
+          <td class="price-val">188.50</td>
+        </tr>
+        <tr>
+          <td>КПД Мортаделла Стандарт</td>
+          <td class="price-na">—</td>
+          <td class="price-val">155.20</td>
+        </tr>
+        <tr>
+          <td>КПД Паштетная Нежность</td>
+          <td class="price-val">221.00</td>
+          <td class="price-val">199.00</td>
+        </tr>
+        <tr>
+          <td>КПД Салями Пикантная</td>
+          <td class="price-val">245.80</td>
+          <td class="price-val">218.40</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted); font-style:italic;">… и ещё позиции категории из прайса</td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="price-disclaimer">Цены действуют до 01.05.2026 · Без НДС · При оформлении заказа цена уточняется · verdetech.ru</p>
+  </div>
+  <div class="slide-footer">
+    <span>Приложение · Прайс-лист</span>
+    <span>Без НДС · Действуют до 01.05.2026</span>
+  </div>
+</div>
+</div>
+
+<div style="max-width:680px; margin-top:32px; padding:20px 24px; background:#fff; border-radius:6px; font-size:13px; line-height:1.7; box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+  <b style="font-size:14px;">Итого что добавилось:</b><br><br>
+  ☑ <b>Чекбокс в форме</b> — «Приложить прайс-лист»<br>
+  ☑ <b>Новый слайд в конце КП</b> — таблица с ценами по категории продукта<br>
+  ☑ <b>Два столбца цен</b> — розница (менее тарного) и оптом (мешок 20+ кг)<br>
+  ☑ <b>Без НДС, с датой действия</b> — автоматически из прайса (01.05.2026)<br>
+  ☑ <b>При печати в PDF</b> — слайд занимает столько страниц, сколько нужно<br><br>
+  <span style="color:var(--muted); font-size:12px;">Первый чекбокс (цены) — показывает цену прямо на слайде рекомендации.<br>
+  Второй чекбокс (прайс) — добавляет отдельный слайд с полной таблицей.</span>
+</div>
+
+</body>
+</html>

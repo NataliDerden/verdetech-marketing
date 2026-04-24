@@ -1,0 +1,263 @@
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://100.80.74.202:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+127.0.0.1 - - [23/Apr/2026 20:53:26] "GET /team HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:53:36] "GET /team HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:55:04] "POST /api/generate-kp HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:58:47] "GET /design HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:58:51] "GET /team HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:59:08] "GET /dashboard HTTP/1.1" 302 -
+127.0.0.1 - - [23/Apr/2026 20:59:08] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:59:09] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:59:19] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [23/Apr/2026 20:59:20] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 20:59:20] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [23/Apr/2026 20:59:31] "POST /design HTTP/1.1" 200 -
+127.0.0.1 - - [23/Apr/2026 21:11:17] "POST /design HTTP/1.1" 200 -
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\parse_price.py', reloading
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\products_prices.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+127.0.0.1 - - [24/Apr/2026 09:08:47] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:08:53] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [24/Apr/2026 09:08:53] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:08:54] "GET /static/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [24/Apr/2026 09:09:03] "GET /team HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:09:07] "GET /design HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:09:10] "GET /team HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:09:24] "GET /design HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:10:10] "GET /design HTTP/1.1" 200 -
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+127.0.0.1 - - [24/Apr/2026 09:31:26] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [24/Apr/2026 09:31:26] "POST /dashboard HTTP/1.1" 405 -
+127.0.0.1 - - [24/Apr/2026 09:31:31] "POST /login HTTP/1.1" 302 -
+127.0.0.1 - - [24/Apr/2026 09:31:31] "POST /dashboard HTTP/1.1" 405 -
+127.0.0.1 - - [24/Apr/2026 09:31:32] "GET /design HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 09:31:36] "POST /design HTTP/1.1" 302 -
+127.0.0.1 - - [24/Apr/2026 09:31:37] "GET /design HTTP/1.1" 200 -
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\products_prices.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\sales_data.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125

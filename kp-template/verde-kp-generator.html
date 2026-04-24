@@ -198,7 +198,7 @@
     <svg viewBox="0 0 64 64" fill="#0FBF00"><ellipse cx="32" cy="16" rx="8" ry="14"/><ellipse cx="48" cy="32" rx="14" ry="8"/><ellipse cx="32" cy="48" rx="8" ry="14"/><ellipse cx="16" cy="32" rx="14" ry="8"/></svg>
     {{ client_name }} · {{ doc_id }}
   </div>
-  <button onclick="window.print()">Сохранить в PDF</button>
+  <button onclick="downloadKP()">Скачать HTML</button>
 </div>
 
 <div class="deck">
@@ -216,7 +216,7 @@
           <h3>{{ product_name }}</h3>
           <div class="r-sub">{{ main_benefit }}</div>
           {% if include_prices and primary_price and primary_price.display %}
-          <div class="price-tag">{{ primary_price.display }} <span class="price-note">без НДС</span></div>
+          <div class="price-tag">{{ primary_price.display }} <span class="price-note">без НДС · за мешок 20–25 кг</span></div>
           {% endif %}
         </div>
         <div class="r-meta">
@@ -308,7 +308,7 @@
       <div class="pain"><div class="idx">03</div><h4>{{ pain3_title }}</h4><p>{{ pain3_desc }}</p></div>
     </div>
   </div>
-  <div class="slide-footer"><span>04 · Барьеры роста</span><span>Источники открытые</span></div>
+  <div class="slide-footer"><span>04 · Барьеры роста</span></div>
 </div>
 
 <!-- 6 CONVENIENT & FAST -->
@@ -319,14 +319,10 @@
     <p class="lead" style="margin-top:8px;">Собственное производство в&nbsp;СПб, R&amp;D под&nbsp;клиента, минимум бюрократии.</p>
     <div class="conv-layout">
       <div>
-        <div class="conv-row"><div class="key">Отгрузка от&nbsp;договора</div><div class="val">5 раб. дней</div></div>
         <div class="conv-row"><div class="key">Образцы</div><div class="val">до 2 кг бесплатно</div></div>
         <div class="conv-row"><div class="key">Тестовая партия</div><div class="val">от 5 кг</div></div>
-        <div class="conv-row"><div class="key">Авторский маринад (NDA)</div><div class="val">5 дней разработка</div></div>
       </div>
       <div>
-        <div class="conv-row"><div class="key">Скидка от&nbsp;100&nbsp;кг</div><div class="val">−5%</div></div>
-        <div class="conv-row"><div class="key">Скидка от&nbsp;500&nbsp;кг</div><div class="val">−10%</div></div>
         <div class="conv-row"><div class="key">Сертификаты</div><div class="val">ТР ТС 021, 029</div></div>
         <div class="conv-row"><div class="key">300+ клиентов</div><div class="val">в России и&nbsp;СНГ</div></div>
       </div>
@@ -336,36 +332,7 @@
       <strong>уже работают с&nbsp;нами.</strong>
     </div>
   </div>
-  <div class="slide-footer"><span>05 · Почему Verde</span><span>Оценка 4.9/5 · 87 отзывов</span></div>
-</div>
-
-<!-- 7 COMPETITORS -->
-<div class="slide">
-  <div class="slide-inner">
-    <div class="eyebrow">06 · Verde vs рынок</div>
-    <h2>Чем мы&nbsp;отличаемся от&nbsp;конкурентов</h2>
-    <p class="lead" style="margin-top:8px;">Сравнение с&nbsp;основными игроками рынка {{ industry_genitive }}.</p>
-    <div class="comp-table">
-      <div class="comp-row h">
-        <div class="c">Конкурент</div>
-        <div class="c">Скорость</div>
-        <div class="c">Их слабость vs Verde</div>
-      </div>
-      {% for cm in (competitors or [])[:4] %}
-      <div class="comp-row">
-        <div class="c">{{ cm.get('name','') }}</div>
-        <div class="c weak">{{ cm.get('speed','') }}</div>
-        <div class="c weak">{{ cm.get('weakness','') }}</div>
-      </div>
-      {% endfor %}
-      <div class="comp-row" style="border-bottom:1px solid var(--ink);">
-        <div class="c verde">Verde Tech</div>
-        <div class="c verde">5 раб. дней</div>
-        <div class="c verde">Собственное R&amp;D, NDA на рецептуру, образцы 2 кг бесплатно</div>
-      </div>
-    </div>
-  </div>
-  <div class="slide-footer"><span>06 · Конкуренты</span><span>Данные по открытым источникам</span></div>
+  <div class="slide-footer"><span>05 · Почему Verde</span></div>
 </div>
 
 <!-- 8 TRENDS -->
@@ -380,7 +347,7 @@
       <div class="trend-row"><div class="ty">{{ trend3_year }}</div><div><h4>{{ trend3_title }}</h4><p>{{ trend3_impact }}</p></div></div>
     </div>
   </div>
-  <div class="slide-footer"><span>07 · Тренд-радар</span><span>Источники открытые · полный отчёт — по&nbsp;запросу</span></div>
+  <div class="slide-footer"><span>07 · Тренд-радар</span></div>
 </div>
 
 <!-- 9 NEXT STEP + CONTACT -->
@@ -394,13 +361,6 @@
       <div class="step-col"><div class="s-num">Неделя 2</div><h4>Замер KPI</h4><p>Проба на&nbsp;100&nbsp;кг. Фиксируем выход и&nbsp;готовим акт.</p></div>
       <div class="step-col"><div class="s-num">Неделя 3</div><h4>Договор + поставка</h4><p>Первая коммерческая партия на&nbsp;ваш склад.</p></div>
     </div>
-    {% if bonus_items %}
-    <div class="bonus-block">
-      <h4>Эксклюзивно для&nbsp;{{ client_name }}</h4>
-      <ul>{% for it in bonus_items[:4] %}<li>{{ it }}</li>{% endfor %}</ul>
-      {% if bonus_value_note %}<div class="note">{{ bonus_value_note }}</div>{% endif %}
-    </div>
-    {% endif %}
     <div class="contact-layout">
       <div class="contact-main">
         <div class="m-label">Ваш менеджер</div>
@@ -423,38 +383,24 @@
   <div class="slide-footer"><span>06 · Контакты</span><span>Действует до&nbsp;{{ expiry_date }}</span></div>
 </div>
 
-<!-- APPENDIX: PRICE LIST -->
-{% if include_pricelist and pricelist_items %}
-<div class="slide slide-pricelist">
-  <div class="slide-inner">
-    <div class="eyebrow">Приложение · Прайс-лист</div>
-    <h2>Цены на продукцию Verde Tech{% if pricelist_cat %} · {{ pricelist_cat }}{% endif %}</h2>
-    <p class="lead" style="margin-top:8px;">Все цены — без НДС. Тарное место — мешок 20–25 кг. Итоговая цена уточняется у менеджера.</p>
-    <table class="price-list-table">
-      <thead>
-        <tr>
-          <th>Продукт</th>
-          <th class="price-col">Менее тарного места, ₽/кг</th>
-          <th class="price-col">Тарное место (20+ кг), ₽/кг</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for it in pricelist_items %}
-        <tr>
-          <td>{{ it.name }}</td>
-          <td class="{{ 'price-val' if it.small else 'price-na' }}">{{ it.small if it.small else '—' }}</td>
-          <td class="{{ 'price-val' if it.bulk else 'price-na' }}">{{ it.bulk if it.bulk else '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <p class="price-disclaimer" style="margin-top:20px;">Цены действуют до {{ price_valid_until }} · Без НДС · При оформлении заказа цена уточняется · verdetech.ru</p>
-  </div>
-  <div class="slide-footer"><span>Приложение · Прайс-лист</span><span>Без НДС · Действуют до {{ price_valid_until }}</span></div>
 </div>
-{% endif %}
 
-</div>
+<script>
+function downloadKP() {
+  // скачиваем текущий КП как самодостаточный HTML-файл
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const client = (document.title.match(/для ([^·]+)/) || [,'Клиент'])[1].trim().replace(/[^\wа-яА-ЯёЁ\s-]/g, '');
+  const today = new Date().toISOString().slice(0, 10);
+  a.download = `КП_${client}_${today}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+</script>
 
 </body>
 </html>
