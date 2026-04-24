@@ -474,6 +474,51 @@
       </div>
     </div>
 
+    <!-- ───── НОВЫЕ КЛИЕНТЫ ───── -->
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px 32px; margin-bottom:24px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Новые клиенты · план на 12 месяцев</div>
+          <h2 style="font-size:20px; font-weight:700; color:var(--ink);">145 новых клиентов дадут +155М ₽</h2>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:28px; font-weight:700; color:var(--green-dark);">12<span style="font-size:14px; font-weight:400; color:var(--muted);"> / мес</span></div>
+          <div style="font-size:11px; color:var(--muted);">новых клиентов нужно закрывать</div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:20px;">12 новых клиентов в месяц = 3 в неделю = ~1 на каждого активного менеджера</div>
+      <div id="newClientsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; margin-bottom:20px;"></div>
+      <!-- Итоговая строка -->
+      <div style="background:var(--green-soft); border:1px solid var(--green)30; border-radius:10px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="font-size:13px; color:var(--body);">
+          <b>Итого новых:</b> 145 клиентов × ~1.07М/год (3 заказа × 290К) = <b style="color:var(--green-dark);">+155М ₽</b>
+        </div>
+        <div style="font-size:12px; color:var(--muted);">Горизонт: 12 месяцев · Остальные +95М — от роста действующих ↓</div>
+      </div>
+    </div>
+
+    <!-- ───── РОСТ ДЕЙСТВУЮЩИХ ───── -->
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px 32px; margin-bottom:24px;">
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Действующая база · 300 клиентов</div>
+        <h2 style="font-size:20px; font-weight:700; color:var(--ink);">Сколько нужно вырасти каждому клиенту</h2>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Без новых клиентов — только за счёт роста среднего чека и частоты заказов</div>
+      </div>
+      <div id="expansionTiersGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; margin-bottom:20px;"></div>
+      <!-- Итог expansion -->
+      <div style="background:var(--hair); border-radius:10px; padding:16px 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">Итого от роста базы</div>
+            <div style="font-size:26px; font-weight:700; color:var(--ink);">+95М ₽</div>
+          </div>
+          <div style="font-size:12px; color:var(--muted); max-width:380px; line-height:1.6;">
+            <b>Инструменты:</b> QBR каждые 6 недель для ТОП-100 · ABM-пакеты для ТОП-20 · реактивация 60+ дней молчания · кросс-сейл рассолы ↔ ароматизаторы ↔ Халяль
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ───── KPI недели ───── -->
     <div class="panel-title">KPI недели <span id="metricsWeekLabel" style="color:var(--green-dark);">1</span></div>
     <div class="panel-sub">Что измеряем каждую пятницу. Цифры — это цель, не потолок.</div>
@@ -729,6 +774,8 @@ function renderMetrics() {
 
   renderTracker();
   renderFunnel();
+  renderNewClients();
+  renderExpansion();
 }
 
 // ───────── ВОРОНКА: ЗВОНКИ → РУБЛИ ─────────
@@ -737,6 +784,54 @@ const CONV_TM    = 0.05;    // касание → встреча
 const CONV_MK    = 0.75;    // встреча → КП
 const CONV_KD    = 0.20;    // КП → сделка
 const BASE_MRR   = 17;      // текущий run-rate, М₽/мес
+
+// ── Сегменты новых клиентов ──
+const NEW_CLIENT_SEGMENTS = [
+  { segment: 'Рассолы без фосфатов', channel: 'Холодные · мясопереработка', needed: 45, revenueM: 50, color: '#0FBF00', perMonth: 4 },
+  { segment: 'Халяль / Экспорт',     channel: 'Холодные · экспортёры',       needed: 35, revenueM: 40, color: '#088800', perMonth: 3 },
+  { segment: 'Снеки / Instant / Pet food', channel: 'Холодные · новый рынок', needed: 40, revenueM: 40, color: '#16a34a', perMonth: 3 },
+  { segment: 'Витамины / Молочка',   channel: 'Холодные + ABM',              needed: 25, revenueM: 25, color: '#15803d', perMonth: 2 },
+];
+
+// ── Тиры роста действующих ──
+const EXPANSION_TIERS = [
+  {
+    tier: 'ТОП-20 VIP',
+    clients: 20,
+    currentAvgYearM: 5.0,
+    targetAvgYearM:  7.5,
+    currentCheckK:   1700,
+    targetCheckK:    2500,
+    growthPct:       50,
+    revenueM:        50,
+    method:          'ABM-пакет персональный: видео от Кирилла + PDF-анализ + личная встреча',
+    color:           '#0FBF00',
+  },
+  {
+    tier: 'Средние (21–100)',
+    clients: 80,
+    currentAvgYearM: 1.09,
+    targetAvgYearM:  1.5,
+    currentCheckK:   365,
+    targetCheckK:    500,
+    growthPct:       38,
+    revenueM:        33,
+    method:          'QBR каждые 6 недель + предложение новинки с индивидуальным прайсом',
+    color:           '#E6A817',
+  },
+  {
+    tier: 'База (101–300)',
+    clients: 200,
+    currentAvgYearM: 0.315,
+    targetAvgYearM:  0.375,
+    currentCheckK:   105,
+    targetCheckK:    125,
+    growthPct:       20,
+    revenueM:        12,
+    method:          'Email-реактивация · триггер 60+ дней без заказа · кросс-сейл рассылка',
+    color:           '#3b82f6',
+  },
+];
 
 function renderFunnel() {
   const wIdx = Math.max(selectedWeek - 1, 0);
@@ -807,6 +902,94 @@ function renderFunnel() {
       </div>
     </div>
   `;
+}
+
+// ───────── НОВЫЕ КЛИЕНТЫ ─────────
+function renderNewClients() {
+  const el = document.getElementById('newClientsGrid');
+  if (!el) return;
+  const wIdx = Math.max(selectedWeek - 1, 0);
+  // Примерный прогресс по неделям (линейный к 12 месяцам)
+  const progressFraction = Math.min(wIdx / 51, 1); // 52 недели в году
+
+  el.innerHTML = NEW_CLIENT_SEGMENTS.map(s => {
+    const doneSoFar = Math.round(s.needed * progressFraction);
+    const pct = Math.round((doneSoFar / s.needed) * 100);
+    return `
+      <div style="border:1.5px solid ${s.color}30; border-radius:12px; padding:18px 20px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:3px;">${s.segment}</div>
+            <div style="font-size:11px; color:var(--muted);">${s.channel}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0; margin-left:10px;">
+            <div style="font-size:22px; font-weight:700; color:${s.color};">${s.needed}</div>
+            <div style="font-size:10px; color:var(--muted);">клиентов</div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:8px;">
+          <span><b style="color:var(--ink);">${s.perMonth}/мес</b> · темп</span>
+          <span>цель +<b style="color:${s.color};">${s.revenueM}М ₽</b></span>
+        </div>
+        <div style="height:6px; background:var(--hair); border-radius:99px; overflow:hidden;">
+          <div style="height:100%; background:${s.color}; width:${pct}%; transition:width 0.5s;"></div>
+        </div>
+        <div style="font-size:10px; color:var(--faint); margin-top:5px;">${doneSoFar} / ${s.needed} клиентов (трек по неделям)</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ───────── РОСТ ДЕЙСТВУЮЩИХ ─────────
+function renderExpansion() {
+  const el = document.getElementById('expansionTiersGrid');
+  if (!el) return;
+  el.innerHTML = EXPANSION_TIERS.map(t => {
+    const growthLabel = t.growthPct >= 40 ? `🔥 +${t.growthPct}%` : `+${t.growthPct}%`;
+    const barW = Math.min(t.growthPct * 1.2, 100);
+    return `
+      <div style="border:1px solid var(--line); border-radius:12px; padding:20px 22px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:2px;">${t.tier}</div>
+            <div style="font-size:11px; color:var(--muted);">${t.clients} клиентов</div>
+          </div>
+          <div style="background:${t.color}15; border:1px solid ${t.color}30; border-radius:6px; padding:4px 10px; font-size:13px; font-weight:700; color:${t.color}; white-space:nowrap;">
+            ${growthLabel}
+          </div>
+        </div>
+
+        <!-- Чек: было → стало -->
+        <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; margin-bottom:14px; background:var(--hair); border-radius:8px; padding:12px 14px;">
+          <div style="text-align:center;">
+            <div style="font-size:10px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px;">Чек сейчас</div>
+            <div style="font-size:20px; font-weight:700; color:var(--body);">${t.currentCheckK}К</div>
+            <div style="font-size:10px; color:var(--faint);">₽ / заказ</div>
+          </div>
+          <div style="font-size:20px; color:${t.color}; font-weight:700;">→</div>
+          <div style="text-align:center;">
+            <div style="font-size:10px; font-weight:600; color:${t.color}; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px;">Чек цель</div>
+            <div style="font-size:20px; font-weight:700; color:${t.color};">${t.targetCheckK}К</div>
+            <div style="font-size:10px; color:var(--faint);">₽ / заказ</div>
+          </div>
+        </div>
+
+        <!-- Прогресс-бар роста -->
+        <div style="height:5px; background:var(--hair); border-radius:99px; overflow:hidden; margin-bottom:8px;">
+          <div style="height:100%; background:${t.color}; width:${barW}%; opacity:0.7;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+          <div style="font-size:11px; color:var(--muted);">${t.currentAvgYearM.toFixed(2)}М → ${t.targetAvgYearM.toFixed(2)}М/год на клиента</div>
+          <div style="font-size:13px; font-weight:700; color:${t.color};">+${t.revenueM}М ₽</div>
+        </div>
+
+        <div style="font-size:11px; color:var(--muted); line-height:1.5; padding-top:10px; border-top:1px solid var(--hair);">
+          <b style="color:var(--ink);">Как:</b> ${t.method}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ───────── 250 → 500M TRACKER ─────────
