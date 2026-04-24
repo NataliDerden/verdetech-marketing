@@ -639,7 +639,12 @@ const SPRINT_PRIZES = {
 };
 
 // ───────── STATE ─────────
-let selectedRole = localStorage.getItem('verdeSalesRole') || null;
+// Проверяем что сохранённая роль ещё существует (защита от переименований)
+const _savedRole = localStorage.getItem('verdeSalesRole');
+const _validRoleIds = ROLES.map(r => r.id);
+let selectedRole = (_savedRole && _validRoleIds.includes(_savedRole)) ? _savedRole : null;
+if (!selectedRole) localStorage.removeItem('verdeSalesRole');
+
 let selectedWeek = parseInt(localStorage.getItem('verdeSalesWeek') || '1');
 let completedTasks = JSON.parse(localStorage.getItem('verdeSalesCompleted') || '{}');
 
