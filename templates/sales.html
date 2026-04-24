@@ -246,17 +246,66 @@
 <div class="page-content active" id="page-my-week">
   <div class="content">
 
-    <div id="roleSelector">
-      <div class="panel-title">Выбери свою роль</div>
-      <div class="panel-sub">План на неделю будет показан именно для тебя. Выбор сохранится в браузере.</div>
-      <div class="role-cards" id="roleCards"></div>
+    <!-- ───── HERO: команда, цель, статус ───── -->
+    <div id="welcomeHero" style="background:linear-gradient(135deg, #0B0B0C 0%, #088800 100%); color:#fff; border-radius:16px; padding:32px 36px; margin-bottom:24px; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-40px; right:-40px; width:220px; height:220px; border:4px solid rgba(255,255,255,0.06); border-radius:50%;"></div>
+      <div style="position:absolute; top:40px; right:60px; width:140px; height:140px; border:3px solid rgba(255,255,255,0.08); border-radius:50%;"></div>
+      <div style="position:relative; z-index:1;">
+        <div style="font-size:12px; font-weight:700; letter-spacing:0.24em; text-transform:uppercase; opacity:0.75; margin-bottom:8px;">Команда продаж · Verde Tech</div>
+        <h1 style="font-size:32px; font-weight:700; line-height:1.15; margin-bottom:14px; max-width:640px;">Наша цель на год — 350 млн ₽ выручки</h1>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:18px; max-width:760px; margin-top:22px;">
+          <div>
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; opacity:0.7; margin-bottom:4px;">Сейчас</div>
+            <div style="font-size:24px; font-weight:700;">17 М ₽/мес</div>
+            <div style="font-size:12px; opacity:0.7; margin-top:2px;">~59 отгрузок/мес</div>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; opacity:0.7; margin-bottom:4px;">Нужно к декабрю</div>
+            <div style="font-size:24px; font-weight:700; color:#b8f5a0;">29 М ₽/мес</div>
+            <div style="font-size:12px; opacity:0.7; margin-top:2px;">~100 отгрузок/мес (+40)</div>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; opacity:0.7; margin-bottom:4px;">Разрыв за год</div>
+            <div style="font-size:24px; font-weight:700; color:#b8f5a0;">+500 отгрузок</div>
+            <div style="font-size:12px; opacity:0.7; margin-top:2px;">~10 доп. отгрузок/нед командой</div>
+          </div>
+        </div>
+        <div style="margin-top:22px; padding-top:18px; border-top:1px solid rgba(255,255,255,0.15); font-size:13px; opacity:0.85; max-width:700px; line-height:1.6;">
+          <b style="color:#b8f5a0;">Как достигнем:</b> 65 новых клиентов в 6 нишах (рассолы, маринады, бульоны, Халяль, снеки, витамины) + рост заказов у действующих 300 клиентов (ТОП-20 под личным ABM, остальные через QBR и кросс-сейл).
+        </div>
+      </div>
     </div>
 
+    <!-- ───── РОЛЬ НЕ ВЫБРАНА: селектор ───── -->
+    <div id="roleSelector">
+      <div class="panel-title">Шаг 1 · Кто ты в команде?</div>
+      <div class="panel-sub">Выбери свою роль — увидишь свой годовой вклад в 350М, план на эту неделю и 3 ключевых действия.</div>
+      <div class="role-cards" id="roleCards"></div>
+
+      <!-- Ссылки на детали -->
+      <div style="margin-top:28px; padding:18px 22px; background:var(--hair); border-radius:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <div style="font-size:13px; color:var(--body); flex:1; min-width:200px;"><b>Хочешь понять цель глубже?</b> Посмотри детальные цифры, воронку и разбивку по клиентам:</div>
+        <button onclick="switchTab('metrics')" style="background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">Открыть Трек 250→350 →</button>
+      </div>
+    </div>
+
+    <!-- ───── РОЛЬ ВЫБРАНА: персональный дашборд ───── -->
     <div id="weeklyTasksView" style="display:none;">
+
+      <!-- Персональное приветствие + вклад в 350М -->
+      <div id="personalHero"></div>
+
+      <!-- 3 ключевых действия -->
+      <div id="topActions"></div>
+
+      <!-- Неделя: нав + задачи -->
       <div class="week-nav" id="weekNav"></div>
       <div class="week-header" id="weekHeader"></div>
       <div class="task-list" id="taskList"></div>
       <div id="fridayCheckpoint"></div>
+
+      <!-- Навигация к другим вкладкам -->
+      <div id="quickNav"></div>
     </div>
 
   </div>
@@ -638,6 +687,102 @@ const SPRINT_PRIZES = {
   12: 'Приз: поездка на отраслевую выставку за счёт компании',
 };
 
+// Годовой вклад каждой роли в 350М — что именно от тебя зависит
+const ROLE_CONTRIBUTIONS = {
+  kirill: {
+    yearGoal: 'Рост с 250М до 350М — твоя стратегическая ответственность',
+    weeklyFocus: 'Согласования · ТОП-5 VIP-клиенты · Халяль-сертификат · бюджет Директа',
+    metrics: [
+      { label: 'Личные касания ТОП-5 VIP', weekTarget: '2-3 звонка в неделю' },
+      { label: 'ABM-видео для ТОП-10', weekTarget: '1 персональное видео/нед' },
+      { label: 'Согласования позиционирования и КП', weekTarget: 'по мере подачи' },
+    ],
+    yearImpact: '+30М от ABM-работы с ТОП-20 VIP',
+  },
+  rop: {
+    yearGoal: 'Команда сдаёт pipeline на 350М — твоя операционная ответственность',
+    weeklyFocus: 'Ежедневные летучки · качество КП · распределение лидов · отчёт Кириллу',
+    metrics: [
+      { label: 'Утренние летучки', weekTarget: '5 × 15 мин ежедневно' },
+      { label: 'Ревью КП команды', weekTarget: '10+ КП с фидбэком в неделю' },
+      { label: 'Pipeline-отчёт Кириллу', weekTarget: 'каждую пятницу' },
+      { label: 'Общий план команды', weekTarget: '~140-200 касаний, 10-16 встреч, 20-30 КП' },
+    ],
+    yearImpact: 'Вся воронка команды: 65 новых клиентов + рост базы',
+  },
+  manager_meat: {
+    yearGoal: '18 новых клиентов в мясе → +13М ₽ за год',
+    weeklyFocus: 'Холодные продажи мясопереработчикам · рассолы без фосфатов + маринады',
+    metrics: [
+      { label: 'Холодные касания', weekTarget: '50-70 в неделю' },
+      { label: 'Новые встречи', weekTarget: '3-5 в неделю' },
+      { label: 'КП отправлено', weekTarget: '7-10 в неделю' },
+      { label: 'Новых клиентов', weekTarget: '~1.5 в месяц = 18 в год' },
+    ],
+    yearImpact: 'Рассолы без фосфатов + сухие маринады — твои две главные ниши',
+  },
+  manager_export: {
+    yearGoal: '10 новых клиентов на Халяль/экспорт → +7М ₽ за год',
+    weeklyFocus: 'Холодные продажи экспортёрам · Халяль-позиционирование',
+    metrics: [
+      { label: 'Холодные касания', weekTarget: '50-70 в неделю' },
+      { label: 'Новые встречи', weekTarget: '3-5 в неделю' },
+      { label: 'КП отправлено', weekTarget: '5-8 в неделю' },
+      { label: 'Новых клиентов', weekTarget: '~1 в месяц = 10 в год' },
+    ],
+    yearImpact: 'Экспортёры мяса в Казахстан, ОАЭ, Катар, Вьетнам',
+  },
+  manager_snack: {
+    yearGoal: '10 новых клиентов в снеках/instant/pet → +7М ₽ за год',
+    weeklyFocus: 'Новый рынок · ароматизаторы для снеков, лапши, пет-фуда, бульонов',
+    metrics: [
+      { label: 'Холодные касания', weekTarget: '50-70 в неделю' },
+      { label: 'Новые встречи', weekTarget: '3-5 в неделю' },
+      { label: 'КП отправлено', weekTarget: '5-8 в неделю' },
+      { label: 'Новых клиентов', weekTarget: '~1 в месяц = 10 в год' },
+    ],
+    yearImpact: 'Новый рынок для Verde — снеки, instant-лапша, pet food, сухие бульоны',
+  },
+  am1: {
+    yearGoal: 'Рост среднего заказа у 150 клиентов в мясе → +28М ₽ за год',
+    weeklyFocus: 'QBR с действующими · кросс-сейл рассолы + маринады + ароматизаторы',
+    metrics: [
+      { label: 'QBR проведено', weekTarget: '5-10 в неделю' },
+      { label: 'Касания действующих', weekTarget: '10-15 в неделю' },
+      { label: 'Новые предложения (upsell)', weekTarget: '3-5 в неделю' },
+      { label: 'Рост среднего заказа', weekTarget: 'на +30% к концу года (ТОП-20)' },
+    ],
+    yearImpact: 'ТОП-20 VIP + 80 средних клиентов в мясном сегменте',
+  },
+  am2: {
+    yearGoal: 'Рост среднего заказа у 150 клиентов молочка/рыба → +27М ₽ за год',
+    weeklyFocus: 'QBR с действующими · витамины, ароматизаторы, фортификация',
+    metrics: [
+      { label: 'QBR проведено', weekTarget: '5-10 в неделю' },
+      { label: 'Касания действующих', weekTarget: '10-15 в неделю' },
+      { label: 'Новые предложения (upsell)', weekTarget: '3-5 в неделю' },
+      { label: 'Рост среднего заказа', weekTarget: 'на +30% к концу года' },
+    ],
+    yearImpact: 'Молочка, рыба, готовая еда + фортификация напитков',
+  },
+  claude: {
+    yearGoal: 'Инфраструктура для 350М: КП-генератор, лендинги, автоматизация Bitrix',
+    weeklyFocus: 'По задачам недели: лендинги, email-серии, дашборды, wizards',
+    metrics: [
+      { label: 'Задачи недели', weekTarget: 'см. список ниже' },
+    ],
+    yearImpact: 'Скорость команды × 2-3 через инструменты',
+  },
+};
+
+// Описания вкладок для навигации
+const TAB_INFO = {
+  'team':    { icon: '🏆', title: 'Команда', desc: 'Лидерборд, кластеры, победы, pledge' },
+  'map':     { icon: '🗺️', title: 'Карта 12 недель', desc: 'Весь план по неделям — клик на любую' },
+  'metrics': { icon: '📊', title: 'Трек 250→350', desc: 'Цифры цели, воронка, клиенты, отгрузки' },
+  'scripts': { icon: '💬', title: 'Скрипты и ритуалы', desc: 'Позиционирование, шаблоны, возражения' },
+};
+
 // ───────── STATE ─────────
 // Проверяем что сохранённая роль ещё существует (защита от переименований)
 const _savedRole = localStorage.getItem('verdeSalesRole');
@@ -688,14 +833,33 @@ function setupTabs() {
 
 // ───────── ROLE CARDS ─────────
 function renderRoleCards() {
-  const cardsHtml = ROLES.map(r => `
+  const cardsHtml = ROLES.map(r => {
+    const contrib = ROLE_CONTRIBUTIONS[r.id] || {};
+    return `
     <div class="role-card ${r.id === selectedRole ? 'active' : ''}" data-role-id="${r.id}" onclick="selectRole('${r.id}')">
       <h3>${r.name}</h3>
       <p>${r.scope}</p>
+      ${contrib.yearGoal ? `
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--hair);">
+          <div style="font-size:10px; font-weight:700; color:var(--green-dark); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px;">Твой вклад в 350М</div>
+          <div style="font-size:12px; color:var(--body); font-weight:600; line-height:1.4;">${contrib.yearGoal}</div>
+        </div>
+      ` : ''}
       <div class="role-pick-btn">${r.id === selectedRole ? 'Выбрано ✓' : 'Выбрать роль →'}</div>
     </div>
-  `).join('');
+  `;}).join('');
   document.getElementById('roleCards').innerHTML = cardsHtml;
+}
+
+// ───────── ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ─────────
+function switchTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+  const tabEl = document.querySelector(`.tab[data-tab="${tabId}"]`);
+  const pageEl = document.getElementById(`page-${tabId}`);
+  if (tabEl) tabEl.classList.add('active');
+  if (pageEl) pageEl.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function selectRole(roleId) {
@@ -745,21 +909,83 @@ function renderWeekView() {
   const week = WEEKS.find(w => w.num === selectedWeek);
   if (!week) return;
 
+  const role = ROLES.find(r => r.id === selectedRole);
+  const contrib = ROLE_CONTRIBUTIONS[selectedRole] || {};
+  const tasks = (week.tasks && week.tasks[selectedRole]) || [];
+
+  // ─── ПЕРСОНАЛЬНЫЙ HERO: кто ты + годовой вклад ───
+  const personalHeroEl = document.getElementById('personalHero');
+  if (personalHeroEl) {
+    const metricsHtml = (contrib.metrics || []).map(m => `
+      <div style="background:rgba(15,191,0,0.06); border:1px solid rgba(15,191,0,0.15); border-radius:10px; padding:12px 14px;">
+        <div style="font-size:11px; font-weight:600; color:var(--muted); margin-bottom:4px; line-height:1.3;">${m.label}</div>
+        <div style="font-size:15px; font-weight:700; color:var(--green-dark);">${m.weekTarget}</div>
+      </div>
+    `).join('');
+
+    personalHeroEl.innerHTML = `
+      <div style="background:#fff; border:2px solid var(--green); border-radius:14px; padding:26px 30px; margin-bottom:20px; box-shadow:0 4px 20px rgba(15,191,0,0.08);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+          <div style="flex:1; min-width:260px;">
+            <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:6px;">Привет! Ты —</div>
+            <h2 style="font-size:24px; font-weight:700; color:var(--ink); margin-bottom:8px;">${role ? role.name : '...'}</h2>
+            <div style="font-size:14px; color:var(--body); line-height:1.5;">${contrib.yearGoal || ''}</div>
+            ${contrib.yearImpact ? `<div style="font-size:12px; color:var(--muted); margin-top:6px; font-style:italic;">${contrib.yearImpact}</div>` : ''}
+          </div>
+          <button onclick="backToRoleSelect()" style="background:none; border:1px solid var(--line); padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap;">← Сменить роль</button>
+        </div>
+        ${metricsHtml ? `
+          <div style="border-top:1px solid var(--hair); padding-top:16px;">
+            <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">Твои недельные нормы</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">${metricsHtml}</div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  // ─── 3 КЛЮЧЕВЫХ ДЕЙСТВИЯ ───
+  const topActionsEl = document.getElementById('topActions');
+  if (topActionsEl) {
+    if (tasks.length > 0) {
+      const top3 = tasks.slice(0, 3);
+      topActionsEl.innerHTML = `
+        <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:14px; padding:22px 28px; margin-bottom:20px;">
+          <div style="font-size:11px; font-weight:700; color:#d97706; letter-spacing:0.18em; text-transform:uppercase; margin-bottom:6px;">🎯 Фокус этой недели — Неделя ${week.num} из 12</div>
+          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-bottom:6px;">«${week.title}»</h3>
+          <div style="font-size:13px; color:var(--body); margin-bottom:16px; line-height:1.5;"><b>Цель недели:</b> ${week.goal}</div>
+          <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">3 первоочередных действия:</div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            ${top3.map((t, i) => `
+              <div style="display:flex; gap:14px; align-items:flex-start; background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 16px;">
+                <div style="background:var(--ink); color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0;">${i+1}</div>
+                <div style="flex:1;">
+                  <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.1em; margin-bottom:3px;">${t.day}</div>
+                  <div style="font-size:14px; font-weight:600; color:var(--ink); margin-bottom:3px; line-height:1.4;">${t.task}</div>
+                  ${t.hint ? `<div style="font-size:11px; color:var(--muted); line-height:1.5;">${t.hint}</div>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      topActionsEl.innerHTML = '';
+    }
+  }
+
   // Header
   document.getElementById('weekHeader').innerHTML = `
     <div class="week-header-top">
       <div>
-        <div class="week-num">Неделя ${week.num} · ${week.dates}</div>
+        <div class="week-num">Все задачи недели ${week.num} · ${week.dates}</div>
         <div class="week-title">${week.title}</div>
       </div>
-      <button onclick="backToRoleSelect()" style="background:none; border:1px solid var(--line); padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer;">Сменить роль</button>
     </div>
-    <div class="week-goal"><b>Цель недели:</b> ${week.goal}</div>
     ${week.focus ? `<div class="week-focus">${week.focus}</div>` : ''}
   `;
 
-  // Tasks for this role
-  const tasks = (week.tasks && week.tasks[selectedRole]) || [];
+  // Tasks for this role (tasks уже объявлена выше)
   const taskKey = (i) => `${selectedWeek}_${selectedRole}_${i}`;
 
   let taskHtml = `<div class="task-section-header">Твои задачи на неделю · ${tasks.length} шт</div>`;
@@ -810,6 +1036,25 @@ function renderWeekView() {
   } else {
     document.getElementById('fridayCheckpoint').innerHTML = '';
   }
+
+  // ─── НАВИГАЦИЯ К ДРУГИМ ВКЛАДКАМ ───
+  const quickNavEl = document.getElementById('quickNav');
+  if (quickNavEl) {
+    quickNavEl.innerHTML = `
+      <div style="margin-top:28px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:12px;">Куда ещё заглянуть</div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+          ${Object.entries(TAB_INFO).map(([id, info]) => `
+            <div onclick="switchTab('${id}')" style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:18px 20px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.borderColor='var(--green)'; this.style.transform='translateY(-1px)';" onmouseout="this.style.borderColor='var(--line)'; this.style.transform='translateY(0)';">
+              <div style="font-size:22px; margin-bottom:8px;">${info.icon}</div>
+              <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:3px;">${info.title}</div>
+              <div style="font-size:11px; color:var(--muted); line-height:1.5;">${info.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
 }
 
 function toggleTask(key) {
@@ -819,8 +1064,13 @@ function toggleTask(key) {
 }
 
 function backToRoleSelect() {
+  selectedRole = null;
+  localStorage.removeItem('verdeSalesRole');
   document.getElementById('roleSelector').style.display = 'block';
   document.getElementById('weeklyTasksView').style.display = 'none';
+  renderRoleCards();
+  updateRoleIndicator();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ───────── MAP 12 WEEKS ─────────
