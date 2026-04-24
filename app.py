@@ -842,6 +842,31 @@ def sales_hub():
 
 SALES_TEAM_FEED_FILE = 'sales_team_feed.jsonl'
 SALES_TEAM_SCORES_FILE = 'sales_team_scores.json'
+SALES_CUSTOM_TASKS_FILE = 'sales_custom_tasks.json'
+
+# Кто кому может назначать задачи
+ASSIGN_PERMISSIONS = {
+    'kirill': ['rop', 'manager_meat', 'manager_export', 'manager_snack', 'am1', 'am2'],
+    'rop':    ['manager_meat', 'manager_export', 'manager_snack', 'am1', 'am2'],
+}
+
+
+def _read_custom_tasks():
+    if not os.path.exists(SALES_CUSTOM_TASKS_FILE):
+        return {'tasks': []}
+    try:
+        with open(SALES_CUSTOM_TASKS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {'tasks': []}
+
+
+def _write_custom_tasks(data):
+    try:
+        with open(SALES_CUSTOM_TASKS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[custom-tasks] write error: {e}')
 
 
 def _read_team_feed(limit=100):
@@ -967,6 +992,96 @@ def sales_scores():
     scores[role] = rec
     _write_team_scores(scores)
     return jsonify({'ok': True, 'score': rec})
+
+
+@app.route('/api/sales-custom-tasks', methods=['GET', 'POST'])
+def sales_custom_tasks():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    data_store = _read_custom_tasks()
+
+    if request.method == 'GET':
+        to_role = request.args.get('to_role', '').strip()
+        week = request.args.get('week', '').strip()
+        items = data_store.get('tasks', [])
+        if to_role:
+            items = [t for t in items if t.get('to_role') == to_role]
+        if week:
+            try:
+                w = int(week)
+                items = [t for t in items if t.get('week') == w]
+            except Exception:
+                pass
+        # Новейшие сверху
+        items = sorted(items, key=lambda x: x.get('ts', ''), reverse=True)
+        return jsonify({'tasks': items})
+
+    body = request.get_json() or {}
+    from_role = (body.get('from_role') or '').strip()
+    to_role   = (body.get('to_role') or '').strip()
+    task_text = (body.get('task') or '').strip()
+    hint      = (body.get('hint') or '').strip()
+    day       = (body.get('day') or 'Пн-Пт').strip()
+    try:
+        week = int(body.get('week') or 1)
+    except Exception:
+        week = 1
+
+    if not task_text:
+        return jsonify({'error': 'Пустой текст задачи'}), 400
+    if from_role not in ASSIGN_PERMISSIONS:
+        return jsonify({'error': f'Роль {from_role} не может назначать задачи'}), 403
+    if to_role not in ASSIGN_PERMISSIONS[from_role]:
+        return jsonify({'error': f'{from_role} не может назначать задачи для {to_role}'}), 403
+
+    import uuid
+    new_task = {
+        'id': uuid.uuid4().hex[:12],
+        'ts': datetime.utcnow().isoformat(timespec='seconds') + 'Z',
+        'week': week,
+        'from_role': from_role,
+        'to_role': to_role,
+        'day': day,
+        'task': task_text,
+        'hint': hint,
+        'done': False,
+        'done_at': None,
+    }
+    data_store.setdefault('tasks', []).append(new_task)
+    _write_custom_tasks(data_store)
+    return jsonify({'ok': True, 'task': new_task})
+
+
+@app.route('/api/sales-custom-tasks/<task_id>', methods=['POST', 'DELETE'])
+def sales_custom_task_update(task_id):
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    data_store = _read_custom_tasks()
+    tasks = data_store.get('tasks', [])
+    task = next((t for t in tasks if t.get('id') == task_id), None)
+    if not task:
+        return jsonify({'error': 'Задача не найдена'}), 404
+
+    if request.method == 'DELETE':
+        # Удалить может только автор
+        body = request.get_json(silent=True) or {}
+        by_role = (body.get('by_role') or '').strip()
+        if by_role != task.get('from_role'):
+            return jsonify({'error': 'Удалять может только автор задачи'}), 403
+        data_store['tasks'] = [t for t in tasks if t.get('id') != task_id]
+        _write_custom_tasks(data_store)
+        return jsonify({'ok': True, 'deleted': task_id})
+
+    # POST — toggle done
+    body = request.get_json() or {}
+    action = body.get('action', 'toggle')
+    if action == 'toggle':
+        task['done'] = not task.get('done', False)
+        task['done_at'] = (datetime.utcnow().isoformat(timespec='seconds') + 'Z') if task['done'] else None
+    _write_custom_tasks(data_store)
+    return jsonify({'ok': True, 'task': task})
 
 
 BITRIX_WEBHOOK_URL = os.environ.get('BITRIX_WEBHOOK_URL', '')

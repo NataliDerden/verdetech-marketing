@@ -61,9 +61,13 @@
   .role-card h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
   .role-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .role-card .role-pick-btn {
-    display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 700;
-    color: var(--green-dark); text-transform: uppercase; letter-spacing: 0.08em;
+    display: block; margin-top: 16px; font-size: 14px; font-weight: 700;
+    color: #fff; background: var(--green); text-align: center;
+    padding: 12px 16px; border-radius: 8px;
+    letter-spacing: 0.02em; transition: all 0.15s;
   }
+  .role-card:hover .role-pick-btn { background: var(--green-dark); }
+  .role-card.active .role-pick-btn { background: var(--ink); }
 
   /* ═══ WEEK VIEW ═══ */
   .week-header {
@@ -294,6 +298,12 @@
 
       <!-- Персональное приветствие + вклад в 350М -->
       <div id="personalHero"></div>
+
+      <!-- Задачи от руководителя (только если есть) -->
+      <div id="assignedTasksBlock"></div>
+
+      <!-- Форма назначения задач (только для Кирилла и РОПа) -->
+      <div id="assignerFormBlock"></div>
 
       <!-- 3 ключевых действия -->
       <div id="topActions"></div>
@@ -783,6 +793,12 @@ const TAB_INFO = {
   'scripts': { icon: '💬', title: 'Скрипты и ритуалы', desc: 'Позиционирование, шаблоны, возражения' },
 };
 
+// Кто кому может назначать задачи (должно совпадать с ASSIGN_PERMISSIONS в app.py)
+const ASSIGN_PERMISSIONS = {
+  'kirill': ['rop', 'manager_meat', 'manager_export', 'manager_snack', 'am1', 'am2'],
+  'rop':    ['manager_meat', 'manager_export', 'manager_snack', 'am1', 'am2'],
+};
+
 // ───────── STATE ─────────
 // Проверяем что сохранённая роль ещё существует (защита от переименований)
 const _savedRole = localStorage.getItem('verdeSalesRole');
@@ -845,7 +861,7 @@ function renderRoleCards() {
           <div style="font-size:12px; color:var(--body); font-weight:600; line-height:1.4;">${contrib.yearGoal}</div>
         </div>
       ` : ''}
-      <div class="role-pick-btn">${r.id === selectedRole ? 'Выбрано ✓' : 'Выбрать роль →'}</div>
+      <div class="role-pick-btn">${r.id === selectedRole ? '✓ Моя роль' : 'Это моя роль →'}</div>
     </div>
   `;}).join('');
   document.getElementById('roleCards').innerHTML = cardsHtml;
@@ -1037,6 +1053,10 @@ function renderWeekView() {
     document.getElementById('fridayCheckpoint').innerHTML = '';
   }
 
+  // ─── ЗАДАЧИ ОТ РУКОВОДИТЕЛЯ + ФОРМА НАЗНАЧЕНИЯ ───
+  renderAssignedTasks();
+  renderAssignerForm();
+
   // ─── НАВИГАЦИЯ К ДРУГИМ ВКЛАДКАМ ───
   const quickNavEl = document.getElementById('quickNav');
   if (quickNavEl) {
@@ -1071,6 +1091,182 @@ function backToRoleSelect() {
   renderRoleCards();
   updateRoleIndicator();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ───────── НАЗНАЧЕНИЕ ЗАДАЧ ─────────
+async function renderAssignedTasks() {
+  const el = document.getElementById('assignedTasksBlock');
+  if (!el || !selectedRole) return;
+  try {
+    const res = await fetch(`/api/sales-custom-tasks?to_role=${selectedRole}&week=${selectedWeek}`);
+    const data = await res.json();
+    const tasks = data.tasks || [];
+    if (tasks.length === 0) { el.innerHTML = ''; return; }
+
+    const itemsHtml = tasks.map(t => {
+      const fromRole = ROLES.find(r => r.id === t.from_role);
+      const fromName = fromRole ? fromRole.name : t.from_role;
+      const dt = new Date(t.ts);
+      const dateStr = `${dt.getDate()}.${String(dt.getMonth()+1).padStart(2,'0')}`;
+      return `
+        <div style="display:flex; gap:12px; align-items:flex-start; padding:14px 16px; border-bottom:1px solid var(--hair); ${t.done ? 'opacity:0.5;' : ''}" id="ctask-${t.id}">
+          <div onclick="toggleCustomTask('${t.id}')" style="width:22px; height:22px; border:2px solid ${t.done ? 'var(--green-dark)' : 'var(--faint)'}; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; background:${t.done ? 'var(--green-dark)' : 'transparent'};">
+            ${t.done ? '<span style="color:#fff; font-size:14px; font-weight:700;">✓</span>' : ''}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:10px; font-weight:700; color:#d97706; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:3px;">От ${fromName} · ${t.day} · ${dateStr}</div>
+            <div style="font-size:14px; font-weight:600; color:var(--ink); line-height:1.4; ${t.done ? 'text-decoration:line-through;' : ''}">${escapeHtml(t.task)}</div>
+            ${t.hint ? `<div style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.5;">${escapeHtml(t.hint)}</div>` : ''}
+          </div>
+          ${t.from_role === selectedRole ? `<button onclick="deleteCustomTask('${t.id}')" title="Удалить" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:18px; padding:4px 8px;">✕</button>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    el.innerHTML = `
+      <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:14px; padding:22px 28px; margin-bottom:20px;">
+        <div style="font-size:11px; font-weight:700; color:#d97706; letter-spacing:0.18em; text-transform:uppercase; margin-bottom:14px;">📌 Задачи от руководителя · неделя ${selectedWeek}</div>
+        <div>${itemsHtml}</div>
+      </div>
+    `;
+  } catch (e) {
+    console.error('renderAssignedTasks error:', e);
+    el.innerHTML = '';
+  }
+}
+
+async function toggleCustomTask(id) {
+  try {
+    await fetch(`/api/sales-custom-tasks/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle' }),
+    });
+    renderAssignedTasks();
+  } catch (e) { console.error(e); }
+}
+
+async function deleteCustomTask(id) {
+  if (!confirm('Удалить эту задачу?')) return;
+  try {
+    await fetch(`/api/sales-custom-tasks/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ by_role: selectedRole }),
+    });
+    renderAssignedTasks();
+    renderAssignerForm();
+  } catch (e) { console.error(e); }
+}
+
+async function renderAssignerForm() {
+  const el = document.getElementById('assignerFormBlock');
+  if (!el || !selectedRole) return;
+  const targets = ASSIGN_PERMISSIONS[selectedRole];
+  if (!targets || targets.length === 0) { el.innerHTML = ''; return; }
+
+  const optionsHtml = targets.map(roleId => {
+    const r = ROLES.find(x => x.id === roleId);
+    return `<option value="${roleId}">${r ? r.name : roleId}</option>`;
+  }).join('');
+
+  // Подтянуть уже назначенные задачи этой ролью на этой неделе
+  let sentHtml = '';
+  try {
+    const res = await fetch(`/api/sales-custom-tasks?week=${selectedWeek}`);
+    const data = await res.json();
+    const mine = (data.tasks || []).filter(t => t.from_role === selectedRole);
+    if (mine.length > 0) {
+      sentHtml = `
+        <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--hair);">
+          <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">Уже назначил на этой неделе (${mine.length}):</div>
+          ${mine.map(t => {
+            const r = ROLES.find(x => x.id === t.to_role);
+            const toName = r ? r.name : t.to_role;
+            return `
+              <div style="display:flex; gap:10px; align-items:center; padding:8px 12px; background:var(--hair); border-radius:8px; margin-bottom:6px; font-size:12px; ${t.done ? 'opacity:0.5;' : ''}">
+                <div style="flex:1;">
+                  <b style="color:var(--ink);">→ ${toName}:</b> ${escapeHtml(t.task).slice(0, 80)}${t.task.length > 80 ? '...' : ''}
+                  ${t.done ? ' <span style="color:var(--green-dark); font-weight:700;">✓ выполнено</span>' : ''}
+                </div>
+                <button onclick="deleteCustomTask('${t.id}')" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:14px;">✕</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+  } catch (e) { console.error(e); }
+
+  el.innerHTML = `
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 28px; margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-wrap:wrap; gap:8px;" onclick="toggleAssignForm()">
+        <div>
+          <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:4px;">✍️ Назначить задачу команде</div>
+          <div style="font-size:13px; color:var(--muted);">Задача появится у получателя в блоке «Задачи от руководителя» на выбранной неделе</div>
+        </div>
+        <button id="assignToggleBtn" style="background:var(--green); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">+ Новая задача</button>
+      </div>
+
+      <div id="assignFormInner" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--hair);">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <div>
+            <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Кому</label>
+            <select id="assignTo" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px;">${optionsHtml}</select>
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">День</label>
+            <select id="assignDay" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px;">
+              <option>Пн</option><option>Вт</option><option>Ср</option><option>Чт</option><option>Пт</option>
+              <option selected>Пн-Пт</option><option>Ежедневно</option><option>Вся неделя</option>
+            </select>
+          </div>
+        </div>
+        <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Задача *</label>
+        <textarea id="assignTask" placeholder="Например: Обзвонить 10 клиентов из ТОП-20 с анонсом Халяль" style="width:100%; min-height:60px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical; margin-bottom:10px;"></textarea>
+        <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Подсказка / детали (необязательно)</label>
+        <textarea id="assignHint" placeholder="Детали, ссылки, контекст" style="width:100%; min-height:50px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical; margin-bottom:12px;"></textarea>
+        <button onclick="submitAssignedTask()" style="width:100%; background:var(--ink); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer;">Назначить задачу</button>
+      </div>
+      ${sentHtml}
+    </div>
+  `;
+}
+
+function toggleAssignForm() {
+  const inner = document.getElementById('assignFormInner');
+  const btn = document.getElementById('assignToggleBtn');
+  if (!inner) return;
+  const isOpen = inner.style.display === 'block';
+  inner.style.display = isOpen ? 'none' : 'block';
+  if (btn) btn.textContent = isOpen ? '+ Новая задача' : 'Закрыть';
+}
+
+async function submitAssignedTask() {
+  const to_role = document.getElementById('assignTo').value;
+  const day = document.getElementById('assignDay').value;
+  const task = document.getElementById('assignTask').value.trim();
+  const hint = document.getElementById('assignHint').value.trim();
+  if (!task) { alert('Заполни текст задачи'); return; }
+
+  try {
+    const res = await fetch('/api/sales-custom-tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from_role: selectedRole,
+        to_role, day, task, hint,
+        week: selectedWeek,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) { alert('Ошибка: ' + data.error); return; }
+    document.getElementById('assignTask').value = '';
+    document.getElementById('assignHint').value = '';
+    toggleAssignForm();
+    renderAssignerForm();
+    renderAssignedTasks();
+  } catch (e) { alert('Ошибка: ' + e.message); }
 }
 
 // ───────── MAP 12 WEEKS ─────────
