@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>КП Verde Tech — шаблон</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --green: #0FBF00;
+    --white: #FFFFFF;
+    --soft: #FCFCFC;
+    --mustard: #F2B42A;
+    --gray: #E8E8E8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    font-family: 'Onest', -apple-system, system-ui, sans-serif;
+    background: #D4D4D4;
+    color: var(--black);
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .toolbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--black);
+    color: var(--white);
+    padding: 12px 24px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+  }
+  .toolbar button {
+    background: var(--green);
+    color: var(--white);
+    border: none;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  .toolbar button:hover { opacity: 0.9; }
+  .deck {
+    padding: 72px 24px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .slide {
+    width: 1280px;
+    height: 720px;
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+  }
+  .slide__header {
+    padding: 32px 48px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .slide__header .wordmark {
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+  .slide__header .wordmark sup { font-size: 0.6em; vertical-align: super; }
+  .slide__header .slide-num { color: #888; font-weight: 400; }
+  .slide__body {
+    flex: 1;
+    padding: 24px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .slide__footer {
+    padding: 16px 48px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--gray);
+    font-size: 12px;
+    color: #666;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .logo-mark svg { width: 100%; height: 100%; }
+
+  h1 { font-size: 64px; font-weight: 900; line-height: 1.05; letter-spacing: -0.02em; }
+  h2 { font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -0.01em; }
+  h3 { font-size: 28px; font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
+  p { font-size: 20px; line-height: 1.5; margin-bottom: 12px; }
+  .lead { font-size: 24px; color: #333; font-weight: 400; }
+  .tiny { font-size: 13px; color: #888; }
+
+  .accent { color: var(--green); }
+  .accent-bg { background: var(--green); color: var(--white); }
+  .highlight-box {
+    background: var(--green);
+    color: var(--white);
+    padding: 24px 32px;
+    border-radius: 8px;
+    display: inline-block;
+    font-size: 32px;
+    font-weight: 800;
+    margin: 16px 0;
+  }
+
+  /* Cover slide */
+  .cover {
+    background: var(--white);
+    justify-content: flex-end;
+  }
+  .cover .slide__body {
+    padding: 48px;
+    justify-content: flex-end;
+  }
+  .cover-mark {
+    position: absolute;
+    top: 48px; left: 48px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .cover-mark .wordmark-large { font-size: 24px; font-weight: 800; letter-spacing: 0.02em; }
+  .cover-mark .logo-mark { width: 48px; height: 48px; }
+  .cover-floral {
+    position: absolute;
+    right: -120px;
+    bottom: -120px;
+    width: 500px;
+    height: 500px;
+    opacity: 0.08;
+  }
+  .cover-date {
+    position: absolute;
+    top: 48px; right: 48px;
+    font-size: 14px; font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .cover-tagline {
+    position: absolute;
+    bottom: 48px; right: 48px;
+    font-size: 14px; font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .cover-tagline .accent-line {
+    display: inline-block;
+    width: 24px;
+    height: 2px;
+    background: var(--green);
+    margin-right: 12px;
+    vertical-align: middle;
+  }
+  .cover h1 {
+    max-width: 900px;
+    margin-bottom: 24px;
+  }
+  .cover .client {
+    font-size: 32px;
+    font-weight: 500;
+    color: #444;
+    border-left: 4px solid var(--green);
+    padding-left: 20px;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 24px;
+    margin: 32px 0;
+  }
+  .stat .num {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--green);
+  }
+  .stat .label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #333;
+    margin-top: 8px;
+  }
+
+  /* Pain cards */
+  .pain-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .pain-card {
+    background: var(--soft);
+    border-left: 4px solid var(--green);
+    padding: 24px;
+  }
+  .pain-card .icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    color: var(--green);
+    font-weight: 900;
+  }
+  .pain-card h4 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .pain-card p {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.5;
+  }
+
+  /* Product spec table */
+  table.spec {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+  }
+  table.spec th, table.spec td {
+    text-align: left;
+    padding: 14px 16px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--gray);
+  }
+  table.spec th {
+    background: var(--black);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  table.spec td:first-child {
+    font-weight: 600;
+    width: 30%;
+  }
+  table.spec td:nth-child(2) {
+    font-weight: 700;
+    color: var(--black);
+    width: 30%;
+  }
+  table.spec td:last-child {
+    color: #666;
+    font-size: 14px;
+  }
+
+  /* ROI */
+  .roi-block {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--gray);
+    border: 2px solid var(--black);
+    margin-top: 16px;
+  }
+  .roi-col { padding: 24px; background: var(--white); }
+  .roi-col.highlight { background: var(--green); color: var(--white); }
+  .roi-col h4 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .roi-col .big {
+    font-size: 40px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .roi-col .label {
+    font-size: 13px;
+    margin-top: 8px;
+    color: #666;
+  }
+  .roi-col.highlight .label { color: rgba(255,255,255,0.85); }
+  .roi-conclusion {
+    margin-top: 24px;
+    padding: 20px 24px;
+    background: var(--black);
+    color: var(--white);
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .roi-conclusion .accent { color: var(--green); font-weight: 900; font-size: 28px; }
+
+  /* Cases */
+  .case-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .case-card {
+    background: var(--white);
+    border: 1px solid var(--gray);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .case-card .segment {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--green);
+  }
+  .case-card .client-name {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .case-card .result {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 2px solid var(--green);
+  }
+
+  /* Terms list */
+  .terms-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 48px;
+    margin-top: 16px;
+  }
+  .terms-list .term {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray);
+    font-size: 17px;
+  }
+  .terms-list .term .key {
+    color: #666;
+    font-weight: 500;
+  }
+  .terms-list .term .val {
+    font-weight: 700;
+  }
+
+  /* Docs list */
+  .docs-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 32px;
+    margin-top: 24px;
+  }
+  .docs-list .doc {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--soft);
+  }
+  .docs-list .doc .check {
+    width: 32px; height: 32px;
+    background: var(--green);
+    color: var(--white);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .docs-list .doc .name { font-size: 17px; font-weight: 500; }
+
+  /* Next steps */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .step {
+    background: var(--white);
+    padding: 24px;
+    border: 2px solid var(--black);
+    position: relative;
+  }
+  .step .week {
+    position: absolute;
+    top: -14px; left: 16px;
+    background: var(--green);
+    color: var(--white);
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .step h5 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    margin-top: 8px;
+  }
+  .step p { font-size: 15px; color: #555; }
+
+  /* Contact */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 24px;
+    align-items: center;
+  }
+  .contact-card {
+    background: var(--black);
+    color: var(--white);
+    padding: 32px;
+  }
+  .contact-card .name {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .contact-card .role {
+    font-size: 16px;
+    color: var(--green);
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  .contact-card .contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 16px;
+  }
+  .contact-card .contacts a {
+    color: var(--white);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(15,191,0,0.5);
+  }
+  .contact-mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .contact-mark .logo-mark { width: 140px; height: 140px; }
+  .contact-mark .wm { font-size: 28px; font-weight: 800; letter-spacing: 0.02em; }
+  .contact-mark .tagline {
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-align: center;
+    color: #444;
+  }
+
+  .reqs {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--gray);
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  /* Editable hint */
+  [contenteditable] {
+    outline: none;
+    transition: background 0.15s;
+  }
+  [contenteditable]:hover {
+    background: rgba(15, 191, 0, 0.08);
+    cursor: text;
+  }
+  [contenteditable]:focus {
+    background: rgba(15, 191, 0, 0.12);
+    box-shadow: 0 0 0 2px var(--green);
+  }
+
+  /* Print — A4 landscape, 1 slide per page */
+  @media print {
+    body { background: var(--white); }
+    .toolbar { display: none; }
+    .deck { padding: 0; gap: 0; }
+    .slide {
+      width: 100%;
+      height: 100vh;
+      box-shadow: none;
+      page-break-after: always;
+    }
+    @page { size: A4 landscape; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div>Verde Tech — КП · шаблон редактируется прямо в браузере</div>
+  <div>
+    <button onclick="window.print()">Сохранить в PDF</button>
+    <button onclick="document.querySelectorAll('[contenteditable]').forEach(el=>el.setAttribute('contenteditable', el.getAttribute('contenteditable')==='true'?'false':'true'))">Вкл/выкл редактор</button>
+  </div>
+</div>
+
+<div class="deck">
+
+  <!-- SLIDE 1: COVER -->
+  <div class="slide cover">
+    <div class="cover-mark">
+      <span class="logo-mark">
+        <svg viewBox="0 0 64 64" fill="currentColor"><ellipse cx="32" cy="16" rx="8" ry="14"/><ellipse cx="48" cy="32" rx="14" ry="8"/><ellipse cx="32" cy="48" rx="8" ry="14"/><ellipse cx="16" cy="32" rx="14" ry="8"/></svg>
+      </span>
+      <span class="wordmark-large">VERDE<sup>®</sup>TECH</span>
+    </div>
+    <div class="cover-date" contenteditable="true">23 АПРЕЛЯ 2026</div>
+    <div class="cover-floral">
+      <svg viewBox="0 0 64 64" fill="currentColor"><ellipse cx="32" cy="16" rx="8" ry="14"/><ellipse cx="48" cy="32" rx="14" ry="8"/><ellipse cx="32" cy="48" rx="8" ry="14"/><ellipse cx="16" cy="32" rx="14" ry="8"/></svg>
+    </div>
+    <div class="slide__body">
+      <div class="tiny" style="margin-bottom: 16px; color:#888; letter-spacing:0.15em; text-transform:uppercase;">Коммерческое предложение</div>
+      <h1 contenteditable="true">Премикс витамина D<br><span class="accent">для мясокомбината</span></h1>
+      <div class="client" contenteditable="true">ООО «Название Клиента»</div>
+    </div>
+    <div class="cover-tagline">
+      <span class="accent-line"></span>
+      <span>Забота о будущем</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: ABOUT -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">02 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Verde Tech за 15 секунд</h2>
+      <p class="lead" style="margin-top:16px; max-width: 900px;" contenteditable="true">
+        Производитель натуральных пищевых ингредиентов из&nbsp;Санкт-Петербурга.
+        Разрабатываем решения, которые сохраняют полезные свойства, снижают себестоимость
+        и&nbsp;проходят аудиты без вопросов.
+      </p>
+      <div class="stats-row">
+        <div class="stat"><div class="num">300+</div><div class="label">B2B клиентов</div></div>
+        <div class="stat"><div class="num">12</div><div class="label">лет на рынке</div></div>
+        <div class="stat"><div class="num">R&amp;D</div><div class="label">партнёрство с ИТМО</div></div>
+        <div class="stat"><div class="num">МТК</div><div class="label">статус 2024</div></div>
+        <div class="stat"><div class="num">СПб</div><div class="label">собственный цех</div></div>
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>О&nbsp;компании</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: PAIN -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">03 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Что сегодня мешает расти</h2>
+      <p class="lead" style="margin-top:12px;" contenteditable="true">Три задачи, которые мы слышим от технологов мясопереработки в 2026 году:</p>
+      <div class="pain-grid">
+        <div class="pain-card">
+          <div class="icon">01</div>
+          <h4 contenteditable="true">Потери при термообработке</h4>
+          <p contenteditable="true">Выход 94-96% — миллионы рублей уходят в пар. Нужна технология стабилизации.</p>
+        </div>
+        <div class="pain-card">
+          <div class="icon">02</div>
+          <h4 contenteditable="true">Давление на фосфаты</h4>
+          <p contenteditable="true">Ритейл требует Clean Label, потребитель читает составы. Без фосфатов выход падает.</p>
+        </div>
+        <div class="pain-card">
+          <div class="icon">03</div>
+          <h4 contenteditable="true">Новые требования по пищевой ценности</h4>
+          <p contenteditable="true">Обогащение витамином D — маркировка, конкурентное преимущество, но затраты на сертификацию.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>Задача клиента</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: SOLUTION -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">04 / 12</span>
+    </div>
+    <div class="slide__body" style="justify-content:center; align-items:flex-start;">
+      <div class="tiny" style="margin-bottom:16px; color:#888; letter-spacing:0.15em; text-transform:uppercase;">Решение</div>
+      <h1 style="font-size:56px; max-width:1000px;" contenteditable="true">
+        <span class="accent">V Smart Plus D</span> — премикс витамина D для колбасных изделий.
+        <span style="color:#444; font-weight:500;">+40% пищевой ценности при той же себестоимости.</span>
+      </h1>
+      <div class="highlight-box" style="margin-top:32px;" contenteditable="true">
+        Один премикс → витамин D + стабилизация выхода + Clean Label
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>Продукт одной фразой</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: TECHNOLOGY -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">05 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Как работает</h2>
+      <p class="lead" style="margin-top:12px;" contenteditable="true">Технология микрокапсуляции витамина D с носителем на основе инулина.</p>
+      <div class="steps" style="margin-top:40px;">
+        <div class="step">
+          <div class="week">Этап 1</div>
+          <h5 contenteditable="true">Вносим на куттеровании</h5>
+          <p contenteditable="true">Премикс добавляется со специями, 0,5 г/кг мясного сырья. Никаких изменений в тех-карте.</p>
+        </div>
+        <div class="step">
+          <div class="week">Этап 2</div>
+          <h5 contenteditable="true">Инкапсуляция работает в термокамере</h5>
+          <p contenteditable="true">Микрокапсулы раскрываются при 72°C, высвобождая витамин D и стабилизируя белковую матрицу.</p>
+        </div>
+        <div class="step">
+          <div class="week">Этап 3</div>
+          <h5 contenteditable="true">Результат в готовом продукте</h5>
+          <p contenteditable="true">+2-3% выход, витамин D 1000 МЕ на 100 г, срок годности без изменений.</p>
+        </div>
+      </div>
+      <p class="tiny" style="margin-top:24px;" contenteditable="true">
+        Исследование проведено совместно с&nbsp;ИТМО. Протокол испытаний №178/2025 — приложение&nbsp;2.
+      </p>
+    </div>
+    <div class="slide__footer">
+      <span>Технология</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: SPECS -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">06 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Характеристики V Smart Plus D</h2>
+      <table class="spec">
+        <thead>
+          <tr><th>Параметр</th><th>Значение</th><th>Комментарий</th></tr>
+        </thead>
+        <tbody>
+          <tr><td contenteditable="true">Действующее вещество</td><td contenteditable="true">Витамин D3</td><td contenteditable="true">1000 МЕ/100 г готового продукта</td></tr>
+          <tr><td contenteditable="true">Дозировка</td><td contenteditable="true">0,5 г/кг сырья</td><td contenteditable="true">Расчёт через калькулятор на academy.verdetech.ru</td></tr>
+          <tr><td contenteditable="true">Носитель</td><td contenteditable="true">Инулин</td><td contenteditable="true">Натуральный пребиотик, Clean Label</td></tr>
+          <tr><td contenteditable="true">Срок хранения</td><td contenteditable="true">24 месяца</td><td contenteditable="true">При t +15…+25 °C, сух. месте</td></tr>
+          <tr><td contenteditable="true">Упаковка</td><td contenteditable="true">5 кг / 25 кг</td><td contenteditable="true">Металлизированный мешок с клапаном</td></tr>
+          <tr><td contenteditable="true">Сертификаты</td><td contenteditable="true">ТР ТС 021, 029</td><td contenteditable="true">Декларация в приложении</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="slide__footer">
+      <span>Характеристики</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: ROI -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">07 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Экономика на 1 тонну готового продукта</h2>
+      <div class="roi-block">
+        <div class="roi-col">
+          <h4>Сейчас</h4>
+          <div class="big" contenteditable="true">80 000 ₽</div>
+          <div class="label">маржа/тонна</div>
+          <p style="margin-top:16px; font-size:14px; color:#666;" contenteditable="true">Выход 96%<br>Без обогащения</p>
+        </div>
+        <div class="roi-col highlight">
+          <h4>С V Smart Plus D</h4>
+          <div class="big" contenteditable="true">84 500 ₽</div>
+          <div class="label">маржа/тонна</div>
+          <p style="margin-top:16px; font-size:14px;" contenteditable="true">Выход 98,5%<br>Витамин D 1000 МЕ</p>
+        </div>
+        <div class="roi-col">
+          <h4>Прирост</h4>
+          <div class="big accent" contenteditable="true">+4 500 ₽</div>
+          <div class="label">на каждой тонне</div>
+          <p style="margin-top:16px; font-size:14px; color:#666;" contenteditable="true">+2,5% выход<br>+ премия за Clean Label</p>
+        </div>
+      </div>
+      <div class="roi-conclusion">
+        На объёме <span contenteditable="true">500 тонн/год</span> — <span class="accent" contenteditable="true">+2,25 млн ₽ прибыли</span>
+      </div>
+      <p class="tiny" style="margin-top:16px;" contenteditable="true">
+        Расчёт ориентировочный. Точные цифры — после пилота на&nbsp;вашей линии.
+        Онлайн-калькулятор: academy.verdetech.ru/calc
+      </p>
+    </div>
+    <div class="slide__footer">
+      <span>ROI</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: CASES -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">08 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Кто уже использует</h2>
+      <div class="case-grid">
+        <div class="case-card">
+          <div class="segment" contenteditable="true">Мясокомбинат · ТОП-50 РФ</div>
+          <div class="client-name" contenteditable="true">Крупный производитель колбас</div>
+          <div class="result" contenteditable="true">+3% выход, -1,2 млн ₽/мес на сырье</div>
+        </div>
+        <div class="case-card">
+          <div class="segment" contenteditable="true">Птицефабрика</div>
+          <div class="client-name" contenteditable="true">«Заря», Ленинградская обл.</div>
+          <div class="result" contenteditable="true">Clean Label без потери цвета, вход в X5</div>
+        </div>
+        <div class="case-card">
+          <div class="segment" contenteditable="true">Мясопереработка</div>
+          <div class="client-name" contenteditable="true">ООО «Колбасов»</div>
+          <div class="result" contenteditable="true">Сертификация Халяль, экспорт в Казахстан</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>Кейсы</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: TERMS -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">09 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Условия поставки</h2>
+      <div class="terms-list">
+        <div class="term"><span class="key">Минимальная партия</span><span class="val" contenteditable="true">25 кг</span></div>
+        <div class="term"><span class="key">Цена, от</span><span class="val" contenteditable="true">2 400 ₽/кг</span></div>
+        <div class="term"><span class="key">Срок поставки</span><span class="val" contenteditable="true">5–10 рабочих дней</span></div>
+        <div class="term"><span class="key">Отсрочка</span><span class="val" contenteditable="true">до 30 дней</span></div>
+        <div class="term"><span class="key">География</span><span class="val" contenteditable="true">РФ, ЕАЭС</span></div>
+        <div class="term"><span class="key">Логистика</span><span class="val" contenteditable="true">самовывоз СПб / доставка от 100 кг</span></div>
+        <div class="term"><span class="key">Оплата</span><span class="val" contenteditable="true">безнал по договору поставки</span></div>
+        <div class="term"><span class="key">Образцы</span><span class="val" contenteditable="true">до 2 кг — бесплатно</span></div>
+      </div>
+      <div class="highlight-box" style="margin-top:32px; font-size:22px;" contenteditable="true">
+        Шкала скидок: от 100 кг — 5%, от 500 кг — 10%, от 1 т — индивидуально
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>Коммерческие условия</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: DOCS -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">10 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Документы и сертификаты</h2>
+      <p class="lead" style="margin-top:8px;" contenteditable="true">Полный пакет предоставляем вместе с&nbsp;первым образцом.</p>
+      <div class="docs-list">
+        <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">Декларация о соответствии ТР ТС 021/2011</div></div>
+        <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">ТР ТС 029/2012 (пищевые добавки)</div></div>
+        <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">ТУ / Технологическая инструкция</div></div>
+        <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">Протокол испытаний №178/2025 (ИТМО)</div></div>
+        <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">Сертификат Халяль</div></div>
+        <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">Паспорт безопасности</div></div>
+      </div>
+      <p class="tiny" style="margin-top:24px;" contenteditable="true">
+        Запросить полный пакет: <span class="accent">docs@verdetech.ru</span> или через менеджера.
+      </p>
+    </div>
+    <div class="slide__footer">
+      <span>Документация</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 11: NEXT STEPS -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">11 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Как работаем дальше</h2>
+      <p class="lead" style="margin-top:12px;" contenteditable="true">Три недели от вашего «да» до первой коммерческой поставки.</p>
+      <div class="steps" style="margin-top:48px;">
+        <div class="step">
+          <div class="week">Неделя 1</div>
+          <h5 contenteditable="true">Образец + пилот</h5>
+          <p contenteditable="true">Отправляем 500 г премикса + протокол испытаний. Ваш технолог закладывает на линию.</p>
+        </div>
+        <div class="step">
+          <div class="week">Неделя 2</div>
+          <h5 contenteditable="true">Замер KPI</h5>
+          <p contenteditable="true">Проба на партии 100 кг. Считаем выход, фиксируем результат, готовим акт.</p>
+        </div>
+        <div class="step">
+          <div class="week">Неделя 3</div>
+          <h5 contenteditable="true">Договор + поставка</h5>
+          <p contenteditable="true">Подписываем договор поставки. Первая коммерческая партия на&nbsp;ваш склад.</p>
+        </div>
+      </div>
+      <div class="highlight-box" style="margin-top:32px; font-size:18px;" contenteditable="true">
+        Бонус клиентам Verde Tech: бесплатный доступ в&nbsp;Академию Вердэ — ROI-калькулятор, справочники, вебинары
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>Следующие шаги</span>
+      <span>verdetech.ru · +7 812 607 64 28</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 12: CONTACTS -->
+  <div class="slide">
+    <div class="slide__header">
+      <span class="wordmark">VERDE<sup>®</sup>TECH</span>
+      <span class="slide-num">12 / 12</span>
+    </div>
+    <div class="slide__body">
+      <h2>Ваш контакт в Verde Tech</h2>
+      <div class="contact-grid">
+        <div class="contact-card">
+          <div class="name" contenteditable="true">Анастасия Васильева</div>
+          <div class="role" contenteditable="true">Исполнительный директор</div>
+          <div class="contacts">
+            <span contenteditable="true">+7 913 677 22 57</span>
+            <a href="#" contenteditable="true">vasileva.a@verdespb.ru</a>
+            <a href="#" contenteditable="true">t.me/verde_tech</a>
+            <a href="#" contenteditable="true">verdetech.ru</a>
+          </div>
+        </div>
+        <div class="contact-mark">
+          <span class="logo-mark">
+            <svg viewBox="0 0 64 64" fill="currentColor"><ellipse cx="32" cy="16" rx="8" ry="14"/><ellipse cx="48" cy="32" rx="14" ry="8"/><ellipse cx="32" cy="48" rx="8" ry="14"/><ellipse cx="16" cy="32" rx="14" ry="8"/></svg>
+          </span>
+          <span class="wm">VERDE<sup>®</sup>TECH</span>
+          <span class="tagline">Забота о будущем</span>
+        </div>
+      </div>
+      <div class="reqs" contenteditable="true">
+        ООО «Вердэ» · ИНН 7842103837 · КПП 784201001 · ОГРН 1127847022637<br>
+        Юр. адрес: 197375, г. Санкт-Петербург, ул. Вербная, д. 27, лит. А, пом. 231<br>
+        Тел: +7 (812) 607 64 28 · verdetech.ru · info@verdespb.ru
+      </div>
+    </div>
+    <div class="slide__footer">
+      <span>Контакты</span>
+      <span>Коммерческое предложение · страница 12 из 12</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Все тексты-редактируемые — остаются такими после сохранения, но можно через кнопку «Вкл/выкл» заморозить
+</script>
+
+</body>
+</html>

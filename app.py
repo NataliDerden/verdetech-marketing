@@ -1,8 +1,358 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, render_template_string, request, redirect, url_for, session, jsonify, send_from_directory
 from functools import wraps
 from dotenv import load_dotenv
 import requests
 import os
+import json
+import re
+from datetime import datetime, timedelta
+from products_catalog import (
+    COMPANY_CONTEXT, ALL_PRODUCTS, CATEGORIES, get_product, get_cases_for_industry
+)
+try:
+    from products_specs import PRODUCT_SPECS
+except ImportError:
+    PRODUCT_SPECS = {}
+
+try:
+    from products_prices import lookup_price, format_price, get_category_pricelist, PRICE_VALID_UNTIL
+except ImportError:
+    def lookup_price(_): return None
+    def format_price(_): return {}
+    PRICE_VALID_UNTIL = ''
+
+# Расширенная база всех 829 спецификаций (3 МБ)
+try:
+    from products_specs_all import ALL_SPECS as _ALL_SPECS_RAW
+except ImportError:
+    _ALL_SPECS_RAW = {}
+
+
+def get_first_line(text, limit=120):
+    """Извлечь первую содержательную строку (описание продукта) из спецификации."""
+    for line in text.split('\n'):
+        line = line.strip()
+        if len(line) > 10 and not line.isupper() and 'ОПИСАНИЕ' not in line.upper()[:15]:
+            return line[:limit]
+    # fallback: первая непустая строка
+    for line in text.split('\n'):
+        if line.strip():
+            return line.strip()[:limit]
+    return ''
+
+
+# Категории и подпути с именами клиентов — НЕ показывать в публичном селекторе
+CLIENT_CATEGORIES = {
+    'спецификации ЗМК',
+    'спецификации Орелпродукт',
+    'спецификации Рефтинская',
+    'спецификации СПК',
+    'спецификации КАФФА',
+}
+CLIENT_PATH_MARKERS = [
+    'Аромарос', 'Спецальянс', 'Фрегат', 'Магазин', 'Светофор',
+    'ЗМК', 'КАФФА', 'Орелпродукт', 'Рефтинская', 'СПК',
+    'Кузин', 'Мельница', 'Волга Трейд', 'ПрофиТТ', 'Хвалана трейд',
+]
+# Папки с документами, а не продуктами
+NON_PRODUCT_PATHS = ['декларации', 'Протоколы испытаний', 'НЕ ИСПОЛЬЗОВАТЬ']
+
+
+# Категории-обёртки — отображаемое имя для UI
+CATEGORY_DISPLAY_NAMES = {
+    'витамины V Smart Plus': 'Витамины V Smart Plus',
+    'КПД спецификации': 'Комплексные пищевые добавки',
+    'смеси пряностей': 'Смеси пряностей и маринады',
+    'смеси Для соусов': 'Смеси для соусов',
+    'смеси для засолки': 'Смеси для засолки',
+    'СПЕЦИИ моно': 'Моноспеции',
+    'спецификации чаи': 'Чаи и напитки',
+}
+
+
+def _is_client_spec(category, path):
+    """Это спецификация клиента (не показываем)?"""
+    if category in CLIENT_CATEGORIES:
+        return True
+    if any(marker in path for marker in CLIENT_PATH_MARKERS):
+        return True
+    if any(np in path for np in NON_PRODUCT_PATHS):
+        return True
+    return False
+
+
+def _sub_category_from_path(path):
+    """Вытащить подкатегорию из пути (второй уровень если есть)."""
+    parts = path.replace('\\', '/').split('/')
+    if len(parts) >= 2:
+        sub = parts[1]
+        # Эвристика: если в названии подпапки есть '(', берём до скобки
+        return sub.split('(')[0].strip()
+    return ''
+
+
+def build_unified_products():
+    """Объединяем curated catalog + raw specs в единый индекс (без клиентских спек)."""
+    unified = {}
+    # Curated продукты — приоритет, ключ = id
+    for p in ALL_PRODUCTS:
+        unified[p['id']] = {
+            'id': p['id'],
+            'name': p['name'],
+            'category': p['category'],
+            'dose': p.get('dose', ''),
+            'purpose': p.get('purpose', ''),
+            'source': 'catalog',
+            'curated': p,
+        }
+    # Raw specs — добавляем всё, что не перекрывается с curated и не клиентское
+    skipped_client = 0
+    for name, meta in _ALL_SPECS_RAW.items():
+        category = meta.get('category', 'Другое')
+        path = meta.get('path', '')
+        if _is_client_spec(category, path):
+            skipped_client += 1
+            continue
+        pid = 'spec:' + name
+        if pid in unified:
+            continue
+        sub_cat = _sub_category_from_path(path)
+        display_cat = CATEGORY_DISPLAY_NAMES.get(category, category)
+        if sub_cat and sub_cat.lower() not in ('смеси специй с характеристиками',):
+            display_cat = f'{display_cat} · {sub_cat}'
+        unified[pid] = {
+            'id': pid,
+            'name': name,
+            'category': display_cat,
+            'base_category': category,
+            'dose': '',
+            'purpose': get_first_line(meta.get('text', ''), 100),
+            'source': 'spec',
+            'path': path,
+        }
+    print(f'[filter] Скрыто клиентских/документных спек: {skipped_client}')
+    return unified
+
+
+UNIFIED_PRODUCTS = build_unified_products()
+print(f'[startup] Unified products: {len(UNIFIED_PRODUCTS)} ({sum(1 for p in UNIFIED_PRODUCTS.values() if p["source"]=="catalog")} curated + {sum(1 for p in UNIFIED_PRODUCTS.values() if p["source"]=="spec")} raw specs)')
+
+
+# Типовые bundle-сценарии: какой тип продукта → какие сопутствующие категории
+BUNDLE_RULES = {
+    # Если продукт — колбасный премикс или КПД: предлагаем краситель + ароматизатор + стабилизатор
+    'колбас': ['красители', 'ароматизаторы', 'стабилизатор', 'эмультек'],
+    'сосиск': ['красители', 'ароматизаторы', 'стабилизатор'],
+    'мортадел': ['красители', 'ароматизаторы', 'экстракт'],
+    'ветчин': ['стабилизатор', 'ФРЕШ', 'красители'],
+    'паштет': ['стабилизатор', 'ароматизаторы'],
+    'салями': ['стартовые культуры', 'красители', 'ароматизаторы'],
+    # Маринады — предлагаем смеси пряностей + экстракты
+    'маринад': ['экстракт', 'специи', 'ароматизатор'],
+    'смеси пряностей': ['экстракт', 'специи'],
+    # Витамины — предлагаем другие витамины для комплексного обогащения
+    'витамин': ['витамины', 'инулин', 'пребиотик'],
+    'v smart plus': ['витамины', 'инулин'],
+    # Красители — предлагаем ароматизаторы и стабилизаторы
+    'красител': ['ароматизатор', 'стабилизатор'],
+    # Стабилизаторы — к ним маринады и красители
+    'эмультек': ['красители', 'ароматизатор', 'маринад'],
+    'фреш': ['красители', 'стабилизатор', 'ароматизатор'],
+    # Соусы
+    'соус': ['экстракт', 'ароматизатор', 'специи'],
+    # Хлебопечение
+    'хлеб': ['улучшитель', 'фермент', 'витамины'],
+    'выпечк': ['улучшитель', 'фермент'],
+    # Снеки
+    'снек': ['ароматизатор', 'специи', 'красител'],
+}
+
+
+INDUSTRY_BOOST_KEYWORDS = {
+    'Напитки': ['экстракт', 'витамин', 'smart plus', 'инулин', 'ароматизатор', 'антиоксидант', 'клетчатк', 'пребиотик', 'кориандр', 'гвоздик', 'мускат'],
+    'HoReCa': ['маринад', 'приправ', 'соус', 'экстракт', 'специи', 'ароматизатор'],
+    'Хлебопекарная': ['улучшитель', 'фермент', 'витамин', 'инулин', 'разрыхл', 'smart plus', 'эмульгатор'],
+    'Готовая еда / полуфабрикаты': ['маринад', 'приправ', 'соус', 'специи', 'экстракт', 'стабилизатор', 'рассол', 'вкусоароматическ'],
+    'Мясопереработка': ['колбас', 'мортадел', 'эмультек', 'фреш', 'супер', 'ветчин', 'инъекта', 'паштет', 'стабилизатор', 'краситель', 'маринад', 'рассол', 'фосфат'],
+    'Птицепереработка': ['инъекта', 'маринад', 'ароматизатор', 'специи', 'экстракт', 'рассол'],
+    'Молочная промышленность': ['витамин', 'smart plus', 'инулин', 'пребиотик', 'стабилизатор', 'ароматизатор', 'экстракт'],
+    'Рыбопереработка': ['маринад', 'рассол', 'специи', 'экстракт', 'антиоксидант'],
+}
+
+
+def build_catalog_index_for_prompt(industry=None, max_items=150):
+    """Компактный каталог для передачи Claude — с отраслевым бустом."""
+    items = []
+    # Курированные всегда в индексе (это самые продаваемые)
+    for p in ALL_PRODUCTS:
+        items.append({
+            'id': p['id'],
+            'name': p['name'],
+            'category': p.get('category', ''),
+            'dose': p.get('dose', ''),
+            'purpose': p.get('purpose', '')[:100],
+        })
+
+    # Отраслевые ключевые слова + общий приоритет
+    industry_kw = INDUSTRY_BOOST_KEYWORDS.get(industry, [])
+    base_kw = ['технолог', 'комплексная', 'эмультек', 'фреш', 'супер', 'умн', 'краситель', 'стабилизатор', 'маринад', 'рассол', 'витамин', 'инулин']
+    priority_keywords = list(set(industry_kw + base_kw))
+
+    # Сначала приоритетные по keywords
+    added_ids = {i['id'] for i in items}
+    priority = []
+    regular = []
+    for name, meta in _ALL_SPECS_RAW.items():
+        pid = 'spec:' + name
+        if pid in added_ids:
+            continue
+        category = meta.get('category', '')
+        path = meta.get('path', '')
+        if _is_client_spec(category, path):
+            continue
+        nm = name.lower()
+        cat = category.lower()
+        is_priority = any(k in nm or k in cat for k in priority_keywords)
+        entry = {
+            'id': pid,
+            'name': name,
+            'category': category,
+            'dose': '',
+            'purpose': get_first_line(meta.get('text', ''), 80),
+        }
+        if is_priority:
+            priority.append(entry)
+        else:
+            regular.append(entry)
+
+    # Добавляем приоритетные до max_items
+    items.extend(priority[:max_items - len(items)])
+    # Добиваем обычными
+    remaining = max_items - len(items)
+    if remaining > 0:
+        items.extend(regular[:remaining])
+
+    return items
+
+
+INDUSTRY_BRIEF_FILES = {
+    'Мясопереработка': 'meat.md',
+    'Птицепереработка': 'poultry.md',
+    'Молочная промышленность': 'dairy.md',
+    'Хлебопекарная': 'bread.md',
+    'Рыбопереработка': 'fish.md',
+    'HoReCa': 'horeca.md',
+    'Готовая еда / полуфабрикаты': 'ready-food.md',
+    'Напитки': 'beverages.md',
+}
+
+
+def load_industry_brief(industry):
+    """Загрузить отраслевой бриф с экспертизой по продуктам Verde."""
+    filename = INDUSTRY_BRIEF_FILES.get(industry)
+    if not filename:
+        return ''
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'industry-briefs', filename)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return ''
+
+
+def fetch_client_context(url):
+    """Скачать и распарсить сайт клиента для использования в КП."""
+    if not url:
+        return ''
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return ''
+
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36'}
+        r = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, 'html.parser')
+        # Удаляем скрипты, стили, навигацию
+        for tag in soup(['script', 'style', 'noscript', 'meta', 'link', 'nav', 'footer']):
+            tag.decompose()
+        # Собираем текст
+        title = soup.find('title')
+        title_text = title.get_text(strip=True) if title else ''
+        meta_desc = ''
+        desc_tag = soup.find('meta', attrs={'name': 'description'})
+        if desc_tag:
+            meta_desc = desc_tag.get('content', '').strip()
+
+        # Извлекаем заголовки h1-h3 и текст
+        headings = []
+        for tag_name in ['h1', 'h2', 'h3']:
+            for t in soup.find_all(tag_name):
+                text = t.get_text(strip=True)
+                if text and len(text) < 200:
+                    headings.append(f'[{tag_name.upper()}] {text}')
+
+        body_text = soup.get_text(separator=' ', strip=True)
+        # Нормализуем пробелы
+        body_text = re.sub(r'\s+', ' ', body_text)
+        # Обрезаем до разумного размера
+        body_text = body_text[:8000]
+
+        parts = []
+        if title_text:
+            parts.append(f'TITLE: {title_text}')
+        if meta_desc:
+            parts.append(f'META DESCRIPTION: {meta_desc}')
+        if headings:
+            parts.append('ЗАГОЛОВКИ:\n' + '\n'.join(headings[:30]))
+        if body_text:
+            parts.append('ТЕКСТ СТРАНИЦЫ:\n' + body_text)
+        parts.append(f'URL: {url}')
+        return '\n\n'.join(parts)
+    except Exception as e:
+        return f'(ошибка получения сайта {url}: {str(e)})'
+
+
+def find_bundle_candidates(product, industry, max_candidates=15):
+    """Найти 5-15 сопутствующих продуктов для комплексного предложения."""
+    if not product:
+        return []
+    pname = (product.get('name', '') or '').lower()
+    pcategory = (product.get('category', '') or '').lower()
+
+    # Какие ключевые слова триггерят в bundle-правилах?
+    trigger_categories = []
+    for keyword, related in BUNDLE_RULES.items():
+        if keyword in pname or keyword in pcategory:
+            trigger_categories.extend(related)
+
+    if not trigger_categories:
+        # Fallback: категория и всё — берём продукты из той же категории
+        trigger_categories = [pcategory.split('·')[0].strip()]
+
+    # Ищем в UNIFIED_PRODUCTS подходящие
+    candidates = []
+    seen_ids = {product.get('id')}
+    for p in UNIFIED_PRODUCTS.values():
+        if p['id'] in seen_ids:
+            continue
+        name_low = p['name'].lower()
+        cat_low = p['category'].lower()
+        for trigger in trigger_categories:
+            if trigger in name_low or trigger in cat_low:
+                candidates.append(p)
+                seen_ids.add(p['id'])
+                break
+        if len(candidates) >= max_candidates * 2:
+            break
+
+    # Отсортируем: curated впереди, потом по имени
+    candidates.sort(key=lambda p: (p.get('source') != 'catalog', p['name']))
+    return candidates[:max_candidates]
 
 load_dotenv()
 
@@ -423,6 +773,732 @@ def team_chat():
         return jsonify({'reply': reply})
     except Exception as e:
         return jsonify({'reply': f'Ошибка: {str(e)}'}), 500
+
+
+@app.route('/design', methods=['GET', 'POST'])
+def design_hub():
+    # Обработка логина прямо с /design
+    if request.method == 'POST' and request.form.get('password'):
+        if request.form.get('password') == MARKETER_PASSWORD:
+            session['team_logged_in'] = True
+            return redirect(url_for('design_hub'))
+        return render_template('team_login.html', error='Неверный пароль')
+
+    if not session.get('team_logged_in'):
+        return render_template('team_login.html', error=None)
+
+    # Если пришли из Битрикса с deal_id — префилл формы
+    deal_id = request.args.get('deal_id')
+    prefill = {}
+    if deal_id:
+        prefill = fetch_bitrix_deal(deal_id)
+    resp = app.make_response(render_template('design.html', prefill=prefill))
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    return resp
+
+
+BITRIX_WEBHOOK_URL = os.environ.get('BITRIX_WEBHOOK_URL', '')
+# Формат: https://<ваш-портал>.bitrix24.ru/rest/<user_id>/<secret>/
+# Битрикс → Разработчикам → Другое → Входящий вебхук. Выбрать права: crm (чтение сделок, запись активностей).
+
+
+# Маппинг поля сделки из Битрикса → отрасль клиента
+# Должно быть пользовательское поле в сделке (например "UF_CRM_INDUSTRY")
+BITRIX_INDUSTRY_FIELD = os.environ.get('BITRIX_INDUSTRY_FIELD', 'UF_CRM_INDUSTRY')
+BITRIX_PRODUCT_FIELD = os.environ.get('BITRIX_PRODUCT_FIELD', 'UF_CRM_VERDE_PRODUCT')
+BITRIX_VOLUME_FIELD = os.environ.get('BITRIX_VOLUME_FIELD', 'UF_CRM_VOLUME_TONS')
+
+
+def bitrix_call(method, params=None):
+    """Универсальный вызов Bitrix REST API через вебхук."""
+    if not BITRIX_WEBHOOK_URL:
+        return {'error': 'BITRIX_WEBHOOK_URL не задан'}
+    try:
+        url = BITRIX_WEBHOOK_URL.rstrip('/') + '/' + method
+        r = requests.post(url, json=params or {}, timeout=15)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        return {'error': str(e)}
+
+
+def fetch_bitrix_deal(deal_id):
+    """Получить данные сделки из Битрикса для префилла формы КП."""
+    if not BITRIX_WEBHOOK_URL:
+        return {'error': 'Bitrix webhook не настроен — заполните форму вручную'}
+
+    deal_resp = bitrix_call('crm.deal.get', {'id': deal_id})
+    if 'error' in deal_resp:
+        return deal_resp
+    deal = deal_resp.get('result', {})
+    if not deal:
+        return {'error': f'Сделка {deal_id} не найдена'}
+
+    # Компания клиента
+    company_name = ''
+    if deal.get('COMPANY_ID'):
+        comp = bitrix_call('crm.company.get', {'id': deal['COMPANY_ID']})
+        company_name = comp.get('result', {}).get('TITLE', '')
+
+    # Менеджер
+    mgr_name, mgr_phone, mgr_email = '', '', ''
+    if deal.get('ASSIGNED_BY_ID'):
+        user = bitrix_call('user.get', {'ID': deal['ASSIGNED_BY_ID']})
+        u = (user.get('result') or [{}])[0]
+        mgr_name = f"{u.get('NAME','')} {u.get('LAST_NAME','')}".strip()
+        mgr_phone = u.get('PERSONAL_MOBILE') or u.get('WORK_PHONE') or ''
+        mgr_email = u.get('EMAIL', '')
+
+    return {
+        'client_name': company_name or deal.get('TITLE', ''),
+        'industry': deal.get(BITRIX_INDUSTRY_FIELD, ''),
+        'product_id': deal.get(BITRIX_PRODUCT_FIELD, ''),
+        'volume': deal.get(BITRIX_VOLUME_FIELD, ''),
+        'manager_name': mgr_name,
+        'manager_phone': mgr_phone,
+        'manager_email': mgr_email,
+        'deal_id': deal_id,
+    }
+
+
+@app.route('/api/bitrix-webhook', methods=['POST'])
+def bitrix_webhook():
+    """Входящий вебхук из Битрикса: когда сделка меняет стадию → авто-генерация."""
+    data = request.get_json() or request.form.to_dict()
+    event = data.get('event', '')
+    deal_id = data.get('data[FIELDS][ID]') or data.get('data', {}).get('FIELDS', {}).get('ID')
+    stage_id = data.get('data[FIELDS][STAGE_ID]') or data.get('data', {}).get('FIELDS', {}).get('STAGE_ID')
+
+    if not deal_id:
+        return jsonify({'status': 'ignored', 'reason': 'no deal_id'}), 200
+
+    # Маппинг стадии → что автоматически делаем
+    stage_actions = {
+        'WON': 'case_draft',              # Закрыта с успехом → черновик кейса
+        'EXECUTING': 'payment_reminder',  # Счёт выставлен → email-напоминание
+        # Добавлять по мере необходимости
+    }
+
+    action = stage_actions.get(stage_id)
+    if not action:
+        return jsonify({'status': 'ignored', 'stage': stage_id}), 200
+
+    # TODO: В Фазе 2 здесь вызов соответствующего генератора
+    # Пока просто логируем
+    return jsonify({'status': 'received', 'deal_id': deal_id, 'stage': stage_id, 'action_queued': action}), 200
+
+
+FEEDBACK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kp_feedback.jsonl')
+
+
+@app.route('/api/kp-feedback', methods=['POST'])
+def kp_feedback():
+    """Сохранить обратную связь менеджера по сгенерированному КП."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+    data = request.get_json() or {}
+    rating = data.get('rating', '')  # 'good' или 'bad'
+    comment = data.get('comment', '').strip()
+    if rating not in ('good', 'bad'):
+        return jsonify({'error': 'rating должен быть good или bad'}), 400
+
+    entry = {
+        'timestamp': datetime.now().isoformat(),
+        'rating': rating,
+        'comment': comment,
+        'client_name': data.get('client_name', ''),
+        'industry': data.get('industry', ''),
+        'situation': data.get('situation', ''),
+        'picked_products': data.get('picked_products', []),
+    }
+    try:
+        with open(FEEDBACK_FILE, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    return jsonify({'status': 'saved', 'total': _count_feedback()}), 200
+
+
+def _count_feedback():
+    try:
+        with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
+            return sum(1 for _ in f)
+    except FileNotFoundError:
+        return 0
+
+
+def load_recent_feedback(limit=20):
+    """Вернёт последние N записей фидбэка для обучения Claude."""
+    try:
+        with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        recent = [json.loads(line) for line in lines[-limit:]]
+        return recent
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+@app.route('/api/attach-kp-to-deal', methods=['POST'])
+def attach_kp_to_deal():
+    """Прикрепить сгенерированный КП (HTML) к сделке в Битриксе как активность."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    data = request.get_json() or {}
+    deal_id = data.get('deal_id')
+    html = data.get('html', '')
+    if not deal_id or not html:
+        return jsonify({'error': 'Нужны deal_id и html'}), 400
+
+    import base64
+    encoded = base64.b64encode(html.encode('utf-8')).decode('ascii')
+    filename = f'КП_deal_{deal_id}_{datetime.now().strftime("%Y-%m-%d")}.html'
+
+    resp = bitrix_call('crm.timeline.comment.add', {
+        'fields': {
+            'ENTITY_ID': int(deal_id),
+            'ENTITY_TYPE': 'deal',
+            'COMMENT': f'КП сгенерировано автоматически: {filename}',
+        }
+    })
+
+    # Прикрепление файла: crm.activity.add с FILES
+    activity = bitrix_call('crm.activity.add', {
+        'fields': {
+            'OWNER_TYPE_ID': 2,  # 2 = deal
+            'OWNER_ID': int(deal_id),
+            'TYPE_ID': 4,  # 4 = manual activity
+            'SUBJECT': f'КП сгенерировано — {filename}',
+            'DESCRIPTION': 'Коммерческое предложение сгенерировано через Дизайн-хаб Verde Tech',
+            'DESCRIPTION_TYPE': 1,
+            'COMPLETED': 'Y',
+            'RESPONSIBLE_ID': 1,
+            'FILES': [[filename, encoded]],
+        }
+    })
+
+    if 'error' in activity:
+        return jsonify({'error': activity['error'], 'comment_result': resp}), 500
+    return jsonify({'status': 'attached', 'activity_id': activity.get('result')}), 200
+
+
+@app.route('/brand-asset/<path:filename>')
+def brand_asset(filename):
+    if not session.get('team_logged_in'):
+        return 'Unauthorized', 401
+    brand_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'VERDE')
+    return send_from_directory(brand_dir, filename, as_attachment=True)
+
+
+INDUSTRY_MAP = {
+    'Мясопереработка': {'genitive': 'мясопереработки', 'dative': 'мясокомбината'},
+    'Птицепереработка': {'genitive': 'птицепереработки', 'dative': 'птицефабрики'},
+    'Рыбопереработка': {'genitive': 'рыбопереработки', 'dative': 'рыбоперерабатывающего завода'},
+    'Молочная промышленность': {'genitive': 'молочной промышленности', 'dative': 'молокозавода'},
+    'Хлебопекарная': {'genitive': 'хлебопекарной отрасли', 'dative': 'хлебозавода'},
+    'Напитки': {'genitive': 'производства напитков', 'dative': 'производителя напитков'},
+    'HoReCa': {'genitive': 'HoReCa', 'dative': 'ресторанной сети'},
+    'Готовая еда / полуфабрикаты': {'genitive': 'производства готовой еды', 'dative': 'производителя полуфабрикатов'},
+}
+
+
+@app.route('/api/products')
+def api_products():
+    """Вернёт все продукты (curated + specs без клиентских), сгруппированные по категории."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    # Группируем по категориям для dropdown
+    from collections import defaultdict
+    cats = defaultdict(list)
+    for p in UNIFIED_PRODUCTS.values():
+        cats[p['category']].append({
+            'id': p['id'],
+            'name': p['name'],
+            'dose': p.get('dose', ''),
+            'purpose': p.get('purpose', ''),
+        })
+    # Сортируем категории и продукты внутри
+    result = {}
+    for cat in sorted(cats.keys()):
+        result[cat] = sorted(cats[cat], key=lambda x: x['name'])
+    return jsonify({'categories': result, 'total': len(UNIFIED_PRODUCTS)})
+
+
+def _enrich_bundle_with_prices(bundle: list, enabled: bool) -> list:
+    """Добавляет поле 'price' к каждому продукту бандла если enabled=True."""
+    if not enabled:
+        return bundle
+    enriched = []
+    for bp in bundle:
+        entry = dict(bp)
+        hit = lookup_price(bp.get('name', ''))
+        entry['price'] = format_price(hit).get('display', '') if hit else ''
+        enriched.append(entry)
+    return enriched
+
+
+@app.route('/api/generate-kp', methods=['POST'])
+def generate_kp():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    data = request.get_json() or {}
+    required = ['client_name', 'industry', 'situation', 'manager_name', 'manager_phone', 'manager_email']
+    missing = [f for f in required if not data.get(f)]
+    if missing:
+        return jsonify({'error': f'Не заполнены поля: {", ".join(missing)}'}), 400
+
+    include_prices = bool(data.get('include_prices'))
+    include_pricelist = bool(data.get('include_pricelist'))
+
+    volume_raw = str(data.get('volume', '')).strip()
+    try:
+        volume = int(volume_raw) if volume_raw else 0
+    except (ValueError, TypeError):
+        volume = 0  # нечисловое значение — игнорируем
+
+    industry = data['industry']
+    industry_forms = INDUSTRY_MAP.get(industry, {'genitive': industry.lower(), 'dative': industry.lower()})
+
+    # Строим компактный каталог для Claude — только ключевые данные
+    # Ограничиваем релевантными категориями чтобы не перегружать промпт
+    catalog_index = build_catalog_index_for_prompt(industry)
+
+    # Дополнительная кастомная выгода (если указана пользователем)
+    custom_benefit = data.get('main_benefit', '').strip()
+    raw_spec_text = ''
+    product = None
+
+    # Реальные обезличенные кейсы по отрасли
+    real_cases = get_cases_for_industry(industry)
+
+    # Дополнительные поля из формы (продающие)
+    situation = data.get('situation', '').strip()
+    deal_stage = data.get('deal_stage', 'warm').strip()  # cold/warm/negotiation/reactivation
+    objections = data.get('objections', [])  # список из чекбоксов
+    if isinstance(objections, str):
+        objections = [o.strip() for o in objections.split(',') if o.strip()]
+
+    # Анализ сайта клиента (если указан)
+    client_url = data.get('client_url', '').strip()
+    client_site_context = fetch_client_context(client_url) if client_url else ''
+
+    # Прошлый фидбэк от менеджеров — учимся на истории
+    past_feedback = load_recent_feedback(10)
+    feedback_for_prompt = ''
+    if past_feedback:
+        lessons = []
+        for fb in past_feedback:
+            if fb.get('rating') == 'bad' and fb.get('comment'):
+                lessons.append(f"❌ {fb['industry']}: {fb['comment']}")
+            elif fb.get('rating') == 'good' and fb.get('comment'):
+                lessons.append(f"✅ {fb['industry']}: {fb['comment']}")
+        if lessons:
+            feedback_for_prompt = 'УРОКИ ИЗ ПРОШЛЫХ КП (учти):\n' + '\n'.join(lessons[-10:])
+
+    prompt = f"""Ты — опытный B2B-маркетолог Verde Tech + копирайтер + продавец. Твоя задача — не просто заполнить шаблон, а написать ПРОДАЮЩИЙ документ, который закрывает сделку.
+
+=== МАРКЕТИНГОВЫЙ PLAYBOOK (применяй на каждом слайде) ===
+
+КОПИРАЙТИНГ:
+- Заголовки по формуле ВЫГОДА+ЦИФРА+МЕХАНИЗМ (не «Повышает выход», а «+2,5% выход = +4 500 ₽ на тонну»)
+- Глаголы действия: экономьте, защитите, контролируйте, снизьте, сохраните
+- Специфика вместо абстракции: «-1,2 млн ₽/мес», а не «существенная экономия»
+- Язык целевой роли: технолог — «выход, термопотери, дозировка»; финдир — «маржа, окупаемость»; собственник — «ROI, рост»
+- Без маркетинговой воды: никаких «инновационные решения», «лидер отрасли», «передовые технологии»
+
+ПСИХОЛОГИЯ ПРОДАЖ:
+- ЯКОРЬ: сначала БОЛЬШАЯ цифра (годовая экономия), затем разложение до тонны
+- ИЗБЕГАНИЕ ПОТЕРЬ: фрейм «Без этого вы теряете X», а не только «С этим вы получаете X»
+- СОЦИАЛЬНОЕ ДОКАЗАТЕЛЬСТВО: конкретные имена Verde Tech (Иней, Пикантье, Эфко, Dun Kan, Столбушино, Bombbar — где уместно) и цифры (300+, 4.9/5, 87 отзывов, экспорт в 5 стран)
+- АВТОРИТЕТ: МТК-статус 2024, 12 лет на рынке, патент на «умную КПД», собственное R&D — упоминать как факт в подписях
+- ВЗАИМНОСТЬ: «Образцы до 2 кг бесплатно, даже если не купите» — работает
+- ОБЯЗАТЕЛЬСТВО: «Пилот 3 недели — минимальный коммит, простой выход»
+- ДЕФИЦИТ (аккуратно): «NDA — эксклюзив только 1 клиенту на сегмент/регион РФ»
+
+SALES ENABLEMENT:
+- ROI на каждом втором слайде, не только в блоке ROI
+- Возражения встроены в текст там, где они всплывают
+- Следующий шаг — ОДНО действие (не список из 5)
+- Регалии авторитета в футере каждого слайда (verdetech.ru · 300+ клиентов · МТК)
+
+=== КОНТЕКСТ КОМПАНИИ ===
+{COMPANY_CONTEXT}
+
+=== ⚡ ОТРАСЛЕВОЙ БРИФ — ГЛАВНАЯ ЭКСПЕРТИЗА ПО ОТРАСЛИ {industry.upper()} ===
+Это бриф от руководителя Verde Tech — что предлагать, по каким линейкам, какие боли, возражения, конкуренты, тренды и реальные кейсы.
+Следуй этому брифу СТРОГО — он главнее общего каталога ниже.
+
+{load_industry_brief(industry) or '(бриф для этой отрасли не найден — опирайся на общий каталог и здравый смысл)'}
+
+=== КАТАЛОГ VERDE TECH (все 800+ продукта — для поиска по ID и именам) ===
+{json.dumps(catalog_index, ensure_ascii=False, indent=2)}
+
+=== КЛИЕНТ И СДЕЛКА ===
+Клиент: {data['client_name']}
+Отрасль: {industry}
+Объём производства: {str(volume) + ' тонн/год' if volume else 'НЕ УКАЗАН (менеджер не знает точно — НЕ упоминай конкретные цифры объёма, говори в общих терминах: "при ваших объёмах", "на вашей линейке". В тексте КП можешь предложить уточнить это на первой встрече)'}
+Ситуация клиента (что рассказал менеджер): {situation or '(не указана, выведи самостоятельно исходя из отрасли и продукта)'}
+Стадия сделки: {deal_stage} ({'холодный лид' if deal_stage=='cold' else 'тёплый' if deal_stage=='warm' else 'на согласовании' if deal_stage=='negotiation' else 'реактивация'})
+{"Возражения, уже прозвучавшие от клиента: " + ', '.join(objections) if objections else ""}
+{"Дополнительный акцент от менеджера: " + custom_benefit if custom_benefit else ""}
+
+=== АНАЛИЗ САЙТА КЛИЕНТА ===
+{client_site_context if client_site_context else '(сайт клиента не указан или не удалось загрузить)'}
+
+=== {feedback_for_prompt if feedback_for_prompt else ''}
+
+{"ВАЖНО: выше — реальное содержимое сайта клиента. Изучи его продуктовую линейку, текущее позиционирование, масштаб бизнеса. В understanding, solution_oneliner и pains ССЫЛАЙСЯ на конкретные продукты или особенности клиента, которые ты увидел на их сайте. Это покажет, что ты их изучил — конверсия вырастет кратно." if client_site_context and 'ошибка' not in client_site_context.lower() else ""}
+
+=== РЕАЛЬНЫЕ КЕЙСЫ ПО ОТРАСЛИ ===
+{json.dumps(real_cases, ensure_ascii=False, indent=2)}
+
+=== ЗАДАЧА ===
+Верни JSON строго в таком формате (без markdown, без пояснений):
+
+{{
+  "primary_product": {{
+    "id": "ID выбранного основного продукта из каталога (например 'spec:V Мортаделла (от технолога)' или 'd_mix')",
+    "name": "Точное имя как в каталоге",
+    "why_picked": "Одна фраза почему именно этот продукт под задачу клиента"
+  }},
+  "bundle_products": [
+    {{
+      "id": "ID продукта",
+      "name": "Имя из каталога",
+      "role": "Для чего клиенту — 3-6 слов (например 'Для пива и сидров', 'Для энергетиков', 'Для пребиотической линейки')",
+      "benefit": "Конкретная польза",
+      "why_picked": "Почему именно этот продукт"
+    }}
+    // Всего 3-6 продуктов. ВАЖНО: для отраслей с широкой линейкой (Напитки, HoReCa, Готовая еда, Хлебопекарная) давай 5-6 продуктов, покрывающих разные направления клиента. Для узкой отрасли — 2-3.
+  ],
+  "cover_headline": "Персональный заголовок обложки: название основного продукта + отрасль клиента конкретно (не 'для мясопереработки', а 'для мясокомбината')",
+  "executive_summary": {{
+    "problem": "Проблема клиента — одной фразой, без воды (для CEO)",
+    "solution": "Решение — одной фразой с цифрой",
+    "roi_headline": "Главная цифра ROI (пример: '+2,25 млн ₽/год при объёме 500 т')",
+    "next_step": "Одно действие (пример: 'Получить 500 г образца за 24 часа')",
+    "why_now": "Почему именно сейчас (регулятор, тренд, возможность) — одной фразой"
+  }},
+  "understanding": "3-4 предложения 'Как мы поняли вашу задачу' — пересказ situation своими словами с профессиональной оценкой. Если situation пустая — сформулируй гипотезу исходя из отрасли+продукта.",
+  "risk": {{
+    "title": "Главный риск для клиента если НЕ решит задачу сейчас (loss aversion, 5-7 слов)",
+    "desc": "1-2 предложения что именно клиент теряет без решения",
+    "stat": "Отраслевая статистика 2026 года или цифра риска (одна строка, конкретно)"
+  }},
+  "benchmark": {{
+    "metric_1": {{"name": "Выход готового продукта", "client": "96%", "industry_avg": "93%", "top_10": "98%"}},
+    "metric_2": {{"name": "Доля функц. продуктов", "client": "15%", "industry_avg": "22%", "top_10": "45%"}},
+    "metric_3": {{"name": "Time-to-market новинок", "client": "6 мес", "industry_avg": "4 мес", "top_10": "2 мес"}},
+    "note": "Оцени реалистично для {industry} и объёма {volume} т/год. Где клиент отстаёт — покажи. Данные ориентировочные, указать сноску."
+  }},
+  "trends": [
+    {{"year": "2026", "title": "Тренд/регуляторика", "impact": "Что меняется и как это влияет на клиента"}},
+    {{"year": "2027", "title": "...", "impact": "..."}},
+    {{"year": "2028", "title": "...", "impact": "..."}}
+  ],
+  "markets": [
+    {{"name": "Целевой рынок/сегмент 1 для этого продукта (пример: 'Федеральный ритейл X5/Магнит', 'HoReCa премиум', 'Экспорт в Казахстан', 'Функциональное питание 40+')", "why": "1 строка: почему этот рынок покупает это решение"}},
+    {{"name": "Рынок 2", "why": "..."}},
+    {{"name": "Рынок 3", "why": "..."}},
+    {{"name": "Рынок 4 (опционально)", "why": "..."}}
+  ],
+  "competitors": [
+    {{"name": "Конкурент 1 в отрасли (бери из отраслевого брифа выше)", "speed": "их скорость поставки", "weakness": "главная слабость vs Verde (из брифа)"}},
+    {{"name": "Конкурент 2", "speed": "...", "weakness": "..."}},
+    {{"name": "Конкурент 3", "speed": "...", "weakness": "..."}}
+  ],
+  "exclusive_bonus": {{
+    "title": "Эксклюзивный бонус для [имя клиента]",
+    "items": [
+      "Персонализированный бонус 1 (например: 'R&D-аудит 2 ваших рецептур от главного технолога Verde бесплатно')",
+      "Бонус 2 (например: '8 часов технологических консультаций в месяц')",
+      "Бонус 3 (например: 'Приоритет в листе новинок — видите на 3 мес раньше рынка')"
+    ],
+    "value_note": "Оценочная стоимость бонуса, если бы это продавалось отдельно"
+  }},
+  "solution_oneliner": "Решение одной фразой с цифрой (не 'повышаем качество', а '+2,5% выход за счёт X')",
+  "main_benefit": "Главная выгода одним предложением с конкретикой",
+  "pains": [
+    {{"title": "Заголовок боли", "desc": "1-2 предложения, СПЕЦИФИКА для {industry} в 2026"}},
+    {{"title": "...", "desc": "..."}},
+    {{"title": "...", "desc": "..."}}
+  ],
+  "tech_lead": "Одно предложение про технологию (профессионально, без маркетинга)",
+  "tech_steps": [
+    {{"title": "Этап 1", "desc": "Конкретно: где, когда, в каких условиях"}},
+    {{"title": "Этап 2", "desc": "Что происходит во время процессинга"}},
+    {{"title": "Этап 3", "desc": "Результат на выходе"}}
+  ],
+  "spec_purpose": "Назначение ≤4 слов",
+  "spec_purpose_note": "Уточнение ≤8 слов",
+  "spec_dosage": "Дозировка из спеки",
+  "spec_carrier": "Носитель из состава",
+  "roi_current": "Число: текущая маржа/тонна (реалистично для {industry})",
+  "roi_current_note": "Что сейчас неоптимально (2 строки через <br>)",
+  "roi_new": "Число: маржа с продуктом (+3-7% к текущей)",
+  "roi_new_note": "Что улучшается (2 строки)",
+  "roi_delta": "Число: roi_new - roi_current",
+  "roi_delta_note": "Как достигнут прирост",
+  "roi_total": "Строка: roi_delta × {volume}, формат '2 250 000' с пробелами",
+  "roi_payback": "Срок окупаемости первой партии (1-2 строки, конкретно)",
+  "bundle": {{
+    "headline": "Название комплексного решения (если уместно: 'Готовая колбасная система', 'Пакет Clean Label', 'Набор обогащения')",
+    "products": [
+      {{"name": "Имя из bundle_candidates", "role": "Роль в связке", "benefit": "Что добавляет"}},
+      {{"name": "...", "role": "...", "benefit": "..."}}
+    ],
+    "total_effect": "Что даёт связка вместе (1 предложение с цифрой)",
+    "show": true
+  }},
+  "cases": [
+    {{"segment": "Сегмент ЗАГЛАВНЫМИ", "client": "Обезличенное имя", "result": "Результат с цифрой"}},
+    {{"segment": "...", "client": "...", "result": "..."}},
+    {{"segment": "...", "client": "...", "result": "..."}}
+  ],
+  "objections": [
+    {{"question": "Типовое возражение в 2-4 словах", "answer": "Ответ в 1-2 предложениях с цифрой или фактом"}},
+    {{"question": "...", "answer": "..."}},
+    {{"question": "...", "answer": "..."}}
+  ],
+  "next_step": {{
+    "headline": "Призыв в 3-5 словах (не 'Свяжитесь с нами', а 'Получите образец за 24 часа')",
+    "action": "Одно конкретное действие для клиента (что кликнуть / кому позвонить / что скачать)",
+    "friction_removers": ["3-4 причины почему это легко и безрисково"]
+  }},
+  "product_name_short": "Короткое имя продукта (до 4 слов)"
+}}
+
+=== КРИТИЧЕСКИЕ ПРАВИЛА ===
+1. Выбери primary_product и bundle_products из каталога выше — ID и имя должны точно совпадать с каталогом.
+2. ВСЕ факты о продуктах — из каталога. Не выдумывай дозировки/составы.
+3. Математика: roi_new - roi_current = roi_delta; roi_delta × {volume} ≈ roi_total.
+4. ⚡ BUNDLE = РЕАЛЬНОЕ ПРЕДЛОЖЕНИЕ КОМПЛЕКСА, не декорация:
+   - Для ОТРАСЛЕЙ С ШИРОКОЙ ЛИНЕЙКОЙ продуктов у клиента (Напитки, HoReCa, Хлеб, Готовая еда) — БЫЛО мало. Должно быть 4-6 продуктов.
+     Пример для напитков: экстракты натуральные (для пива/сидров) + витамины (для энергетиков/чаёв) + инулин-пребиотик (для функциональных напитков) + ароматизаторы.
+     Пример для HoReCa: маринады + приправы + соусы + экстракты.
+   - Для УЗКОЙ задачи (один продукт клиента) — 2-3 продукта.
+   - ПОЛЕ role В bundle_products — это НЕ «дополнение/роль в связке», а КАТЕГОРИЯ ПРИМЕНЕНИЯ у клиента, например: «Для пива и сидров», «Для энергетиков», «Для пребиотической линейки», «Натуральные ароматизаторы».
+   - show=true ВСЕГДА если есть хотя бы 2 продукта в bundle.
+5. Продумай шире: если клиент — производитель напитков, у него 3-5 разных линеек (пиво, чай, лимонад, энергетик, морс). Каждой линейке подбери 1-2 продукта из каталога Verde.
+4. Objections: если в поле objections есть явные возражения клиента — обязательно их включи в первую очередь. Дополни 1-2 типовыми из стадии {deal_stage}.
+5. Стадия сделки: {deal_stage} — для cold лида больше авторитета и social proof; для negotiation больше ROI и возражений; для reactivation — новости, изменения и льготные условия.
+6. Язык: профессиональный русский, без «лучшие», «единственные», health-claims без сносок.
+7. Каждая цифра или факт — проверяемы/источники (МР 2.3.1.0253-21, ТР ТС 021/2011, и т.д.)
+"""
+
+    try:
+        response = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'anthropic/claude-sonnet-4',
+                'messages': [
+                    {'role': 'system', 'content': 'Ты выдаёшь строго JSON по шаблону. Никакого markdown, никаких пояснений, только JSON-объект.'},
+                    {'role': 'user', 'content': prompt},
+                ],
+                'max_tokens': 5000,
+                'temperature': 0.4,
+            },
+            timeout=90,
+        )
+        response.raise_for_status()
+        ai_reply = response.json()['choices'][0]['message']['content'].strip()
+
+        # strip markdown fences if AI added them
+        ai_reply = re.sub(r'^```(?:json)?\s*|\s*```$', '', ai_reply, flags=re.MULTILINE).strip()
+        ai_data = json.loads(ai_reply)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Не удалось разобрать ответ AI как JSON: {str(e)}. Попробуйте ещё раз.'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Ошибка AI-сервиса: {str(e)}'}), 500
+
+    # Load template
+    tpl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kp-template', 'verde-kp-generator.html')
+    try:
+        with open(tpl_path, 'r', encoding='utf-8') as f:
+            tpl = f.read()
+    except FileNotFoundError:
+        return jsonify({'error': 'Шаблон КП не найден на сервере'}), 500
+
+    # Claude выбрал продукт — подтягиваем его из каталога
+    picked = ai_data.get('primary_product', {}) or {}
+    picked_id = picked.get('id', '')
+    picked_name = picked.get('name', '')
+
+    # Сначала пробуем по id
+    product = get_product(picked_id) if picked_id else None
+    if not product and picked_id and picked_id.startswith('spec:'):
+        # Из расширенной базы
+        raw_name = picked_id[5:]
+        meta = _ALL_SPECS_RAW.get(raw_name)
+        if meta:
+            raw_spec_text = meta.get('text', '')
+            product = {
+                'id': picked_id,
+                'name': raw_name,
+                'category': meta.get('category', ''),
+                'dose': '', 'purpose': picked.get('why_picked', ''),
+                'composition': '', 'why': picked.get('why_picked', ''),
+                'technology': '', 'label_claim': 'согласно ТР ТС 021/2011',
+                'cert': 'ТР ТС 021/2011, 029/2012',
+            }
+    # Fallback по имени
+    if not product and picked_name:
+        for p in UNIFIED_PRODUCTS.values():
+            if p['name'] == picked_name:
+                product = p.get('curated') or {
+                    'id': p['id'], 'name': p['name'], 'category': p['category'],
+                    'dose': p.get('dose',''), 'purpose': p.get('purpose',''),
+                    'composition': '', 'why': '', 'technology': '',
+                    'label_claim': '', 'cert': 'ТР ТС 021/2011, 029/2012',
+                }
+                raw_spec_text = _ALL_SPECS_RAW.get(p['name'], {}).get('text', '')
+                break
+    # Если вообще ничего не нашлось — используем примитивную заглушку
+    if not product:
+        product = {
+            'id': 'unknown', 'name': picked_name or 'Решение Verde Tech',
+            'category': 'Комплексная пищевая добавка',
+            'dose': '', 'purpose': '', 'composition': '', 'why': '',
+            'technology': '', 'label_claim': '', 'cert': 'ТР ТС 021/2011',
+        }
+
+    # Build render context
+    pains = ai_data.get('pains', [{}, {}, {}])
+    tech_steps = ai_data.get('tech_steps', [{}, {}, {}])
+    cases = ai_data.get('cases', [{}, {}, {}])
+    objections_data = ai_data.get('objections', [])
+    trends = ai_data.get('trends', [])
+    bundle_data = ai_data.get('bundle', {})
+    risk_data = ai_data.get('risk', {})
+    benchmark = ai_data.get('benchmark', {})
+    exec_summary = ai_data.get('executive_summary', {})
+    bonus = ai_data.get('exclusive_bonus', {})
+    next_step_data = ai_data.get('next_step', {})
+    while len(pains) < 3: pains.append({'title': '—', 'desc': '—'})
+    while len(tech_steps) < 3: tech_steps.append({'title': '—', 'desc': '—'})
+    while len(cases) < 3: cases.append({'segment': '—', 'client': '—', 'result': '—'})
+    while len(objections_data) < 3: objections_data.append({'question': '—', 'answer': '—'})
+    while len(trends) < 3: trends.append({'year': '—', 'title': '—', 'impact': '—'})
+
+    # main_benefit: приоритет — кастомный ввод пользователя, иначе из AI
+    final_main_benefit = custom_benefit or ai_data.get('main_benefit', product.get('why', ''))
+
+    # Прайс-лист: фильтруем по категории основного продукта
+    _pl_hit = lookup_price(product['name']) if include_pricelist and product else None
+    _pl_cat = _pl_hit['cat'] if _pl_hit else ''
+    pricelist_items = get_category_pricelist(_pl_cat) if include_pricelist else []
+
+    context = {
+        'client_name': data['client_name'],
+        'industry_genitive': industry_forms['genitive'],
+        'industry_dative': industry_forms['dative'],
+        'product_name': product['name'],
+        'product_name_short': ai_data.get('product_name_short', product['name'].split(' (')[0]),
+        'main_benefit': final_main_benefit,
+        'volume': volume,
+        'date': datetime.now().strftime('%d.%m.%Y').upper(),
+        'manager_name': data['manager_name'],
+        'manager_phone': data['manager_phone'],
+        'manager_email': data['manager_email'],
+        'solution_oneliner': ai_data.get('solution_oneliner', ''),
+        'pain1_title': pains[0].get('title', '—'),
+        'pain1_desc': pains[0].get('desc', '—'),
+        'pain2_title': pains[1].get('title', '—'),
+        'pain2_desc': pains[1].get('desc', '—'),
+        'pain3_title': pains[2].get('title', '—'),
+        'pain3_desc': pains[2].get('desc', '—'),
+        'tech_lead': ai_data.get('tech_lead', ''),
+        'tech_step1_title': tech_steps[0].get('title', '—'),
+        'tech_step1_desc': tech_steps[0].get('desc', '—'),
+        'tech_step2_title': tech_steps[1].get('title', '—'),
+        'tech_step2_desc': tech_steps[1].get('desc', '—'),
+        'tech_step3_title': tech_steps[2].get('title', '—'),
+        'tech_step3_desc': tech_steps[2].get('desc', '—'),
+        'spec_purpose': ai_data.get('spec_purpose', '—'),
+        'spec_purpose_note': ai_data.get('spec_purpose_note', '—'),
+        'spec_dosage': ai_data.get('spec_dosage', '—'),
+        'spec_carrier': ai_data.get('spec_carrier', '—'),
+        'roi_current': ai_data.get('roi_current', '—'),
+        'roi_current_note': ai_data.get('roi_current_note', '—'),
+        'roi_new': ai_data.get('roi_new', '—'),
+        'roi_new_note': ai_data.get('roi_new_note', '—'),
+        'roi_delta': ai_data.get('roi_delta', '—'),
+        'roi_delta_note': ai_data.get('roi_delta_note', '—'),
+        'roi_total': ai_data.get('roi_total', '—'),
+        'case1_segment': cases[0].get('segment', '—'),
+        'case1_client': cases[0].get('client', '—'),
+        'case1_result': cases[0].get('result', '—'),
+        'case2_segment': cases[1].get('segment', '—'),
+        'case2_client': cases[1].get('client', '—'),
+        'case2_result': cases[1].get('result', '—'),
+        'case3_segment': cases[2].get('segment', '—'),
+        'case3_client': cases[2].get('client', '—'),
+        'case3_result': cases[2].get('result', '—'),
+        # Новые фишки
+        'understanding': ai_data.get('understanding', ''),
+        'cover_headline': ai_data.get('cover_headline', product['name']),
+        'risk_title': risk_data.get('title', ''),
+        'risk_desc': risk_data.get('desc', ''),
+        'risk_stat': risk_data.get('stat', ''),
+        'exec_problem': exec_summary.get('problem', ''),
+        'exec_solution': exec_summary.get('solution', ''),
+        'exec_roi_headline': exec_summary.get('roi_headline', ''),
+        'exec_next_step': exec_summary.get('next_step', ''),
+        'exec_why_now': exec_summary.get('why_now', ''),
+        'bench_1_name': benchmark.get('metric_1', {}).get('name', ''),
+        'bench_1_client': benchmark.get('metric_1', {}).get('client', ''),
+        'bench_1_avg': benchmark.get('metric_1', {}).get('industry_avg', ''),
+        'bench_1_top': benchmark.get('metric_1', {}).get('top_10', ''),
+        'bench_2_name': benchmark.get('metric_2', {}).get('name', ''),
+        'bench_2_client': benchmark.get('metric_2', {}).get('client', ''),
+        'bench_2_avg': benchmark.get('metric_2', {}).get('industry_avg', ''),
+        'bench_2_top': benchmark.get('metric_2', {}).get('top_10', ''),
+        'bench_3_name': benchmark.get('metric_3', {}).get('name', ''),
+        'bench_3_client': benchmark.get('metric_3', {}).get('client', ''),
+        'bench_3_avg': benchmark.get('metric_3', {}).get('industry_avg', ''),
+        'bench_3_top': benchmark.get('metric_3', {}).get('top_10', ''),
+        'bench_note': benchmark.get('note', 'Данные ориентировочные, основаны на открытых отраслевых источниках'),
+        'trend1_year': trends[0].get('year', ''), 'trend1_title': trends[0].get('title', ''), 'trend1_impact': trends[0].get('impact', ''),
+        'trend2_year': trends[1].get('year', ''), 'trend2_title': trends[1].get('title', ''), 'trend2_impact': trends[1].get('impact', ''),
+        'trend3_year': trends[2].get('year', ''), 'trend3_title': trends[2].get('title', ''), 'trend3_impact': trends[2].get('impact', ''),
+        'bundle_show': (bundle_data.get('show', False) and len(bundle_data.get('products', []))>0) or len(ai_data.get('bundle_products', []))>0,
+        'bundle_headline': bundle_data.get('headline', '') or 'Комплексное решение',
+        'bundle_products': _enrich_bundle_with_prices(
+            bundle_data.get('products', []) or ai_data.get('bundle_products', []),
+            include_prices
+        ),
+        'bundle_effect': bundle_data.get('total_effect', ''),
+        'obj1_q': objections_data[0].get('question', ''), 'obj1_a': objections_data[0].get('answer', ''),
+        'obj2_q': objections_data[1].get('question', ''), 'obj2_a': objections_data[1].get('answer', ''),
+        'obj3_q': objections_data[2].get('question', ''), 'obj3_a': objections_data[2].get('answer', ''),
+        'bonus_title': bonus.get('title', f"Эксклюзивный бонус для {data['client_name']}"),
+        'bonus_items': bonus.get('items', []),
+        'bonus_value_note': bonus.get('value_note', ''),
+        'next_headline': next_step_data.get('headline', 'Начните с бесплатного образца'),
+        'next_action': next_step_data.get('action', 'Позвоните менеджеру для отправки образца'),
+        'next_friction': next_step_data.get('friction_removers', []),
+        'roi_payback': ai_data.get('roi_payback', ''),
+        'markets': ai_data.get('markets', []),
+        'competitors': ai_data.get('competitors', []),
+        'doc_id': f"KP-{datetime.now().strftime('%Y%m%d-%H%M')}-{data['client_name'][:3].upper()}",
+        'expiry_date': (datetime.now() + timedelta(days=30)).strftime('%d.%m.%Y'),
+        'include_prices': include_prices,
+        'primary_price': format_price(lookup_price(product['name'])) if include_prices else {},
+        'price_valid_until': PRICE_VALID_UNTIL,
+        'include_pricelist': include_pricelist,
+        'pricelist_items': pricelist_items,
+        'pricelist_cat': _pl_cat,
+    }
+
+    rendered = render_template_string(tpl, **context)
+    return jsonify({'html': rendered})
 
 
 if __name__ == '__main__':

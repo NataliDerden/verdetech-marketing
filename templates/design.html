@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дизайн-хаб — Verde Tech</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
+
+.header { background: #fff; padding: 12px 24px; border-bottom: 1px solid #e5e5ea; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.header h1 { font-size: 18px; color: #0FBF00; font-weight: 800; }
+.header-links { display: flex; gap: 16px; }
+.header-links a { color: #86868b; text-decoration: none; font-size: 13px; font-weight: 500; }
+.header-links a:hover { color: #0FBF00; }
+
+.tabs { background: #fff; border-bottom: 1px solid #e5e5ea; padding: 0 24px; display: flex; gap: 0; }
+.tab { padding: 14px 20px; font-size: 14px; font-weight: 700; color: #86868b; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.15s; }
+.tab:hover { color: #1d1d1f; }
+.tab.active { color: #000; border-bottom-color: #0FBF00; }
+
+.content { padding: 32px; max-width: 1200px; margin: 0 auto; }
+
+.pane { display: none; }
+.pane.active { display: block; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from {opacity: 0; transform: translateY(8px);} to {opacity:1; transform: translateY(0);} }
+
+h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.01em; }
+.lead { font-size: 16px; color: #666; margin-bottom: 32px; }
+
+/* BRAND PANE */
+.brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .brand-grid { grid-template-columns: 1fr; } }
+.card { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 24px; }
+.card h3 { font-size: 16px; font-weight: 800; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.swatch { text-align: center; }
+.swatch .chip { width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid #e5e5ea; margin-bottom: 6px; }
+.swatch .hex { font-size: 11px; font-weight: 700; font-family: monospace; }
+.swatch .role { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+.font-sample { font-size: 48px; font-weight: 900; margin: 8px 0 12px; letter-spacing: -0.02em; }
+.font-weights { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.font-weights div span { color: #666; font-size: 11px; margin-left: 8px; }
+
+.download-list { display: flex; flex-direction: column; gap: 8px; }
+.download-list a { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f9f9f9; border-radius: 8px; text-decoration: none; color: #000; font-size: 14px; font-weight: 500; transition: all 0.15s; }
+.download-list a:hover { background: #0FBF00; color: #fff; }
+.download-list a .icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+
+.rules-list { list-style: none; padding: 0; }
+.rules-list li { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; display: flex; gap: 12px; }
+.rules-list li:last-child { border-bottom: none; }
+.rules-list li::before { content: '✓'; color: #0FBF00; font-weight: 900; flex-shrink: 0; }
+
+/* TEMPLATES PANE */
+.templates-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+.template-card { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; overflow: hidden; }
+.template-preview { aspect-ratio: 4/3; background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; }
+.template-preview .tp-title { font-size: 20px; font-weight: 900; letter-spacing: -0.01em; text-align: center; }
+.template-preview .tp-mark { position: absolute; bottom: 12px; right: 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+.template-preview.green { background: #0FBF00; }
+.template-preview.white { background: #FCFCFC; color: #000; border-bottom: 1px solid #e5e5ea; }
+.template-body { padding: 16px; }
+.template-body h4 { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.template-body p { font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.5; }
+.template-body .btn-row { display: flex; gap: 8px; }
+.btn { display: inline-block; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-primary { background: #0FBF00; color: #fff; }
+.btn-primary:hover { background: #0a9a00; }
+.btn-secondary { background: #f0f0f0; color: #000; }
+.btn-secondary:hover { background: #e0e0e0; }
+
+/* KP GENERATOR PANE */
+.kp-layout { display: grid; grid-template-columns: 420px 1fr; gap: 24px; }
+@media (max-width: 900px) { .kp-layout { grid-template-columns: 1fr; } }
+.kp-form { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 24px; position: sticky; top: 20px; align-self: start; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #333; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #d5d5d7; border-radius: 6px; font-family: inherit; font-size: 14px; background: #fafafa; transition: all 0.15s; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0FBF00; background: #fff; box-shadow: 0 0 0 3px rgba(15,191,0,0.15); }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-group small { display: block; font-size: 11px; color: #999; margin-top: 4px; }
+
+.btn-generate { width: 100%; background: #000; color: #fff; border: none; padding: 14px 20px; border-radius: 8px; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+.btn-generate:hover { background: #0FBF00; }
+.btn-generate:disabled { background: #ccc; cursor: not-allowed; }
+.btn-generate.loading { background: #666; }
+
+.kp-result { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 24px; min-height: 400px; }
+.kp-result.empty { display: flex; align-items: center; justify-content: center; flex-direction: column; color: #999; text-align: center; }
+.kp-result.empty .big-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.3; }
+.kp-result.empty h4 { font-size: 18px; color: #666; margin-bottom: 4px; }
+
+.result-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.preview-frame { width: 100%; height: 600px; border: 1px solid #e5e5ea; border-radius: 8px; background: #fff; }
+
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hint { background: #fff8e1; border-left: 3px solid #f2b42a; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; border-radius: 4px; }
+.hint b { color: #b45309; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🎨 Дизайн-хаб Verde Tech</h1>
+    <div class="header-links">
+        <a href="/team">← Задачи команды</a>
+        <a href="/dashboard">Маркетинг</a>
+    </div>
+</div>
+
+<div class="tabs">
+    <div class="tab active" onclick="showPane('kp')">⚡ Генератор КП</div>
+    <div class="tab" onclick="showPane('wizards')">🪄 Мастера</div>
+    <div class="tab" onclick="showPane('brand')">🎨 Брендбук</div>
+    <div class="tab" onclick="showPane('templates')">📋 Шаблоны</div>
+</div>
+
+{% if prefill %}
+<script id="bitrixPrefill" type="application/json">{{ prefill | tojson }}</script>
+{% endif %}
+
+<div class="content">
+
+<!-- KP GENERATOR -->
+<div class="pane active" id="pane-kp">
+    <h2>Генератор коммерческого предложения</h2>
+    <p class="lead">Заполните 5 полей → получите готовый 12-слайдовый КП в фирменном стиле за 30 секунд. Можно сразу скачать и отправить клиенту.</p>
+
+    <div class="kp-layout">
+        <form class="kp-form" id="kpForm" onsubmit="event.preventDefault(); generateKP(event); return false;">
+            <div class="form-group">
+                <label>Клиент (название компании)</label>
+                <input type="text" name="client_name" required placeholder='ООО "Мясокомбинат Колбасов"'>
+            </div>
+            <div class="form-group">
+                <label>🌐 Сайт клиента <span style="color:#0FBF00; font-weight:400;">(опционально — изучу автоматически)</span></label>
+                <input type="url" name="client_url" placeholder="https://client-company.ru">
+                <small>Если укажешь — я изучу сайт и подберу решение под их реальную линейку. Занимает +10-15 сек.</small>
+            </div>
+            <div class="form-group">
+                <label>Отрасль клиента</label>
+                <select name="industry" required>
+                    <option value="">— выбрать —</option>
+                    <option>Мясопереработка</option>
+                    <option>Птицепереработка</option>
+                    <option>Рыбопереработка</option>
+                    <option>Молочная промышленность</option>
+                    <option>Хлебопекарная</option>
+                    <option>Напитки</option>
+                    <option>HoReCa</option>
+                    <option>Готовая еда / полуфабрикаты</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>💬 Задача клиента <span style="color:#0FBF00;">★</span></label>
+                <textarea name="situation" rows="6" required placeholder='Опиши что услышал от клиента — чем подробнее, тем точнее подбор.&#10;&#10;Пример:&#10;"Мясокомбинат среднего размера. Хотят премиум-линейку вареных колбас для входа в Магнит. Технолог жалуется на выход при термообработке. Ищут замену импортному Буденхайм. Важен Clean Label."'></textarea>
+                <small>★ Главное поле. По нему ИИ сам подберёт 2-4 продукта из 598 в базе.</small>
+            </div>
+
+            <div class="form-group">
+                <label>🎯 Стадия сделки</label>
+                <select name="deal_stage">
+                    <option value="cold">Холодный лид — ещё не знаком с Verde</option>
+                    <option value="warm" selected>Тёплый — уже общались</option>
+                    <option value="negotiation">На согласовании — обсуждаем условия</option>
+                    <option value="reactivation">Реактивация — старый клиент</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>⚠️ Возражения, уже прозвучавшие (опционально)</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_price" value="дорого"> дорого</label>
+                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_competitor" value="работают с конкурентом"> работают с конкурентом</label>
+                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_quality" value="не доверяют качеству"> не доверяют качеству</label>
+                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_later" value="нет потребности сейчас"> нет потребности</label>
+                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_import" value="ждут импортозамещения"> ждут импорт</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Масштаб бизнеса клиента</label>
+                <div style="background:#f0fdf4; border-left:3px solid #0FBF00; padding:8px 12px; font-size:12px; color:#444; margin-bottom:10px; border-radius:4px;">
+                    <b>30 секунд оценки сейчас = КП точнее в 2 раза.</b><br>
+                    Посмотри сайт клиента, их линейку, географию филиалов — и выбери масштаб.
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="volume_scale" value="50" style="margin-top:2px;">
+                        <div>
+                            <div style="font-size:13px; font-weight:600; color:#000;">Мелкое · до 100 т/год</div>
+                            <div style="font-size:11px; color:#666; margin-top:2px;">Локальный цех / 1-3 точки. Оборот до 50 млн ₽. Начинающий бренд.</div>
+                        </div>
+                    </label>
+                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="volume_scale" value="500" style="margin-top:2px;">
+                        <div>
+                            <div style="font-size:13px; font-weight:600; color:#000;">Среднее · 100–1000 т/год</div>
+                            <div style="font-size:11px; color:#666; margin-top:2px;">Региональный игрок. 1-2 области. Оборот 50-300 млн ₽.</div>
+                        </div>
+                    </label>
+                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="volume_scale" value="5000" style="margin-top:2px;">
+                        <div>
+                            <div style="font-size:13px; font-weight:600; color:#000;">Крупное · 1000–10 000 т/год</div>
+                            <div style="font-size:11px; color:#666; margin-top:2px;">Межрегиональный. Есть СТМ. Оборот 300 млн – 3 млрд ₽.</div>
+                        </div>
+                    </label>
+                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
+                        <input type="radio" name="volume_scale" value="20000" style="margin-top:2px;">
+                        <div>
+                            <div style="font-size:13px; font-weight:600; color:#000;">Федеральный · 10 000+ т/год</div>
+                            <div style="font-size:11px; color:#666; margin-top:2px;">ТОП-50 отрасли. X5/Магнит как клиент. Оборот 3+ млрд ₽.</div>
+                        </div>
+                    </label>
+                </div>
+                <div style="margin-top:10px;">
+                    <input type="text" name="volume" id="volumeInput" placeholder="Знаешь точное число тонн/год? Впиши здесь" style="width:100%;">
+                </div>
+                <small style="margin-top:6px;">Точное число бьёт оценку — если знаешь, введи.</small>
+            </div>
+            <div class="form-group">
+                <label>Менеджер Verde Tech</label>
+                <input type="text" name="manager_name" required placeholder="Анастасия Васильева">
+            </div>
+            <div class="form-group">
+                <label>Телефон менеджера</label>
+                <input type="text" name="manager_phone" required placeholder="+7 913 677 22 57">
+            </div>
+            <div class="form-group">
+                <label>Email менеджера</label>
+                <input type="email" name="manager_email" required placeholder="vasileva.a@verdespb.ru">
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; user-select:none;">
+                    <input type="checkbox" id="includePricesToggle" name="include_prices" value="1"
+                           style="margin-top:3px; accent-color:#0FBF00; width:16px; height:16px; flex-shrink:0;">
+                    <span>
+                        <span style="font-weight:600; font-size:13px;">Добавить ориентировочные цены в КП</span><br>
+                        <span style="font-size:11px; color:#888; line-height:1.4;">Включай для тёплых и горячих сделок.
+                        Для холодных — сначала зацепи продуктом, цены отдай на встрече.</span>
+                    </span>
+                </label>
+            </div>
+            <div class="form-group" style="margin-bottom:8px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; user-select:none;">
+                    <input type="checkbox" id="includePriceListToggle" name="include_pricelist" value="1"
+                           style="margin-top:3px; accent-color:#0FBF00; width:16px; height:16px; flex-shrink:0;">
+                    <span>
+                        <span style="font-weight:600; font-size:13px;">Приложить прайс-лист</span><br>
+                        <span style="font-size:11px; color:#888; line-height:1.4;">Добавляет слайд с полными ценами по категории продукта. Для горячих сделок и запросов на ассортимент.</span>
+                    </span>
+                </label>
+            </div>
+
+            <button type="button" class="btn-generate" id="generateBtn" onclick="generateKP(event)">⚡ Сгенерировать КП</button>
+        </form>
+
+        <div class="kp-result empty" id="kpResult">
+            <div class="big-icon">📄</div>
+            <h4>КП появится здесь</h4>
+            <p>Заполните форму слева и нажмите «Сгенерировать».<br>Цифровой помощник Вердэ соберёт КП под задачу клиента.</p>
+        </div>
+    </div>
+</div>
+
+<!-- WIZARDS -->
+<div class="pane" id="pane-wizards">
+    <h2>Мастера маркетинга</h2>
+    <p class="lead">Каждый мастер использует проверенную методику (скилл) + брендбук Verde. Выбирай задачу — получаешь готовый результат в фирменном стиле.</p>
+
+    <div class="templates-grid">
+
+        <div class="template-card">
+            <div class="template-preview green">
+                <div class="tp-title">Пост<br>в соцсети</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>🪄 Пост с картинкой</h4>
+                <p>Текст через <b>copywriting</b> + визуал Flux/Midjourney. Квадрат 1080×1080 + варианты для TG, VK, Instagram.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="alert('В разработке. Уже: форма ТЗ + генерация через Claude, остался визуальный генератор (нужен fal.ai ключ).')">Открыть мастер</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview white">
+                <div class="tp-title" style="color:#000;">Email<br>рассылка</div>
+                <div class="tp-mark" style="color:#000;">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>🪄 Email в фирменном HTML</h4>
+                <p>Через <b>email-writer</b> + брендированный HTML-шаблон. Готово к отправке через Битрикс24/Unisender.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="alert('В разработке. Claude + email-writer skill + HTML-шаблон Verde. Подключение: 1 день.')">Открыть мастер</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview" style="background:#F2B42A;">
+                <div class="tp-title">Ad Creative<br>(10 вариантов)</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>🪄 Рекламные объявления</h4>
+                <p>Через <b>ad-creative</b> — 10-30 вариантов сразу для Я.Директа. Заголовки + тексты + призывы.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="alert('В разработке. Вход: продукт + ЦА → 10 вариантов RSA с брендированными визуалами.')">Открыть мастер</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview">
+                <div class="tp-title">Сравнительный<br>лендинг</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>🪄 Verde vs Конкурент</h4>
+                <p>Через <b>competitor-alternatives</b>. Готовая страница «Verde vs Буденхайм» или любой другой конкурент.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="alert('В разработке. Вход: конкурент → посадочная с матрицей сравнения и CTA.')">Открыть мастер</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview green">
+                <div class="tp-title">Запуск<br>продукта</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>🪄 Промо-кампания</h4>
+                <p>Через <b>launch-strategy</b>. Пакет: анонс, email-цепочка, посты, лендинг, реклама. Для нового продукта.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="alert('В разработке. Вход: новый продукт → полный промо-пакет за 1 клик.')">Открыть мастер</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview white">
+                <div class="tp-title" style="color:#000;">Sales<br>Enablement</div>
+                <div class="tp-mark" style="color:#000;">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>🪄 Материалы для продаж</h4>
+                <p>Через <b>sales-enablement</b>. One-pager, battle card, objection handling для отдела продаж.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="alert('В разработке. Вход: продукт + возражения → готовый пакет.')">Открыть мастер</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="hint" style="margin-top:32px;">
+        <b>Порядок реализации:</b> 1) Email-мастер (проще всего), 2) Пост для соцсетей (после fal.ai), 3) Ad Creative, 4) Sales Enablement, 5) Сравнительный лендинг, 6) Запуск продукта.
+    </div>
+</div>
+
+<!-- BRAND -->
+<div class="pane" id="pane-brand">
+    <h2>Бренд Verde Tech</h2>
+    <p class="lead">Палитра, шрифт, логотипы, правила. Всё что нужно для работы с фирстилем — перед тем как делать любой макет.</p>
+
+    <div class="brand-grid">
+
+        <div class="card">
+            <h3>Палитра</h3>
+            <div class="palette">
+                <div class="swatch"><div class="chip" style="background:#FFFFFF; border:1px solid #ccc;"></div><div class="hex">#FFFFFF</div><div class="role">Фон</div></div>
+                <div class="swatch"><div class="chip" style="background:#000000;"></div><div class="hex">#000000</div><div class="role">Текст</div></div>
+                <div class="swatch"><div class="chip" style="background:#0FBF00;"></div><div class="hex">#0FBF00</div><div class="role">Акцент</div></div>
+                <div class="swatch"><div class="chip" style="background:#FCFCFC; border:1px solid #eee;"></div><div class="hex">#FCFCFC</div><div class="role">Софт-фон</div></div>
+            </div>
+            <p style="margin-top: 12px; font-size: 13px; color: #666;">Опционально для продуктовых фото — жёлто-горчичный <b>#F2B42A</b> как в гайдлайне.</p>
+        </div>
+
+        <div class="card">
+            <h3>Шрифт Onest</h3>
+            <div class="font-sample">Onest</div>
+            <div class="font-weights">
+                <div style="font-weight:900;">VERDE TECH <span>Black</span></div>
+                <div style="font-weight:700;">VERDE TECH <span>Bold</span></div>
+                <div style="font-weight:500;">VERDE TECH <span>Medium</span></div>
+                <div style="font-weight:400;">VERDE TECH <span>Regular</span></div>
+                <div style="font-weight:300;">VERDE TECH <span>Thin</span></div>
+            </div>
+            <p style="margin-top:16px; font-size:13px; color:#666;">Бесплатный шрифт (SIL OFL). Установите у всех в команде.</p>
+        </div>
+
+        <div class="card">
+            <h3>Скачать ассеты</h3>
+            <div class="download-list">
+                <a href="/brand-asset/VERDE%20%D0%B3%D0%B0%D0%B9%D0%B4%D0%BB%D0%B0%D0%B9%D0%BD%20PDF/Verde%20-%20%D0%B3%D0%B0%D0%B9%D0%B4%D0%BB%D0%B0%D0%B9%D0%BD.pdf" target="_blank"><span class="icon">📘</span>Полный гайдлайн PDF</a>
+                <a href="/brand-asset/%D0%92%D0%B5%D1%80%D0%B4%D1%8D%20%D0%BB%D0%BE%D0%B3%D0%BE%20%D0%BD%D0%B0%20%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC/verde_logo_black.svg" target="_blank"><span class="icon">🖤</span>Лого чёрный (SVG)</a>
+                <a href="/brand-asset/%D0%92%D0%B5%D1%80%D0%B4%D1%8D%20%D0%BB%D0%BE%D0%B3%D0%BE%20%D0%BD%D0%B0%20%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC/verde_logo_green.svg" target="_blank"><span class="icon">💚</span>Лого зелёный (SVG)</a>
+                <a href="/brand-asset/%D0%92%D0%B5%D1%80%D0%B4%D1%8D%20%D0%BB%D0%BE%D0%B3%D0%BE%20%D0%BD%D0%B0%20%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%BC/verde_logo_white.svg" target="_blank"><span class="icon">🤍</span>Лого белый (SVG)</a>
+                <a href="/brand-asset/VERDE%20%D0%B0%D0%B2%D0%B0%D1%82%D0%B0%D1%80%D1%8B%20%D0%B4%D0%BB%D1%8F%20%D1%81%D0%BE%D1%86%D1%81%D0%B5%D1%82%D0%B5%D0%B9/%D0%A6%D0%B2%D0%B5%D1%82%D0%BD%D0%BE%D0%B9.png" target="_blank"><span class="icon">📱</span>Аватар соцсетей (PNG)</a>
+                <a href="/brand-asset/VERDE%20%D1%88%D1%80%D0%B8%D1%84%D1%82%D1%8B/Onest/Onest-VariableFont_wght.ttf" target="_blank"><span class="icon">🔤</span>Шрифт Onest (TTF)</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Главные правила</h3>
+            <ul class="rules-list">
+                <li>Только Onest во всех макетах</li>
+                <li>Палитра: только #000 / #FFF / #0FBF00 / #FCFCFC</li>
+                <li>Логотип — только из исходников, не перерисовывать</li>
+                <li>Охранное поле A=½B вокруг логотипа</li>
+                <li>Минимум 30% белого пространства</li>
+                <li>Слоган: «Забота о будущем» / «Caring for the Future»</li>
+                <li>Без теней, градиентов, украшательств</li>
+                <li>Для печати: CMYK, 300dpi, вылеты 3-5мм</li>
+            </ul>
+        </div>
+
+    </div>
+</div>
+
+<!-- TEMPLATES -->
+<div class="pane" id="pane-templates">
+    <h2>Библиотека шаблонов</h2>
+    <p class="lead">Готовые шаблоны для быстрого старта. Скачай HTML или PPTX, замени переменные, отправь клиенту.</p>
+
+    <div class="templates-grid">
+
+        <div class="template-card">
+            <div class="template-preview">
+                <div class="tp-title">Коммерческое<br>предложение</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>12-слайдовое КП</h4>
+                <p>Полный шаблон: обложка, о компании, задача, решение, технология, характеристики, ROI, кейсы, условия, документы, следующие шаги, контакты.</p>
+                <div class="btn-row">
+                    <a class="btn btn-primary" onclick="showPane('kp')">Сгенерировать</a>
+                    <a class="btn btn-secondary" href="/brand-asset/../kp-template/verde-kp-template.html" target="_blank">HTML</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview green">
+                <div class="tp-title">Пост<br>в соцсети</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>Пост для соцсетей</h4>
+                <p>Квадрат 1080×1080. Продукт на цветном фоне, вордмарк снизу + слоган. Формат как в гайдлайне (стр.21).</p>
+                <div class="btn-row">
+                    <a class="btn btn-secondary" onclick="alert('Скоро — Figma-шаблон в разработке')">Скоро</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview white">
+                <div class="tp-title" style="color:#000;">Продуктовая<br>карточка</div>
+                <div class="tp-mark" style="color:#000;">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>Карточка продукта</h4>
+                <p>Для каталога и лендингов. Фото продукта + название + дозировка + ключевые свойства. 1080×1350.</p>
+                <div class="btn-row">
+                    <a class="btn btn-secondary" onclick="alert('Скоро — Figma-шаблон в разработке')">Скоро</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card">
+            <div class="template-preview" style="background:#F2B42A;">
+                <div class="tp-title">Сторис</div>
+                <div class="tp-mark">VERDE®TECH</div>
+            </div>
+            <div class="template-body">
+                <h4>Сторис / Reels обложка</h4>
+                <p>Вертикаль 1080×1920 для Telegram, Instagram Stories, YouTube Shorts. Бренд + CTA + QR.</p>
+                <div class="btn-row">
+                    <a class="btn btn-secondary" onclick="alert('Скоро — Figma-шаблон в разработке')">Скоро</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="hint" style="margin-top:32px;">
+        <b>Следующий шаг:</b> подключим Figma Team library и живые превью шаблонов прямо здесь. Пока — скачивайте HTML для КП, остальные шаблоны в работе.
+    </div>
+</div>
+
+</div>
+
+<script>
+function showPane(id) {
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('pane-' + id).classList.add('active');
+    const tabMap = { kp: 0, wizards: 1, brand: 2, templates: 3 };
+    document.querySelectorAll('.tab')[tabMap[id]].classList.add('active');
+}
+
+// Префилл формы КП из Bitrix24 (приход через ?deal_id=...)
+function applyPrefill(prefill) {
+    if (!prefill || !prefill.client_name) return;
+    const form = document.getElementById('kpForm');
+    if (!form) return;
+    const fields = ['client_name', 'industry', 'volume', 'manager_name', 'manager_phone', 'manager_email'];
+    fields.forEach(f => {
+        const el = form.querySelector(`[name="${f}"]`);
+        if (el && prefill[f]) el.value = prefill[f];
+    });
+    if (prefill.product_id) {
+        // применяется после загрузки селектора
+        window._pendingProductId = prefill.product_id;
+    }
+    if (prefill.deal_id) {
+        window._bitrixDealId = prefill.deal_id;
+        // Показать уведомление
+        const banner = document.createElement('div');
+        banner.style.cssText = 'background:#FEF9C3; border-left:3px solid #F2B42A; padding:12px 16px; margin-bottom:16px; font-size:14px; border-radius:4px;';
+        banner.innerHTML = `📥 Данные подгружены из Битрикс24 · Сделка #${prefill.deal_id}`;
+        form.parentNode.insertBefore(banner, form);
+    }
+}
+
+// Каталог больше не загружаем — Claude сам подбирает продукты по ситуации
+async function loadProductsCatalog() { /* disabled */ }
+
+function escapeHtml(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+document.addEventListener('DOMContentLoaded', () => {
+    const prefillEl = document.getElementById('bitrixPrefill');
+    if (prefillEl) {
+        try { applyPrefill(JSON.parse(prefillEl.textContent)); } catch(e) {}
+    }
+
+    // Авто-включение цен при стадии "на согласовании" или "реактивация"
+    const dealStageSelect = document.querySelector('select[name="deal_stage"]');
+    const priceToggle = document.getElementById('includePricesToggle');
+    if (dealStageSelect && priceToggle) {
+        function syncPriceToggle() {
+            const s = dealStageSelect.value;
+            if (s === 'negotiation' || s === 'reactivation') {
+                priceToggle.checked = true;
+            } else if (s === 'cold') {
+                priceToggle.checked = false;
+            }
+            // warm — не трогаем, пусть менеджер решает сам
+        }
+        dealStageSelect.addEventListener('change', syncPriceToggle);
+        syncPriceToggle(); // применить сразу при загрузке
+    }
+});
+
+function showBadFeedback() {
+    document.getElementById('kpFeedbackBad').style.display = 'block';
+}
+async function submitFeedback(rating) {
+    const comment = rating === 'bad' ? (document.getElementById('kpFeedbackComment')?.value || '') : '';
+    const data = window._lastKpData || {};
+    try {
+        await fetch('/api/kp-feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                rating, comment,
+                client_name: data.client_name,
+                industry: data.industry,
+                situation: data.situation,
+            }),
+        });
+        document.getElementById('kpFeedback').style.display = 'none';
+        const done = document.getElementById('kpFeedbackDone');
+        if (done) {
+            done.style.display = 'block';
+            const fbBox = done.parentElement;
+            if (fbBox) {
+                fbBox.innerHTML = '<div style="color:#0FBF00; font-weight:600; font-size:13px;">✅ Спасибо! Учту в следующий раз.</div>';
+            }
+        }
+    } catch (e) {
+        alert('Не удалось отправить: ' + e.message);
+    }
+}
+
+function copyKpHtml() {
+    const html = window._lastKpHtml || '';
+    if (!html) { alert('Сначала сгенерируйте КП'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(html).then(
+            () => alert('HTML скопирован в буфер обмена'),
+            () => fallbackCopy(html)
+        );
+    } else {
+        fallbackCopy(html);
+    }
+}
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); alert('HTML скопирован'); }
+    catch(e) { alert('Не удалось скопировать. Скачайте файл.'); }
+    document.body.removeChild(ta);
+}
+
+async function generateKP(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const form = document.getElementById('kpForm');
+    const fd = new FormData(form);
+    const data = {};
+    const objections = [];
+    for (const [k, v] of fd.entries()) {
+        if (k.startsWith('obj_')) { objections.push(v); }
+        else { data[k] = v; }
+    }
+    data.objections = objections;
+    // Чекбоксы — явно выставляем bool (FormData не включает непроставленные)
+    data.include_prices    = document.getElementById('includePricesToggle')?.checked    || false;
+    data.include_pricelist = document.getElementById('includePriceListToggle')?.checked || false;
+    // Если точный объём не введён, но выбран масштаб — используем оценку масштаба
+    if (!data.volume && data.volume_scale) { data.volume = data.volume_scale; }
+    const btn = document.getElementById('generateBtn');
+    const result = document.getElementById('kpResult');
+
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.innerHTML = '<span class="spinner"></span>Готовлю предложение...';
+    result.className = 'kp-result empty';
+    const clientLabel = (data.client_name || 'клиента').replace(/[<>]/g,'');
+    result.innerHTML = `
+        <div class="big-icon">🌿</div>
+        <h4 style="color:#0FBF00;">Твой цифровой помощник Вердэ собирает КП для ${clientLabel}</h4>
+        <p style="max-width:480px; margin:8px auto 0; color:#444; line-height:1.55;">
+            Изучаю 598 наших продуктов, отраслевой бриф и задачу клиента — подбираю решение точно под вашу цель.
+        </p>
+        <p style="max-width:480px; margin:12px auto 0; color:#888; font-size:13px; line-height:1.55;">
+            С каждым твоим фидбэком я становлюсь точнее — <b>вместе мы делаем предложения сильнее</b>. 20–40 секунд.
+        </p>
+    `;
+
+    try {
+        const res = await fetch('/api/generate-kp', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        const json = await res.json();
+
+        if (json.error) {
+            result.className = 'kp-result empty';
+            result.innerHTML = '<div class="big-icon">⚠️</div><h4>Ошибка</h4><p>' + json.error + '</p>';
+            return;
+        }
+
+        const html = json.html;
+        // Используем UTF-8 BOM-free blob с кодировкой, чтобы кириллица читалась правильно
+        const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        window._lastKpHtml = html;
+        window._lastKpUrl = url;
+        const safeClient = (data.client_name || 'client').replace(/[^\wа-яА-ЯёЁ\-\s]/gi,'').replace(/\s+/g,'_').slice(0, 40);
+        const fileName = 'КП_' + safeClient + '_' + new Date().toISOString().slice(0,10) + '.html';
+
+        result.className = 'kp-result';
+        // сохраняем данные КП для фидбэка
+        window._lastKpData = data;
+        result.innerHTML = `
+            <h3 style="margin-bottom:12px;">✅ КП готово</h3>
+            <p style="color:#666; margin-bottom:16px;">Собрано с учётом вашей задачи. Откройте в новой вкладке и нажмите Ctrl+P → «Сохранить в PDF».</p>
+            <div class="result-actions">
+                <a class="btn btn-primary" href="${url}" download="${fileName}">⬇ Скачать HTML</a>
+                <a class="btn btn-secondary" href="${url}" target="_blank">👁 Открыть в новой вкладке</a>
+                <button class="btn btn-secondary" onclick="copyKpHtml()">📋 Скопировать код</button>
+            </div>
+            <iframe class="preview-frame" id="kpPreview"></iframe>
+            <div id="kpFeedback" style="margin-top:20px; padding:20px; background:#f9f9f9; border-radius:10px; border:1px solid #e5e5e7;">
+                <div style="font-size:14px; font-weight:600; margin-bottom:12px;">💬 Помоги мне стать лучше — оцени это КП</div>
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <button class="btn btn-primary" onclick="submitFeedback('good')" style="background:#0FBF00;">👍 Попал в точку</button>
+                    <button class="btn btn-secondary" onclick="showBadFeedback()" style="background:#ef4444; color:#fff;">👎 Не то — исправь</button>
+                </div>
+                <div id="kpFeedbackBad" style="display:none; margin-top:10px;">
+                    <textarea id="kpFeedbackComment" placeholder="Что не так? Какие продукты я должен был предложить? Чего не хватает? Что лишнее?" style="width:100%; padding:10px; border:1px solid #d5d5d7; border-radius:6px; font-family:inherit; font-size:13px; min-height:70px; background:#fff;"></textarea>
+                    <button class="btn btn-primary" onclick="submitFeedback('bad')" style="margin-top:8px;">Отправить фидбэк</button>
+                </div>
+                <div id="kpFeedbackDone" style="display:none; color:#0FBF00; font-weight:600; font-size:13px;">✅ Спасибо! Учту в следующий раз.</div>
+            </div>
+        `;
+        // Назначаем src после вставки в DOM, чтобы iframe корректно получил blob URL
+        setTimeout(() => {
+            const ifr = document.getElementById('kpPreview');
+            if (ifr) ifr.src = url;
+        }, 50);
+    } catch (err) {
+        result.className = 'kp-result empty';
+        result.innerHTML = '<div class="big-icon">⚠️</div><h4>Ошибка сети</h4><p>' + err.message + '</p>';
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.innerHTML = '⚡ Сгенерировать КП';
+    }
+}
+</script>
+
+</body>
+</html>
