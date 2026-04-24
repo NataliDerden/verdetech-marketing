@@ -238,7 +238,7 @@
   <div class="tab active" data-tab="my-week">Моя неделя</div>
   <div class="tab" data-tab="team">Команда</div>
   <div class="tab" data-tab="map">Карта 12 недель</div>
-  <div class="tab" data-tab="metrics">Трек 250→500</div>
+  <div class="tab" data-tab="metrics">Трек 250→350</div>
   <div class="tab" data-tab="scripts">Скрипты и ритуалы</div>
 </div>
 
@@ -468,7 +468,7 @@
       </div>
     </div>
 
-    <!-- ───── ТРЕК 250 → 500 ───── -->
+    <!-- ───── ТРЕК 250 → 350 ───── -->
     <div style="background:linear-gradient(135deg, #fff 0%, #f0fff4 100%); border:1px solid var(--line); border-radius:14px; padding:28px 32px; margin-bottom:24px; box-shadow:0 2px 20px rgba(0,0,0,0.04);">
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
         <div>
@@ -1106,7 +1106,7 @@ function renderTracker() {
   const wIdx = Math.min(selectedWeek - 1, RR_TRAJECTORY.length - 1);
   const currentRR = RR_TRAJECTORY[wIdx] || 250;
   const delta = currentRR - 250;
-  const pathPct = Math.round((delta / 250) * 100);  // % от 250 до 500
+  const pathPct = Math.round((delta / 100) * 100);  // % от 250 до 350 (путь 100М)
   const barPct = Math.min(Math.max(pathPct, 2), 100);
 
   const badge = document.getElementById('trackerWeekNum');
