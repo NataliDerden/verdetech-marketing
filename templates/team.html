@@ -63,7 +63,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .section-tab.active { color: #1a7f37; border-bottom-color: #1a7f37; }
 .section-tab .tab-count { font-size: 10px; font-weight: 400; margin-left: 4px; background: #f3f4f6; padding: 1px 5px; border-radius: 8px; }
 .section-tab.active .tab-count { background: #dcfce7; color: #166534; }
-.section-tab.kp-tab { color: #0FBF00; margin-left: auto; border-left: 1px solid #e5e5ea; }
+.section-tab.kp-tab { color: #0FBF00; border-right: 1px solid #e5e5ea; }
 .section-tab.kp-tab:hover { color: #088800; background: #f0fff4; }
 .section-tab.kp-tab.active { color: #088800; border-bottom-color: #0FBF00; background: #f0fff4; }
 #kpPanel { display: none; flex: 1; overflow: hidden; }
@@ -165,9 +165,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <body>
 <div class="header">
     <h1>Вердэ Ингредиенты — План команды</h1>
-    <div style="display:flex; gap:16px;">
-        <a href="/design" style="color:#0FBF00; font-weight:700;">🎨 Дизайн-хаб</a>
-        <a href="/dashboard">← Маркетинг</a>
+    <div style="display:flex; gap:12px; align-items:center;">
+        <a href="/design" target="_blank" style="background:#0FBF00; color:#fff; font-weight:700; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:13px;">⚡ Генератор КП</a>
+        <a href="/design" style="color:#0FBF00; font-weight:700; font-size:13px;">🎨 Дизайн-хаб</a>
+        <a href="/dashboard" style="font-size:13px;">← Маркетинг</a>
     </div>
 </div>
 <div class="progress-panel" id="progressPanel"></div>
@@ -277,12 +278,12 @@ function render() {
         if(!secCounts[g]) secCounts[g]={t:0,d:0}; secCounts[g].t++;
         if(saved[t.id]==='done'){secCounts[g].d++;secCounts.all.d++;}
     });
-    let tabsH = `<div class="section-tab ${activeSection==='all'?'active':''}" onclick="setSection('all')">Все<span class="tab-count">${secCounts.all.d}/${secCounts.all.t}</span></div>`;
+    let tabsH = `<div class="section-tab kp-tab ${activeSection==='kp'?'active':''}" onclick="setSection('kp')">⚡ КП</div>`;
+    tabsH += `<div class="section-tab ${activeSection==='all'?'active':''}" onclick="setSection('all')">Все<span class="tab-count">${secCounts.all.d}/${secCounts.all.t}</span></div>`;
     for(const[k,name] of Object.entries(sectionMap)){
         if(!secCounts[k]) continue;
         tabsH += `<div class="section-tab ${activeSection===k?'active':''}" onclick="setSection('${k}')">${name}<span class="tab-count">${secCounts[k].d}/${secCounts[k].t}</span></div>`;
     }
-    tabsH += `<div class="section-tab kp-tab ${activeSection==='kp'?'active':''}" onclick="setSection('kp')">⚡ Генератор КП</div>`;
     document.getElementById('sectionTabs').innerHTML = tabsH;
 
     // Показываем KP-панель или задачи
