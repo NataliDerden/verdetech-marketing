@@ -236,9 +236,10 @@
 <!-- ═══════════ TABS ═══════════ -->
 <div class="tabs">
   <div class="tab active" data-tab="my-week">Моя неделя</div>
+  <div class="tab" data-tab="team">Команда</div>
   <div class="tab" data-tab="map">Карта 12 недель</div>
-  <div class="tab" data-tab="metrics">Метрики</div>
-  <div class="tab" data-tab="scripts">Скрипты и материалы</div>
+  <div class="tab" data-tab="metrics">Трек 250→500</div>
+  <div class="tab" data-tab="scripts">Скрипты и ритуалы</div>
 </div>
 
 <!-- ═══════════ PAGE: MY WEEK ═══════════ -->
@@ -258,6 +259,113 @@
       <div id="fridayCheckpoint"></div>
     </div>
 
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: TEAM (лидерборд + лента + кластеры) ═══════════ -->
+<div class="page-content" id="page-team">
+  <div class="content">
+
+    <!-- ── СПРИНТ ── -->
+    <div id="sprintBanner" style="display:none; background:linear-gradient(135deg, #0B0B0C 0%, #088800 100%); color:#fff; border-radius:14px; padding:24px 32px; margin-bottom:20px; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-20px; right:-20px; width:160px; height:160px; border:3px solid rgba(255,255,255,0.08); border-radius:50%;"></div>
+      <div style="position:relative;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.8;">Мобилизация</div>
+        <div style="font-size:28px; font-weight:700; margin-top:4px;">АВРАЛЬНЫЙ СПРИНТ — неделя <span id="sprintWeekLabel"></span></div>
+        <div style="font-size:14px; margin-top:8px; opacity:0.85; max-width:600px;">+50% к плану. Кластер-победитель получает приз. Ежедневные летучки в 9:00. Лидерборд обновляется 2 раза в день.</div>
+        <div id="sprintPrize" style="margin-top:14px; padding:10px 16px; background:rgba(255,255,255,0.12); border-radius:8px; font-size:13px; font-weight:600; display:inline-block;"></div>
+      </div>
+    </div>
+
+    <!-- ── КЛАСТЕРЫ ── -->
+    <div style="margin-bottom:24px;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:10px;">Кластерное соревнование · Охотники vs Земледельцы</div>
+      <div id="clustersRow" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;"></div>
+    </div>
+
+    <!-- ── ЛИДЕРБОРД ── -->
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 style="font-size:22px; font-weight:700; color:var(--ink);">Лидерборд недели</h2>
+          <div style="font-size:12px; color:var(--muted); margin-top:2px;">Общие очки складываются из всех активностей. Кликай на карточку, чтобы увидеть разбивку.</div>
+        </div>
+        <button onclick="showScoreForm()" style="background:var(--ink); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">+ Обновить свои цифры</button>
+      </div>
+      <div id="leaderboard"></div>
+    </div>
+
+    <!-- ── ЛЕНТА ── -->
+    <div style="display:grid; grid-template-columns:1fr 380px; gap:20px;" id="feedLayout">
+      <!-- Лента -->
+      <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px 28px;">
+        <h2 style="font-size:18px; font-weight:700; color:var(--ink); margin-bottom:14px;">Лента команды</h2>
+        <div id="teamFeed"></div>
+      </div>
+
+      <!-- Формы постинга -->
+      <div>
+        <!-- Pledge -->
+        <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px;">
+          <h3 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:8px;">Понедельничный pledge</h3>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">Публичное обязательство на неделю. До пятницы не переобуваешься.</div>
+          <textarea id="pledgeText" placeholder="На этой неделе я: 80 холодных, 5 встреч, 10 КП. Главный вызов — {…}" style="width:100%; min-height:80px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+          <button onclick="postFeed('pledge')" style="margin-top:10px; width:100%; background:var(--green); color:#fff; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">Зафиксировать</button>
+        </div>
+
+        <!-- Daily standup -->
+        <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px;">
+          <h3 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:8px;">Утренний рапорт</h3>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">Вчера / сегодня / блокеры. 60 секунд на запись.</div>
+          <textarea id="standupText" placeholder="Вчера: 15 касаний, 2 ответа. Сегодня: 20 касаний + 1 демо. Блокер: нет доступа к прайсу снеков." style="width:100%; min-height:80px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+          <button onclick="postFeed('standup')" style="margin-top:10px; width:100%; background:var(--ink); color:#fff; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">Отправить</button>
+        </div>
+
+        <!-- Win -->
+        <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; border-left:4px solid var(--green);">
+          <h3 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:8px;">Победа недели</h3>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">Закрыл сделку? Получил ДА? Расскажи!</div>
+          <textarea id="winText" placeholder="Закрыл ООО «Мясмастер» на рассолы без фосфатов, 2 тонны/мес. Сработало возражение «уже есть поставщик» — предложил тест на 1 позицию." style="width:100%; min-height:80px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+          <button onclick="postFeed('win')" style="margin-top:10px; width:100%; background:linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); color:#fff; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">Опубликовать победу</button>
+        </div>
+
+        <!-- Shout-out -->
+        <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; border-left:4px solid #E6A817;">
+          <h3 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:8px;">Shout-out коллеге</h3>
+          <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">Спасибо за {конкретика}</div>
+          <select id="shoutoutTarget" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:8px; font-family:inherit; font-size:13px; margin-bottom:8px;">
+            <option value="">— выбери коллегу —</option>
+          </select>
+          <textarea id="shoutoutText" placeholder="Спасибо за скрипт по снекам — закрыл 3 встречи за день." style="width:100%; min-height:60px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+          <button onclick="postFeed('shoutout')" style="margin-top:10px; width:100%; background:#E6A817; color:#fff; border:none; padding:10px; border-radius:6px; font-weight:700; cursor:pointer;">Поблагодарить</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── БЕЙДЖИ ── -->
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:20px;">
+      <h2 style="font-size:18px; font-weight:700; color:var(--ink); margin-bottom:14px;">Бейджи — что можно заработать</h2>
+      <div id="badgesGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCORE INPUT MODAL ═══════════ -->
+<div id="scoreModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:14px; padding:24px 28px; max-width:460px; width:90%; max-height:90vh; overflow-y:auto;">
+    <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-bottom:6px;">Обнови свои цифры</h3>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:16px;">Введи что сделал с последнего обновления. Цифры суммируются.</div>
+    <div id="scoreModalBody">
+      <div style="margin-bottom:10px;"><label style="font-size:12px; font-weight:600; color:var(--muted);">Холодных касаний добавить</label><input type="number" id="sc_cold" min="0" value="0" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-size:14px; margin-top:4px;"></div>
+      <div style="margin-bottom:10px;"><label style="font-size:12px; font-weight:600; color:var(--muted);">Встреч добавить</label><input type="number" id="sc_meet" min="0" value="0" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-size:14px; margin-top:4px;"></div>
+      <div style="margin-bottom:10px;"><label style="font-size:12px; font-weight:600; color:var(--muted);">КП отправил</label><input type="number" id="sc_kp" min="0" value="0" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-size:14px; margin-top:4px;"></div>
+      <div style="margin-bottom:10px;"><label style="font-size:12px; font-weight:600; color:var(--muted);">QBR провёл</label><input type="number" id="sc_qbr" min="0" value="0" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-size:14px; margin-top:4px;"></div>
+      <div style="margin-bottom:16px;"><label style="font-size:12px; font-weight:600; color:var(--muted);">Сделок закрыл (новые)</label><input type="number" id="sc_deal" min="0" value="0" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-size:14px; margin-top:4px;"></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button onclick="submitScore()" style="flex:1; background:var(--green); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer;">Сохранить</button>
+      <button onclick="closeScoreModal()" style="flex:1; background:var(--hair); color:var(--ink); border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer;">Отмена</button>
+    </div>
   </div>
 </div>
 
@@ -361,6 +469,16 @@ const ROLES = {{ roles | tojson }};
 const WEEKS = {{ weeks | tojson }};
 const KPI_TARGETS = {{ kpi_targets | tojson }};
 const SCRIPTS = {{ scripts | tojson }};
+const CLUSTERS = {{ clusters | tojson }};
+const BADGES = {{ badges | tojson }};
+const ACTION_POINTS = {{ action_points | tojson }};
+const SPRINT_WEEKS = {{ sprint_weeks | tojson }};
+
+const SPRINT_PRIZES = {
+  4: 'Приз: день к выходным всем участникам кластера-победителя',
+  8: 'Приз: премия 10% от оклада всем участникам победившего кластера',
+  12: 'Приз: поездка на отраслевую выставку за счёт компании',
+};
 
 // ───────── STATE ─────────
 let selectedRole = localStorage.getItem('verdeSalesRole') || null;
@@ -375,12 +493,21 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMap();
   renderMetrics();
   renderScripts();
+  renderTeamTab();
   setupTabs();
 
   if (selectedRole) {
     updateRoleIndicator();
     showWeeklyTasks();
   }
+
+  // Refresh team tab every 30s when visible
+  setInterval(() => {
+    if (document.getElementById('page-team').classList.contains('active')) {
+      loadScores();
+      loadFeed();
+    }
+  }, 30000);
 });
 
 // ───────── TABS ─────────
@@ -677,6 +804,253 @@ function copyScript(ci, ii) {
 
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ───────── TEAM TAB ─────────
+let TEAM_SCORES = {};
+let TEAM_FEED = [];
+
+function renderTeamTab() {
+  renderSprintBanner();
+  renderClusters();
+  renderBadges();
+  populateShoutoutTargets();
+  loadScores();
+  loadFeed();
+}
+
+function renderSprintBanner() {
+  const banner = document.getElementById('sprintBanner');
+  if (!banner) return;
+  if (SPRINT_WEEKS.includes(selectedWeek)) {
+    banner.style.display = 'block';
+    document.getElementById('sprintWeekLabel').textContent = selectedWeek;
+    document.getElementById('sprintPrize').textContent = SPRINT_PRIZES[selectedWeek] || '';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function renderClusters() {
+  const html = CLUSTERS.map(c => {
+    const memberRoles = c.members.map(mid => ROLES.find(r => r.id === mid)).filter(Boolean);
+    const totalPoints = c.members.reduce((sum, mid) => sum + ((TEAM_SCORES[mid] || {}).points || 0), 0);
+    return `
+      <div style="background:#fff; border:2px solid ${c.color}33; border-radius:14px; padding:20px 24px; position:relative; overflow:hidden;">
+        <div style="position:absolute; top:-30px; right:-30px; width:120px; height:120px; background:${c.color}11; border-radius:50%;"></div>
+        <div style="position:relative;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:${c.color};">${c.motto}</div>
+          <h3 style="font-size:22px; font-weight:700; color:var(--ink); margin-top:4px;">${c.name}</h3>
+          <div style="font-size:12px; color:var(--muted); margin-top:2px;">${c.subtitle}</div>
+          <div style="margin-top:16px; display:flex; align-items:baseline; gap:8px;">
+            <span style="font-size:36px; font-weight:700; color:${c.color};">${totalPoints}</span>
+            <span style="font-size:13px; color:var(--muted);">очков в сумме</span>
+          </div>
+          <div style="margin-top:12px; font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:0.1em; font-weight:700;">Состав:</div>
+          <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+            ${memberRoles.map(r => {
+              const pts = ((TEAM_SCORES[r.id] || {}).points) || 0;
+              return `<div style="display:flex; justify-content:space-between; font-size:13px; padding:4px 0;"><span>${r.name.split('·')[0]}</span><span style="font-weight:700; color:${c.color};">${pts}</span></div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('clustersRow').innerHTML = html;
+}
+
+function renderLeaderboard() {
+  const sales_roles = ROLES.filter(r => r.id !== 'claude' && r.id !== 'natalia' && r.id !== 'rop');
+  const ranked = sales_roles.map(r => {
+    const s = TEAM_SCORES[r.id] || {};
+    return { role: r, score: s, points: s.points || 0 };
+  }).sort((a, b) => b.points - a.points);
+
+  const medals = ['1', '2', '3'];
+  const colors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+
+  const html = ranked.map((entry, i) => {
+    const r = entry.role;
+    const s = entry.score;
+    const pts = entry.points;
+    const medalColor = i < 3 ? colors[i] : '#f5f5f7';
+    const level = pts < 500 ? 'НОВИЧОК' : pts < 2000 ? 'ПРОДАВЕЦ' : pts < 5000 ? 'ОХОТНИК' : pts < 10000 ? 'ЭКСПЕРТ' : pts < 20000 ? 'МАСТЕР' : 'ЛЕГЕНДА';
+    const cluster = CLUSTERS.find(c => c.members.includes(r.id));
+    const clusterLabel = cluster ? cluster.name : '';
+    const clusterColor = cluster ? cluster.color : 'var(--muted)';
+    const updated = s.updated ? new Date(s.updated).toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : 'не обновлял';
+    return `
+      <div style="display:grid; grid-template-columns:50px 1fr auto auto auto auto auto; gap:14px; align-items:center; padding:14px 0; border-bottom:1px solid var(--hair);">
+        <div style="background:${medalColor}; color:#000; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px;">${i+1}</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; color:var(--ink);">${r.name}</div>
+          <div style="display:flex; gap:8px; margin-top:4px; font-size:10px;">
+            <span style="background:${clusterColor}22; color:${clusterColor}; font-weight:700; padding:2px 7px; border-radius:99px; letter-spacing:0.08em; text-transform:uppercase;">${clusterLabel}</span>
+            <span style="color:var(--faint);">${level}</span>
+          </div>
+        </div>
+        <div style="text-align:center;"><div style="font-weight:700; color:var(--ink);">${s.cold_touches || 0}</div><div style="font-size:10px; color:var(--faint);">КАСАНИЙ</div></div>
+        <div style="text-align:center;"><div style="font-weight:700; color:var(--ink);">${s.meetings || 0}</div><div style="font-size:10px; color:var(--faint);">ВСТРЕЧ</div></div>
+        <div style="text-align:center;"><div style="font-weight:700; color:var(--ink);">${s.kp_sent || 0}</div><div style="font-size:10px; color:var(--faint);">КП</div></div>
+        <div style="text-align:center;"><div style="font-weight:700; color:var(--ink);">${s.deals_closed || 0}</div><div style="font-size:10px; color:var(--faint);">СДЕЛОК</div></div>
+        <div style="text-align:right; min-width:90px;"><div style="font-size:22px; font-weight:700; color:var(--green-dark);">${pts}</div><div style="font-size:10px; color:var(--faint);">ОЧКОВ</div></div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('leaderboard').innerHTML = html || '<div style="padding:20px; text-align:center; color:var(--faint);">Пока никто не обновил цифры. Будь первым!</div>';
+}
+
+function renderBadges() {
+  const html = BADGES.map(b => {
+    const tierColors = {
+      bronze: {bg: '#fff5ea', bd: '#cd7f32', fg: '#8b4513'},
+      silver: {bg: '#f5f5f7', bd: '#a8a8a8', fg: '#555'},
+      gold: {bg: '#fffbea', bd: '#E6A817', fg: '#8a6b00'},
+      platinum: {bg: 'linear-gradient(135deg, #f0fff4 0%, #fff 100%)', bd: '#0FBF00', fg: '#088800'},
+    };
+    const c = tierColors[b.tier] || tierColors.bronze;
+    return `
+      <div style="background:${c.bg}; border:1.5px solid ${c.bd}55; border-radius:10px; padding:12px 14px; position:relative;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:${c.fg}; opacity:0.7; margin-bottom:4px;">${b.tier}</div>
+        <div style="font-size:14px; font-weight:700; color:${c.fg}; margin-bottom:4px;">${b.name}</div>
+        <div style="font-size:11px; color:var(--muted); line-height:1.4; margin-bottom:8px;">${b.desc}</div>
+        <div style="font-size:11px; font-weight:700; color:${c.fg};">+${b.points} очков</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('badgesGrid').innerHTML = html;
+}
+
+function populateShoutoutTargets() {
+  const select = document.getElementById('shoutoutTarget');
+  if (!select) return;
+  const opts = ROLES.filter(r => r.id !== 'claude' && (selectedRole ? r.id !== selectedRole : true))
+    .map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+  select.innerHTML = '<option value="">— выбери коллегу —</option>' + opts;
+}
+
+async function loadScores() {
+  try {
+    const res = await fetch('/api/sales-scores');
+    if (!res.ok) return;
+    const data = await res.json();
+    TEAM_SCORES = data.scores || {};
+    renderClusters();
+    renderLeaderboard();
+  } catch (e) { console.error(e); }
+}
+
+async function loadFeed() {
+  try {
+    const res = await fetch('/api/sales-feed');
+    if (!res.ok) return;
+    const data = await res.json();
+    TEAM_FEED = data.items || [];
+    renderFeed();
+  } catch (e) { console.error(e); }
+}
+
+function renderFeed() {
+  const kindLabel = {
+    pledge: {title: 'Обязательство', color: '#0FBF00'},
+    standup: {title: 'Рапорт', color: '#71717A'},
+    win: {title: 'ПОБЕДА', color: '#088800'},
+    shoutout: {title: 'Shout-out', color: '#E6A817'},
+    milestone: {title: 'Веха', color: '#6d28d9'},
+  };
+  if (TEAM_FEED.length === 0) {
+    document.getElementById('teamFeed').innerHTML = '<div style="padding:30px 10px; text-align:center; color:var(--faint); font-size:13px;">Лента пустая. Запость первое обязательство или победу!</div>';
+    return;
+  }
+  const html = TEAM_FEED.map(e => {
+    const kl = kindLabel[e.kind] || {title: e.kind, color: '#71717A'};
+    const authorRole = ROLES.find(r => r.id === e.author_role);
+    const authorName = authorRole ? authorRole.name : (e.author_name || 'Команда');
+    const targetRole = ROLES.find(r => r.id === e.target);
+    const targetName = targetRole ? targetRole.name : '';
+    const ts = e.ts ? new Date(e.ts).toLocaleString('ru-RU', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
+    return `
+      <div style="padding:14px 0; border-bottom:1px solid var(--hair);">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:6px; flex-wrap:wrap;">
+          <span style="background:${kl.color}; color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:99px; letter-spacing:0.1em; text-transform:uppercase;">${kl.title}</span>
+          <span style="font-size:13px; font-weight:600; color:var(--ink);">${authorName}</span>
+          ${targetName ? `<span style="font-size:12px; color:var(--muted);">→ ${targetName}</span>` : ''}
+          <span style="font-size:11px; color:var(--faint); margin-left:auto;">${ts}</span>
+        </div>
+        <div style="font-size:13.5px; color:var(--body); line-height:1.6; white-space:pre-wrap;">${escapeHtml(e.text || '')}</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('teamFeed').innerHTML = html;
+}
+
+async function postFeed(kind) {
+  const role = ROLES.find(r => r.id === selectedRole);
+  if (!selectedRole || !role) {
+    alert('Сначала выбери свою роль на вкладке «Моя неделя»');
+    return;
+  }
+
+  let text = '';
+  let target = '';
+  if (kind === 'pledge') text = document.getElementById('pledgeText').value.trim();
+  else if (kind === 'standup') text = document.getElementById('standupText').value.trim();
+  else if (kind === 'win') text = document.getElementById('winText').value.trim();
+  else if (kind === 'shoutout') {
+    text = document.getElementById('shoutoutText').value.trim();
+    target = document.getElementById('shoutoutTarget').value;
+    if (!target) { alert('Выбери коллегу'); return; }
+  }
+
+  if (!text) { alert('Напиши текст'); return; }
+
+  try {
+    const res = await fetch('/api/sales-feed', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({kind, author_role: selectedRole, author_name: role.name, text, target}),
+    });
+    if (!res.ok) { alert('Ошибка отправки'); return; }
+    // Clear inputs
+    if (kind === 'pledge') document.getElementById('pledgeText').value = '';
+    else if (kind === 'standup') document.getElementById('standupText').value = '';
+    else if (kind === 'win') document.getElementById('winText').value = '';
+    else if (kind === 'shoutout') { document.getElementById('shoutoutText').value = ''; document.getElementById('shoutoutTarget').value = ''; }
+    await loadFeed();
+  } catch (e) { console.error(e); alert('Ошибка сети'); }
+}
+
+function showScoreForm() {
+  if (!selectedRole) { alert('Сначала выбери свою роль на вкладке «Моя неделя»'); return; }
+  document.getElementById('scoreModal').style.display = 'flex';
+}
+
+function closeScoreModal() {
+  document.getElementById('scoreModal').style.display = 'none';
+}
+
+async function submitScore() {
+  const payload = {
+    role: selectedRole,
+    cold_touches: parseInt(document.getElementById('sc_cold').value || '0', 10),
+    meetings: parseInt(document.getElementById('sc_meet').value || '0', 10),
+    kp_sent: parseInt(document.getElementById('sc_kp').value || '0', 10),
+    qbr_done: parseInt(document.getElementById('sc_qbr').value || '0', 10),
+    deals_closed: parseInt(document.getElementById('sc_deal').value || '0', 10),
+  };
+  try {
+    const res = await fetch('/api/sales-scores', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) { alert('Ошибка обновления'); return; }
+    ['sc_cold', 'sc_meet', 'sc_kp', 'sc_qbr', 'sc_deal'].forEach(id => { document.getElementById(id).value = '0'; });
+    closeScoreModal();
+    await loadScores();
+  } catch (e) { console.error(e); alert('Ошибка сети'); }
 }
 </script>
 

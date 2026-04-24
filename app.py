@@ -811,7 +811,12 @@ def sales_hub():
         return render_template('team_login.html', error=None)
 
     try:
-        from sales_data import ROLES as SALES_ROLES, WEEKS as SALES_WEEKS, KPI_TARGETS as SALES_KPI, SCRIPTS as SALES_SCRIPTS
+        from sales_data import (
+            ROLES as SALES_ROLES, WEEKS as SALES_WEEKS,
+            KPI_TARGETS as SALES_KPI, SCRIPTS as SALES_SCRIPTS,
+            CLUSTERS as SALES_CLUSTERS, BADGES as SALES_BADGES,
+            ACTION_POINTS as SALES_POINTS, SPRINT_WEEKS,
+        )
     except Exception as e:
         return f'Ошибка загрузки плана продаж: {e}', 500
 
@@ -821,10 +826,147 @@ def sales_hub():
         weeks=SALES_WEEKS,
         kpi_targets=SALES_KPI,
         scripts=SALES_SCRIPTS,
+        clusters=SALES_CLUSTERS,
+        badges=SALES_BADGES,
+        action_points=SALES_POINTS,
+        sprint_weeks=SPRINT_WEEKS,
     ))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
     return resp
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Sales Team Backend: лента, лидерборд, shout-out-ы
+# ═══════════════════════════════════════════════════════════════════════════
+
+SALES_TEAM_FEED_FILE = 'sales_team_feed.jsonl'
+SALES_TEAM_SCORES_FILE = 'sales_team_scores.json'
+
+
+def _read_team_feed(limit=100):
+    if not os.path.exists(SALES_TEAM_FEED_FILE):
+        return []
+    items = []
+    try:
+        with open(SALES_TEAM_FEED_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        items.append(json.loads(line))
+                    except Exception:
+                        pass
+    except Exception:
+        return []
+    return items[-limit:][::-1]  # newest first
+
+
+def _append_team_feed(entry):
+    try:
+        with open(SALES_TEAM_FEED_FILE, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+    except Exception as e:
+        print(f'[sales-feed] write error: {e}')
+
+
+def _read_team_scores():
+    if not os.path.exists(SALES_TEAM_SCORES_FILE):
+        return {}
+    try:
+        with open(SALES_TEAM_SCORES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _write_team_scores(scores):
+    try:
+        with open(SALES_TEAM_SCORES_FILE, 'w', encoding='utf-8') as f:
+            json.dump(scores, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[sales-scores] write error: {e}')
+
+
+@app.route('/api/sales-feed', methods=['GET', 'POST'])
+def sales_feed():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    if request.method == 'GET':
+        return jsonify({'items': _read_team_feed(limit=100)})
+
+    data = request.get_json() or {}
+    kind = data.get('kind', 'note')  # pledge | win | shoutout | standup | milestone
+    author_role = (data.get('author_role') or '').strip()
+    author_name = (data.get('author_name') or '').strip() or author_role or 'Аноним'
+    text = (data.get('text') or '').strip()
+    target = (data.get('target') or '').strip()  # для shout-out — кому
+
+    if not text and kind != 'milestone':
+        return jsonify({'error': 'Пустой текст'}), 400
+
+    entry = {
+        'ts': datetime.utcnow().isoformat(timespec='seconds') + 'Z',
+        'kind': kind,
+        'author_role': author_role,
+        'author_name': author_name,
+        'text': text,
+        'target': target,
+    }
+    _append_team_feed(entry)
+    return jsonify({'ok': True, 'entry': entry})
+
+
+@app.route('/api/sales-scores', methods=['GET', 'POST'])
+def sales_scores():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    if request.method == 'GET':
+        return jsonify({'scores': _read_team_scores()})
+
+    data = request.get_json() or {}
+    role = data.get('role')
+    if not role:
+        return jsonify({'error': 'role required'}), 400
+
+    scores = _read_team_scores()
+    rec = scores.get(role, {
+        'cold_touches': 0, 'meetings': 0, 'kp_sent': 0,
+        'qbr_done': 0, 'base_touches': 0, 'deals_closed': 0,
+        'points': 0, 'streak_days': 0, 'badges': [],
+        'updated': '',
+    })
+
+    # Принимаем инкременты (+N) и абсолютные значения
+    for k in ['cold_touches', 'meetings', 'kp_sent', 'qbr_done', 'base_touches', 'deals_closed']:
+        if k in data:
+            try:
+                if data.get(f'{k}_mode') == 'absolute':
+                    rec[k] = int(data[k])
+                else:
+                    rec[k] = int(rec.get(k, 0)) + int(data[k])
+            except Exception:
+                pass
+
+    # Пересчёт очков из action_points
+    try:
+        from sales_data import ACTION_POINTS
+        rec['points'] = (
+            rec.get('cold_touches', 0) * ACTION_POINTS.get('cold_touch', 1) +
+            rec.get('meetings', 0) * ACTION_POINTS.get('meeting', 10) +
+            rec.get('kp_sent', 0) * ACTION_POINTS.get('kp', 5) +
+            rec.get('qbr_done', 0) * ACTION_POINTS.get('qbr', 15) +
+            rec.get('deals_closed', 0) * ACTION_POINTS.get('deal_closed', 100)
+        )
+    except Exception:
+        pass
+
+    rec['updated'] = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+    scores[role] = rec
+    _write_team_scores(scores)
+    return jsonify({'ok': True, 'score': rec})
 
 
 BITRIX_WEBHOOK_URL = os.environ.get('BITRIX_WEBHOOK_URL', '')
