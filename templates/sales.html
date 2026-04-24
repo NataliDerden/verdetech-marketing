@@ -608,14 +608,117 @@
       <!-- Итоги: прогноз / цель / статус -->
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;" id="funnelSummary"></div>
 
-      <!-- Bitrix placeholder -->
-      <div style="margin-top:20px; padding:16px 20px; background:var(--hair); border-radius:10px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-        <div style="font-size:22px; flex-shrink:0;">🔗</div>
-        <div style="flex:1; min-width:200px;">
-          <div style="font-size:13px; font-weight:700; color:var(--ink);">Здесь будет реальный pipeline из Bitrix24</div>
-          <div style="font-size:12px; color:var(--muted); margin-top:3px;">После подключения Bitrix — суммы сделок по стадиям, горячие лиды этой недели, реальный прогноз закрытия. Пока показываем расчёт по плановым KPI.</div>
-        </div>
+      <!-- Bitrix mini placeholder -->
+      <div style="margin-top:20px; padding:14px 18px; background:var(--hair); border-radius:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:20px;">🔗</div>
+        <div style="flex:1; min-width:200px; font-size:12px; color:var(--muted);">Полный план интеграции с Bitrix24 — см. блок ниже ↓</div>
         <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; white-space:nowrap; background:var(--line); padding:6px 12px; border-radius:6px;">Ожидание webhook</div>
+      </div>
+    </div>
+
+    <!-- ───── ИНТЕГРАЦИЯ С BITRIX24 — ПЛАН В 5 ФАЗАХ ───── -->
+    <div style="background:#fff; border:2px solid #ffd666; border-radius:14px; padding:28px 32px; margin-bottom:24px;">
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#d97706; margin-bottom:4px;">🔗 Интеграция с Bitrix24 · план разработки</div>
+        <h2 style="font-size:20px; font-weight:700; color:var(--ink);">Как Bitrix24 соединится с этим хабом — 5 фаз</h2>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Что команда перестанет делать вручную. Каждая фаза — отдельный релиз, не всё сразу.</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:14px;">
+
+        <!-- Фаза 1 -->
+        <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:12px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="background:#d97706; color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.08em;">ФАЗА 1 · QUICK WIN</div>
+            <div style="font-size:10px; color:var(--muted); font-weight:700;">1-2 дня</div>
+          </div>
+          <h4 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:6px;">Задачи → Bitrix Tasks</h4>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:8px;">Когда Кирилл/РОП назначает задачу в этом хабе — автоматически создаётся задача в Bitrix на конкретного сотрудника.</div>
+          <div style="font-size:11px; color:var(--body); line-height:1.6;">
+            <b>Что ломается:</b> нет дублирования, видно в Bitrix-календаре<br>
+            <b>API:</b> <code style="background:var(--hair); padding:1px 5px; border-radius:3px; font-size:10px;">tasks.task.add</code>
+          </div>
+        </div>
+
+        <!-- Фаза 2 -->
+        <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:12px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="background:#d97706; color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.08em;">ФАЗА 2</div>
+            <div style="font-size:10px; color:var(--muted); font-weight:700;">2-3 дня</div>
+          </div>
+          <h4 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:6px;">Pipeline → Трек 250→350</h4>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:8px;">Реальные суммы открытых сделок и стадий из Bitrix на трекере. "Прогноз месяца" считается по настоящим цифрам, не по KPI.</div>
+          <div style="font-size:11px; color:var(--body); line-height:1.6;">
+            <b>Что ломается:</b> Excel-отчёты РОПа, ручной pipeline<br>
+            <b>API:</b> <code style="background:var(--hair); padding:1px 5px; border-radius:3px; font-size:10px;">crm.deal.list</code> + webhook по стадиям
+          </div>
+        </div>
+
+        <!-- Фаза 3 -->
+        <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:12px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="background:#d97706; color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.08em;">ФАЗА 3</div>
+            <div style="font-size:10px; color:var(--muted); font-weight:700;">2 дня</div>
+          </div>
+          <h4 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:6px;">Авто-заполнение KPI</h4>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:8px;">Касания, встречи, КП считаются автоматически из Bitrix Activities. Менеджерам не надо вручную вводить цифры в лидерборд.</div>
+          <div style="font-size:11px; color:var(--body); line-height:1.6;">
+            <b>Что ломается:</b> ручной ввод очков, забывчивость менеджеров<br>
+            <b>API:</b> <code style="background:var(--hair); padding:1px 5px; border-radius:3px; font-size:10px;">crm.activity.list</code>
+          </div>
+        </div>
+
+        <!-- Фаза 4 -->
+        <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:12px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="background:#d97706; color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.08em;">ФАЗА 4</div>
+            <div style="font-size:10px; color:var(--muted); font-weight:700;">3-4 дня</div>
+          </div>
+          <h4 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:6px;">Стадия сделки → КП-генератор</h4>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:8px;">Когда сделка переходит в стадию "Отправить КП" — Bitrix webhook триггерит генератор КП в /design. PDF автоматически прикрепляется к сделке.</div>
+          <div style="font-size:11px; color:var(--body); line-height:1.6;">
+            <b>Что ломается:</b> ручное написание КП по шаблону<br>
+            <b>API:</b> webhook на ONCRMDEALUPDATE + <code style="background:var(--hair); padding:1px 5px; border-radius:3px; font-size:10px;">disk.file.add</code>
+          </div>
+        </div>
+
+        <!-- Фаза 5 -->
+        <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:12px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="background:#d97706; color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.08em;">ФАЗА 5</div>
+            <div style="font-size:10px; color:var(--muted); font-weight:700;">2-3 дня</div>
+          </div>
+          <h4 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:6px;">ТОП-20 + риск ухода</h4>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:8px;">Из Bitrix выгружаются ТОП-20 по выручке, срок последнего заказа, риск ухода. Подсвечиваются AM: "этим позвонить сегодня — 75+ дней молчат".</div>
+          <div style="font-size:11px; color:var(--body); line-height:1.6;">
+            <b>Что ломается:</b> ABM-листы в Excel, потеря клиентов в тишине<br>
+            <b>API:</b> <code style="background:var(--hair); padding:1px 5px; border-radius:3px; font-size:10px;">crm.deal.list</code> + сегментация по выручке
+          </div>
+        </div>
+
+        <!-- Бонус -->
+        <div style="background:var(--green-soft); border:1px solid var(--green)40; border-radius:12px; padding:18px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="background:var(--green-dark); color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.08em;">БОНУС</div>
+            <div style="font-size:10px; color:var(--muted); font-weight:700;">1 день</div>
+          </div>
+          <h4 style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:6px;">Утренний дайджест команде</h4>
+          <div style="font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:8px;">Каждое утро в 9:00 бот постит в ленту /sales: "Вчера команда сделала X касаний, закрыла Y сделок на Z М₽, провалы по: ..."</div>
+          <div style="font-size:11px; color:var(--body); line-height:1.6;">
+            <b>Что ломается:</b> утренняя летучка занимает 15 мин — теперь 5 мин
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Что нужно от Натальи -->
+      <div style="background:var(--hair); border-radius:10px; padding:16px 20px; margin-top:20px;">
+        <div style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:8px;">Что нужно от Натальи чтобы запустить:</div>
+        <div style="font-size:12px; color:var(--body); line-height:1.7;">
+          <b>1.</b> Bitrix24 admin → Разработчикам → Входящий вебхук → скопировать URL<br>
+          <b>2.</b> Права вебхука: <code style="background:#fff; padding:1px 5px; border-radius:3px; font-size:11px;">crm, tasks, disk, user</code><br>
+          <b>3.</b> Прислать URL — запустим Фазу 1 (задачи → Bitrix Tasks) за 1-2 дня
+        </div>
       </div>
     </div>
 
@@ -1171,25 +1274,34 @@ async function renderAssignerForm() {
   }).join('');
 
   // Подтянуть уже назначенные задачи этой ролью на этой неделе
-  let sentHtml = '';
+  let sentCount = 0;
+  let sentListHtml = '';
   try {
     const res = await fetch(`/api/sales-custom-tasks?week=${selectedWeek}`);
     const data = await res.json();
     const mine = (data.tasks || []).filter(t => t.from_role === selectedRole);
-    if (mine.length > 0) {
-      sentHtml = `
-        <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--hair);">
-          <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">Уже назначил на этой неделе (${mine.length}):</div>
+    sentCount = mine.length;
+    const openCount = mine.filter(t => !t.done).length;
+    const doneCount = mine.filter(t => t.done).length;
+
+    if (sentCount > 0) {
+      sentListHtml = `
+        <div style="background:rgba(255,255,255,0.08); border-radius:10px; padding:16px 18px; margin-top:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <div style="font-size:12px; font-weight:700; color:#fff; letter-spacing:0.12em; text-transform:uppercase;">Уже назначено на неделе: ${sentCount}</div>
+            <div style="font-size:11px; opacity:0.8;"><span style="color:#b8f5a0;">✓ выполнено: ${doneCount}</span> · <span style="color:#ffd666;">в работе: ${openCount}</span></div>
+          </div>
           ${mine.map(t => {
             const r = ROLES.find(x => x.id === t.to_role);
             const toName = r ? r.name : t.to_role;
             return `
-              <div style="display:flex; gap:10px; align-items:center; padding:8px 12px; background:var(--hair); border-radius:8px; margin-bottom:6px; font-size:12px; ${t.done ? 'opacity:0.5;' : ''}">
+              <div style="display:flex; gap:10px; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.08); border-radius:6px; margin-bottom:6px; font-size:12px; color:#fff; ${t.done ? 'opacity:0.5;' : ''}">
+                <div style="width:12px; height:12px; border-radius:50%; background:${t.done ? '#b8f5a0' : '#ffd666'}; flex-shrink:0;"></div>
                 <div style="flex:1;">
-                  <b style="color:var(--ink);">→ ${toName}:</b> ${escapeHtml(t.task).slice(0, 80)}${t.task.length > 80 ? '...' : ''}
-                  ${t.done ? ' <span style="color:var(--green-dark); font-weight:700;">✓ выполнено</span>' : ''}
+                  <b>→ ${toName}</b> · ${t.day}: ${escapeHtml(t.task).slice(0, 90)}${t.task.length > 90 ? '...' : ''}
+                  ${t.done ? ' <span style="color:#b8f5a0;">· выполнено ✓</span>' : ''}
                 </div>
-                <button onclick="deleteCustomTask('${t.id}')" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:14px;">✕</button>
+                <button onclick="deleteCustomTask('${t.id}')" style="background:none; border:none; color:rgba(255,255,255,0.5); cursor:pointer; font-size:14px;">✕</button>
               </div>
             `;
           }).join('')}
@@ -1198,48 +1310,54 @@ async function renderAssignerForm() {
     }
   } catch (e) { console.error(e); }
 
-  el.innerHTML = `
-    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 28px; margin-bottom:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-wrap:wrap; gap:8px;" onclick="toggleAssignForm()">
-        <div>
-          <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:4px;">✍️ Назначить задачу команде</div>
-          <div style="font-size:13px; color:var(--muted);">Задача появится у получателя в блоке «Задачи от руководителя» на выбранной неделе</div>
-        </div>
-        <button id="assignToggleBtn" style="background:var(--green); color:#fff; border:none; padding:10px 18px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">+ Новая задача</button>
-      </div>
+  const roleHint = selectedRole === 'kirill'
+    ? 'Ты — Директор. Твои задачи идут команде напрямую. Ставь приоритеты.'
+    : 'Ты — РОП. Через тебя идут все операционные задачи менеджерам. Распределяй нагрузку.';
 
-      <div id="assignFormInner" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--hair);">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-          <div>
-            <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Кому</label>
-            <select id="assignTo" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px;">${optionsHtml}</select>
+  const teamSize = targets.length;
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg, #0B0B0C 0%, #088800 100%); color:#fff; border-radius:14px; padding:26px 30px; margin-bottom:22px; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-30px; right:-30px; width:180px; height:180px; border:3px solid rgba(255,255,255,0.06); border-radius:50%;"></div>
+      <div style="position:relative;">
+
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.8; margin-bottom:6px;">🎯 Постановка задач команде</div>
+        <h3 style="font-size:22px; font-weight:700; margin-bottom:6px;">Ты руководишь ${teamSize} ${selectedRole === 'kirill' ? 'людьми' : 'менеджерами'} — ставь задачи здесь</h3>
+        <div style="font-size:13px; opacity:0.85; margin-bottom:18px; line-height:1.5;">${roleHint}</div>
+
+        <!-- Форма — всегда развёрнута -->
+        <div style="background:rgba(255,255,255,0.1); backdrop-filter:blur(10px); border-radius:10px; padding:18px 20px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+            <div>
+              <label style="font-size:10px; font-weight:700; opacity:0.85; letter-spacing:0.12em; text-transform:uppercase; display:block; margin-bottom:4px;">Кому назначить</label>
+              <select id="assignTo" style="width:100%; border:none; border-radius:6px; padding:11px; font-family:inherit; font-size:13px; font-weight:600;">${optionsHtml}</select>
+            </div>
+            <div>
+              <label style="font-size:10px; font-weight:700; opacity:0.85; letter-spacing:0.12em; text-transform:uppercase; display:block; margin-bottom:4px;">Когда сделать</label>
+              <select id="assignDay" style="width:100%; border:none; border-radius:6px; padding:11px; font-family:inherit; font-size:13px; font-weight:600;">
+                <option>Пн</option><option>Вт</option><option>Ср</option><option>Чт</option><option>Пт</option>
+                <option selected>Пн-Пт</option><option>Ежедневно</option><option>Вся неделя</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">День</label>
-            <select id="assignDay" style="width:100%; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px;">
-              <option>Пн</option><option>Вт</option><option>Ср</option><option>Чт</option><option>Пт</option>
-              <option selected>Пн-Пт</option><option>Ежедневно</option><option>Вся неделя</option>
-            </select>
-          </div>
+          <label style="font-size:10px; font-weight:700; opacity:0.85; letter-spacing:0.12em; text-transform:uppercase; display:block; margin-bottom:4px;">Задача *</label>
+          <textarea id="assignTask" placeholder="Например: Обзвонить 10 клиентов из ТОП-20 с анонсом Халяль к четвергу" style="width:100%; min-height:66px; border:none; border-radius:6px; padding:11px; font-family:inherit; font-size:13px; resize:vertical; margin-bottom:10px;"></textarea>
+          <label style="font-size:10px; font-weight:700; opacity:0.85; letter-spacing:0.12em; text-transform:uppercase; display:block; margin-bottom:4px;">Подсказка / контекст (необязательно)</label>
+          <textarea id="assignHint" placeholder="Детали, ссылки, примеры скриптов, какие результаты ожидаешь" style="width:100%; min-height:50px; border:none; border-radius:6px; padding:11px; font-family:inherit; font-size:13px; resize:vertical; margin-bottom:14px;"></textarea>
+          <button onclick="submitAssignedTask()" style="width:100%; background:#fff; color:var(--ink); border:none; padding:14px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='#b8f5a0';" onmouseout="this.style.background='#fff';">Назначить задачу →</button>
         </div>
-        <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Задача *</label>
-        <textarea id="assignTask" placeholder="Например: Обзвонить 10 клиентов из ТОП-20 с анонсом Халяль" style="width:100%; min-height:60px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical; margin-bottom:10px;"></textarea>
-        <label style="font-size:11px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Подсказка / детали (необязательно)</label>
-        <textarea id="assignHint" placeholder="Детали, ссылки, контекст" style="width:100%; min-height:50px; border:1px solid var(--line); border-radius:6px; padding:10px; font-family:inherit; font-size:13px; resize:vertical; margin-bottom:12px;"></textarea>
-        <button onclick="submitAssignedTask()" style="width:100%; background:var(--ink); color:#fff; border:none; padding:12px; border-radius:6px; font-weight:700; cursor:pointer;">Назначить задачу</button>
+
+        ${sentListHtml}
+
+        <!-- Bitrix placeholder -->
+        <div style="margin-top:18px; padding:14px 16px; background:rgba(255,255,255,0.08); border-radius:8px; border-left:3px solid #ffd666;">
+          <div style="font-size:11px; font-weight:700; color:#ffd666; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:4px;">🔗 Bitrix24 — подключится</div>
+          <div style="font-size:12px; opacity:0.9; line-height:1.5;">После подключения Bitrix — каждая задача автоматически создаётся как Bitrix Task на конкретного сотрудника, а когда он отметит выполнение в Bitrix — галочка появится здесь.</div>
+        </div>
+
       </div>
-      ${sentHtml}
     </div>
   `;
-}
-
-function toggleAssignForm() {
-  const inner = document.getElementById('assignFormInner');
-  const btn = document.getElementById('assignToggleBtn');
-  if (!inner) return;
-  const isOpen = inner.style.display === 'block';
-  inner.style.display = isOpen ? 'none' : 'block';
-  if (btn) btn.textContent = isOpen ? '+ Новая задача' : 'Закрыть';
 }
 
 async function submitAssignedTask() {
