@@ -1501,6 +1501,270 @@ SALES ENABLEMENT:
     return jsonify({'html': rendered})
 
 
+BRAND_CHECKLIST_PROMPT = """Ты — бренд-гардиан Verde Tech. Проверь макет строго по чек-листу.
+
+ПРАВИЛА БРЕНДА Verde Tech:
+1. Логотип взят из исходников (знак 4 лепестка + вордмарк VERDE®TECH), не перерисован вручную
+2. Охранное поле логотипа: свободное пространство вокруг лого ≥ половины его высоты
+3. Палитра строго: #FFFFFF / #000000 / #0FBF00 / #FCFCFC. Жёлто-горчичный #F2B42A допустим ТОЛЬКО как фон под продуктовое фото
+4. Шрифт — только Onest (геометрический гротеск). Arial, Helvetica, Times — нарушение
+5. Контраст лого и фона: чёрный лого на белом/сером ✓, белый лого на чёрном/зелёном ✓, зелёный лого на белом/чёрном ✓
+6. Слоган точно: «Забота о будущем» или «Caring for the Future» — без изменений
+7. Минимум 30% белого/пустого пространства в макете
+8. Нет теней, градиентов, свечений, blur, текстур — ни на лого, ни на заголовках
+9. Для печати: CMYK профиль, разрешение 300dpi+, вылеты 3-5мм
+10. Для digital: цветовой профиль sRGB, файл оптимизирован по весу
+
+Верни строго JSON (без markdown, без пояснений):
+{
+  "overall": "pass" | "warn" | "fail",
+  "score": <число 0-10>,
+  "items": [
+    {"id": 1, "name": "Логотип из исходников", "status": "pass"|"fail"|"warn"|"na", "comment": "Краткий комментарий или пустая строка"},
+    {"id": 2, "name": "Охранное поле логотипа", "status": "...", "comment": "..."},
+    {"id": 3, "name": "Палитра #000/#FFF/#0FBF00/#FCFCFC", "status": "...", "comment": "..."},
+    {"id": 4, "name": "Шрифт Onest", "status": "...", "comment": "..."},
+    {"id": 5, "name": "Контраст лого/фон", "status": "...", "comment": "..."},
+    {"id": 6, "name": "Слоган без искажений", "status": "...", "comment": "..."},
+    {"id": 7, "name": "Минимум 30% воздуха", "status": "...", "comment": "..."},
+    {"id": 8, "name": "Нет теней/градиентов", "status": "...", "comment": "..."},
+    {"id": 9, "name": "CMYK/300dpi/вылеты (печать)", "status": "...", "comment": "..."},
+    {"id": 10, "name": "sRGB/вес файла (digital)", "status": "...", "comment": "..."}
+  ],
+  "main_issues": ["список главных проблем, или пустой массив"],
+  "recommendations": "Что исправить в 1-3 предложения. Пустая строка если всё OK."
+}
+
+Если пункт невозможно оценить по изображению — ставь "na".
+"""
+
+
+@app.route('/api/brand-check', methods=['POST'])
+def brand_check():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    data = request.get_json() or {}
+    image_b64 = data.get('image', '')
+    context_note = data.get('note', '').strip()
+
+    if not image_b64:
+        return jsonify({'error': 'Изображение не загружено'}), 400
+
+    prompt_text = BRAND_CHECKLIST_PROMPT
+    if context_note:
+        prompt_text += f'\n\nДополнительный контекст: {context_note}'
+
+    try:
+        response = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'anthropic/claude-sonnet-4',
+                'messages': [{
+                    'role': 'user',
+                    'content': [
+                        {'type': 'image_url', 'image_url': {'url': image_b64}},
+                        {'type': 'text', 'text': prompt_text},
+                    ],
+                }],
+                'max_tokens': 1500,
+                'temperature': 0.1,
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        reply = response.json()['choices'][0]['message']['content'].strip()
+        reply = re.sub(r'^```(?:json)?\s*|\s*```$', '', reply, flags=re.MULTILINE).strip()
+        result = json.loads(reply)
+        return jsonify(result)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'AI вернул не JSON: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Ошибка: {str(e)}'}), 500
+
+
+@app.route('/api/generate-email', methods=['POST'])
+def generate_email():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    data = request.get_json() or {}
+    segment = data.get('segment', '').strip()
+    product = data.get('product', '').strip()
+    email_goal = data.get('goal', '').strip()
+    email_number = data.get('email_number', '1')
+    manager_name = data.get('manager_name', '').strip()
+    manager_phone = data.get('manager_phone', '+7 (812) 607-64-28').strip()
+    manager_email_addr = data.get('manager_email', 'sales@verdetech.ru').strip()
+    recipient_name = data.get('recipient_name', '').strip()
+
+    if not segment or not email_goal:
+        return jsonify({'error': 'Укажите сегмент и цель письма'}), 400
+
+    # Загрузить отраслевой бриф по сегменту
+    industry_brief = ''
+    seg_lower = segment.lower()
+    industry_map_check = {
+        'Мясопереработка': ['мяс', 'колбас', 'сосис', 'ветчин', 'мортадел'],
+        'Птицепереработка': ['птиц', 'курин', 'бройлер'],
+        'Молочная промышленность': ['молоч', 'сыр', 'творог', 'йогурт', 'кефир'],
+        'Хлебопекарная': ['хлеб', 'выпечк', 'булоч', 'кондитер'],
+        'Рыбопереработка': ['рыб', 'морепродукт'],
+        'HoReCa': ['horeca', 'ресторан', 'кафе', 'общепит'],
+        'Готовая еда / полуфабрикаты': ['полуфабрикат', 'готовая еда', 'заморожен'],
+        'Напитки': ['напит', 'сок', 'пиво', 'лимонад', 'чай'],
+    }
+    for ind, keywords in industry_map_check.items():
+        if any(kw in seg_lower for kw in keywords):
+            industry_brief = load_industry_brief(ind)
+            break
+
+    greeting = f'Добрый день, {recipient_name}!' if recipient_name else 'Добрый день!'
+    mgr_display = manager_name or 'Менеджер Verde Tech'
+
+    prompt = f"""Ты — B2B email-маркетолог Verde Tech. Напиши короткое продающее письмо.
+
+КОМПАНИЯ Verde Tech:
+- Производитель пищевых ингредиентов, СПб, с 2012 г., МТК-статус 2024
+- 300+ B2B клиентов: Иней, Пикантье, Dun Kan, Эфко, Столбушино, Bombbar, Goldjick
+- Отгрузка за 5 рабочих дней, образцы бесплатно до 2 кг, NDA на рецептуры
+- Слоган: «Забота о будущем» / verdetech.ru
+
+{(f"ОТРАСЛЕВОЙ КОНТЕКСТ:{chr(10)}{industry_brief[:2000]}") if industry_brief else ""}
+
+ЗАДАНИЕ:
+- Сегмент получателя: {segment}
+- Продукт / тема: {product if product else "подбери подходящий под сегмент из ассортимента Verde Tech"}
+- Цель письма: {email_goal}
+- Письмо №{email_number} в последовательности
+- Менеджер-отправитель: {mgr_display}
+- Приветствие: {greeting}
+
+ПРАВИЛА:
+1. Тема: ≤55 символов, B2B стиль, без спам-слов (бесплатно, срочно, только сегодня)
+2. Прехедер: ≤90 символов, дополняет тему
+3. Текст: 3-5 коротких абзацев. Конкретика: цифры, факты, кейс. Без воды.
+4. Один CTA — короткое действие (до 5 слов)
+5. Подпись: {mgr_display} | Verde Tech
+
+Верни строго JSON (без markdown):
+{{
+  "subject": "Тема письма",
+  "preheader": "Прехедер",
+  "body_paragraphs": ["абзац 1", "абзац 2", "абзац 3"],
+  "cta_text": "Текст кнопки",
+  "cta_note": "Подсказка под кнопкой или пустая строка"
+}}
+"""
+
+    try:
+        response = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'anthropic/claude-sonnet-4',
+                'messages': [
+                    {'role': 'system', 'content': 'Выдай строго JSON без markdown, без пояснений.'},
+                    {'role': 'user', 'content': prompt},
+                ],
+                'max_tokens': 1500,
+                'temperature': 0.5,
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        reply = response.json()['choices'][0]['message']['content'].strip()
+        reply = re.sub(r'^```(?:json)?\s*|\s*```$', '', reply, flags=re.MULTILINE).strip()
+        email_data = json.loads(reply)
+    except json.JSONDecodeError as e:
+        return jsonify({'error': f'Ошибка разбора AI: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Ошибка AI: {str(e)}'}), 500
+
+    subject = email_data.get('subject', '')
+    preheader = email_data.get('preheader', '')
+    paragraphs = email_data.get('body_paragraphs', [])
+    cta_text = email_data.get('cta_text', 'Запросить образцы')
+    cta_note = email_data.get('cta_note', '')
+
+    body_html = ''.join(
+        f'<p style="margin:0 0 16px 0;color:#27272a;font-size:15px;line-height:1.65;font-family:\'Helvetica Neue\',Arial,sans-serif;">{p}</p>'
+        for p in paragraphs if p.strip()
+    )
+    cta_note_html = (
+        f'<p style="margin:6px 0 0;font-size:12px;color:#888;font-family:\'Helvetica Neue\',Arial,sans-serif;">{cta_note}</p>'
+        if cta_note else ''
+    )
+
+    html_email = f"""<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:'Helvetica Neue',Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">{preheader}</div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f4;">
+<tr><td align="center" style="padding:32px 16px;">
+<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+  <tr>
+    <td style="background:#000000;padding:22px 40px;border-radius:8px 8px 0 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td><span style="font-size:17px;font-weight:900;color:#ffffff;letter-spacing:0.1em;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;">VERDE®TECH</span></td>
+          <td align="right"><span style="font-size:11px;color:#777777;letter-spacing:0.08em;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;">Забота о будущем</span></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr><td style="height:3px;background:#0FBF00;"></td></tr>
+  <tr>
+    <td style="background:#ffffff;padding:36px 40px 28px;">
+      {body_html}
+      <table cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;">
+        <tr>
+          <td style="background:#0FBF00;border-radius:4px;">
+            <a href="#" style="display:inline-block;padding:13px 26px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.02em;">{cta_text}</a>
+          </td>
+        </tr>
+      </table>
+      {cta_note_html}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#fafafa;padding:20px 40px;border-top:1px solid #e8e8e8;">
+      <p style="margin:0 0 3px;font-size:13px;font-weight:700;color:#111111;font-family:'Helvetica Neue',Arial,sans-serif;">{mgr_display}</p>
+      <p style="margin:0 0 2px;font-size:12px;color:#666666;font-family:'Helvetica Neue',Arial,sans-serif;">Verde Tech (ООО «Вердэ»)</p>
+      <p style="margin:0 0 2px;font-size:12px;font-family:'Helvetica Neue',Arial,sans-serif;"><a href="tel:{manager_phone}" style="color:#0FBF00;text-decoration:none;">{manager_phone}</a></p>
+      <p style="margin:0;font-size:12px;font-family:'Helvetica Neue',Arial,sans-serif;"><a href="mailto:{manager_email_addr}" style="color:#0FBF00;text-decoration:none;">{manager_email_addr}</a> &nbsp;·&nbsp; <a href="https://verdetech.ru" style="color:#0FBF00;text-decoration:none;">verdetech.ru</a></p>
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#111111;padding:14px 40px;border-radius:0 0 8px 8px;">
+      <p style="margin:0;font-size:11px;color:#555555;text-align:center;letter-spacing:0.04em;font-family:'Helvetica Neue',Arial,sans-serif;">Verde Tech · Санкт-Петербург · 300+ клиентов · МТК 2024 · verdetech.ru</p>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>"""
+
+    return jsonify({
+        'subject': subject,
+        'preheader': preheader,
+        'html': html_email,
+    })
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') != 'production'

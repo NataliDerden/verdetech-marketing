@@ -103,6 +103,28 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 .hint { background: #fff8e1; border-left: 3px solid #f2b42a; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; border-radius: 4px; }
 .hint b { color: #b45309; }
 
+/* BRAND GUARDIAN */
+.brand-check-section { margin-top: 28px; }
+.brand-check-upload { border: 2px dashed #d5d5d7; border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; transition: all 0.15s; background: #fafafa; }
+.brand-check-upload:hover { border-color: #0FBF00; background: #f0fff0; }
+.brand-check-upload input[type=file] { display: none; }
+.brand-check-result { margin-top: 16px; background: #fff; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px; min-height: 60px; display: none; }
+.bci-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f3f3; }
+.bci-row:last-child { border-bottom: none; }
+.bci-name { font-size: 13px; font-weight: 600; color: #111; }
+.bci-comment { font-size: 12px; color: #666; margin-top: 1px; }
+
+/* EMAIL WIZARD */
+.email-wizard-panel { display: none; grid-template-columns: 380px 1fr; gap: 24px; }
+@media (max-width: 900px) { .email-wizard-panel { grid-template-columns: 1fr; } }
+.email-wizard-form { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 24px; position: sticky; top: 20px; align-self: start; }
+.email-result-panel { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 24px; min-height: 300px; }
+.back-link { display: inline-flex; align-items: center; gap: 6px; color: #86868b; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 20px; text-decoration: none; background: none; border: none; padding: 0; font-family: inherit; }
+.back-link:hover { color: #000; }
+.btn-email { width: 100%; background: #000; color: #fff; border: none; padding: 13px 20px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+.btn-email:hover { background: #0FBF00; }
+.btn-email:disabled { background: #ccc; cursor: not-allowed; }
+
 </style>
 </head>
 <body>
@@ -275,6 +297,7 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
     <h2>Мастера маркетинга</h2>
     <p class="lead">Каждый мастер использует проверенную методику (скилл) + брендбук Verde. Выбирай задачу — получаешь готовый результат в фирменном стиле.</p>
 
+    <div id="wizardCards">
     <div class="templates-grid">
 
         <div class="template-card">
@@ -298,9 +321,9 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
             </div>
             <div class="template-body">
                 <h4>🪄 Email в фирменном HTML</h4>
-                <p>Через <b>email-writer</b> + брендированный HTML-шаблон. Готово к отправке через Битрикс24/Unisender.</p>
+                <p>Сегмент + цель → брендированное HTML-письмо, готовое к отправке через Битрикс24/Unisender.</p>
                 <div class="btn-row">
-                    <a class="btn btn-primary" onclick="alert('В разработке. Claude + email-writer skill + HTML-шаблон Verde. Подключение: 1 день.')">Открыть мастер</a>
+                    <a class="btn btn-primary" onclick="showEmailWizard()">Открыть мастер</a>
                 </div>
             </div>
         </div>
@@ -364,8 +387,79 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
     </div>
 
     <div class="hint" style="margin-top:32px;">
-        <b>Порядок реализации:</b> 1) Email-мастер (проще всего), 2) Пост для соцсетей (после fal.ai), 3) Ad Creative, 4) Sales Enablement, 5) Сравнительный лендинг, 6) Запуск продукта.
+        <b>Порядок реализации:</b> 1) ✅ Email-мастер — готов, 2) Пост для соцсетей (после fal.ai), 3) Ad Creative, 4) Sales Enablement, 5) Сравнительный лендинг, 6) Запуск продукта.
     </div>
+    </div><!-- /wizardCards -->
+
+    <!-- EMAIL WIZARD PANEL -->
+    <div class="email-wizard-panel" id="emailWizardPanel">
+        <div class="email-wizard-form">
+            <button class="back-link" onclick="backToWizards()">← Все мастера</button>
+            <h3 style="font-size:18px; font-weight:800; margin-bottom:4px;">✉️ Email в фирменном HTML</h3>
+            <p style="font-size:13px; color:#666; margin-bottom:20px;">Заполните бриф → получите готовое письмо для Unisender или Битрикс24</p>
+            <form id="emailWizardForm">
+                <div class="form-group">
+                    <label>Сегмент получателей *</label>
+                    <input type="text" name="segment" placeholder="Мясоперерабатывающий завод, 50-300 чел." required>
+                    <small>Кому пишем — тип компании, отрасль, масштаб</small>
+                </div>
+                <div class="form-group">
+                    <label>Цель письма *</label>
+                    <select name="goal" required>
+                        <option value="">Выберите цель...</option>
+                        <option value="Пригласить на тест образцов — первый контакт с холодным лидом">Первый контакт — пригласить на образцы</option>
+                        <option value="Напомнить о компании после звонка / показать кейс">Фолоу-ап после звонка / кейс</option>
+                        <option value="Отправить коммерческое предложение и обозначить следующий шаг">Сопроводить КП</option>
+                        <option value="Реактивировать клиента который давно не покупал — показать новинки и льготные условия">Реактивация старого клиента</option>
+                        <option value="Уведомить об акции или сезонном предложении">Акция / сезонное предложение</option>
+                        <option value="Welcome — поздравить нового клиента и объяснить следующие шаги">Welcome новому клиенту</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Продукт / тема (необязательно)</label>
+                    <input type="text" name="product" placeholder="Рассол для шприцевания, витамины V Smart Plus D...">
+                    <small>Если не указать — Claude подберёт под сегмент</small>
+                </div>
+                <div class="form-group">
+                    <label>Номер письма в серии</label>
+                    <select name="email_number">
+                        <option value="1">Письмо 1 — первое касание</option>
+                        <option value="2">Письмо 2 — фолоу-ап</option>
+                        <option value="3">Письмо 3 — кейс / доказательство</option>
+                        <option value="4">Письмо 4 — последний шанс / CTA</option>
+                    </select>
+                </div>
+                <div style="border-top:1px solid #f0f0f0; margin:16px 0 16px; padding-top:16px;">
+                    <p style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:12px;">Подпись менеджера</p>
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label>Имя менеджера</label>
+                        <input type="text" name="manager_name" placeholder="Анна Петрова">
+                    </div>
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label>Телефон</label>
+                        <input type="text" name="manager_phone" placeholder="+7 (812) 607-64-28">
+                    </div>
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label>Email</label>
+                        <input type="text" name="manager_email" placeholder="sales@verdetech.ru">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Имя получателя (для персонализации)</label>
+                        <input type="text" name="recipient_name" placeholder="Иван Иванович — опционально">
+                    </div>
+                </div>
+                <button type="button" class="btn-email" id="emailGenBtn" onclick="generateEmail()">✉️ Написать письмо</button>
+            </form>
+        </div>
+        <div class="email-result-panel" id="emailResult">
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:200px; color:#999; text-align:center;">
+                <div style="font-size:40px; margin-bottom:12px; opacity:0.3;">✉️</div>
+                <div style="font-size:15px; font-weight:600; color:#666;">Письмо появится здесь</div>
+                <div style="font-size:13px; margin-top:6px;">Заполните форму слева и нажмите «Написать письмо»</div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- BRAND -->
@@ -426,6 +520,37 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
         </div>
 
     </div>
+
+    <!-- BRAND GUARDIAN -->
+    <div class="brand-check-section">
+        <h3 style="font-size:18px; font-weight:800; margin-bottom:6px;">🔍 Бренд-гардиан — проверить макет</h3>
+        <p style="font-size:14px; color:#666; margin-bottom:16px;">Загрузите PNG или JPG — Claude проверит по 10 правилам гайдлайна и скажет что исправить.</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div>
+                <label class="brand-check-upload" id="brandCheckUploadLabel" onclick="document.getElementById('brandCheckFile').click()">
+                    <input type="file" id="brandCheckFile" accept="image/png,image/jpeg,image/webp" onchange="onBrandFileSelected(this)">
+                    <div id="brandCheckFileLabel" style="font-size:14px; color:#888;">
+                        <div style="font-size:28px; margin-bottom:8px;">🖼️</div>
+                        <div style="font-weight:600; color:#333;">Нажмите чтобы выбрать файл</div>
+                        <div style="font-size:12px; margin-top:4px;">PNG, JPG — скриншот макета или экспорт из Figma/Canva</div>
+                    </div>
+                </label>
+            </div>
+            <div>
+                <label style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#333; margin-bottom:6px;">Контекст (необязательно)</label>
+                <select id="brandCheckContext" style="width:100%; padding:10px 12px; border:1px solid #d5d5d7; border-radius:6px; font-family:inherit; font-size:14px; background:#fafafa; margin-bottom:10px;">
+                    <option value="">Не указан</option>
+                    <option value="Это макет для печати (каталог, буклет, листовка)">Печать (каталог, буклет, листовка)</option>
+                    <option value="Это digital-макет (пост соцсетей, email, баннер)">Digital (соцсети, email, баннер)</option>
+                    <option value="Это презентация КП">Презентация / КП</option>
+                    <option value="Это выставочный стенд или полиграфия для мероприятия">Выставочный стенд / мероприятие</option>
+                </select>
+                <button class="btn-generate" id="brandCheckBtn" onclick="brandCheck()" style="padding:10px 20px; font-size:14px;">🔍 Проверить по чек-листу</button>
+            </div>
+        </div>
+        <div class="brand-check-result" id="brandCheckResult"></div>
+    </div>
+
 </div>
 
 <!-- TEMPLATES -->
@@ -615,6 +740,160 @@ function fallbackCopy(text) {
     try { document.execCommand('copy'); alert('HTML скопирован'); }
     catch(e) { alert('Не удалось скопировать. Скачайте файл.'); }
     document.body.removeChild(ta);
+}
+
+// ── BRAND GUARDIAN ──────────────────────────────────────
+function onBrandFileSelected(input) {
+    const label = document.getElementById('brandCheckFileLabel');
+    if (input.files && input.files[0]) {
+        label.innerHTML = `<div style="font-size:20px; margin-bottom:6px;">✅</div><div style="font-weight:600; color:#0FBF00;">${escapeHtml(input.files[0].name)}</div><div style="font-size:12px; color:#888; margin-top:4px;">Нажмите «Проверить по чек-листу»</div>`;
+    }
+}
+
+async function brandCheck() {
+    const fileInput = document.getElementById('brandCheckFile');
+    const contextNote = document.getElementById('brandCheckContext')?.value || '';
+    const resultDiv = document.getElementById('brandCheckResult');
+    const btn = document.getElementById('brandCheckBtn');
+
+    if (!fileInput.files || !fileInput.files[0]) {
+        alert('Сначала выберите файл изображения (PNG или JPG)');
+        return;
+    }
+    const file = fileInput.files[0];
+    if (!file.type.startsWith('image/')) {
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '<div style="color:#ef4444;">⚠️ Поддерживаются только PNG и JPG. Экспортируйте PDF в картинку перед проверкой.</div>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="border-color:rgba(0,0,0,.15); border-top-color:#0FBF00;"></span>Проверяю...';
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div style="color:#666; padding:8px 0;">Отправляю в Claude, проверяю по 10 правилам гайдлайна...</div>';
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const imageB64 = e.target.result;
+        try {
+            const res = await fetch('/api/brand-check', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ image: imageB64, note: contextNote }),
+            });
+            const data = await res.json();
+            if (data.error) {
+                resultDiv.innerHTML = `<div style="color:#ef4444;">⚠️ ${escapeHtml(data.error)}</div>`;
+                return;
+            }
+            const overall = data.overall || 'warn';
+            const score = data.score ?? '?';
+            const overallColor = overall === 'pass' ? '#0FBF00' : overall === 'warn' ? '#f59e0b' : '#ef4444';
+            const overallLabel = overall === 'pass' ? '✅ Проходит' : overall === 'warn' ? '⚠️ Замечания' : '❌ Не проходит';
+            const statusIcon = s => s === 'pass' ? '✅' : s === 'fail' ? '❌' : s === 'warn' ? '⚠️' : '—';
+            const statusColor = s => s === 'pass' ? '#0FBF00' : s === 'fail' ? '#ef4444' : s === 'warn' ? '#f59e0b' : '#aaa';
+            const itemsHtml = (data.items || []).map(item => `
+                <div class="bci-row">
+                    <span style="flex-shrink:0; font-size:15px; color:${statusColor(item.status)}; line-height:1.4;">${statusIcon(item.status)}</span>
+                    <div>
+                        <div class="bci-name">${escapeHtml(item.name || '')}</div>
+                        ${item.comment ? `<div class="bci-comment">${escapeHtml(item.comment)}</div>` : ''}
+                    </div>
+                </div>`).join('');
+            const issuesHtml = (data.main_issues || []).length
+                ? `<div style="margin-bottom:14px;"><div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#333; margin-bottom:6px;">Главные проблемы:</div><ul style="margin:0; padding-left:18px;">${(data.main_issues).map(i=>`<li style="font-size:13px; color:#333;">${escapeHtml(i)}</li>`).join('')}</ul></div>`
+                : '';
+            const recHtml = data.recommendations
+                ? `<div style="background:#f0fdf4; border-left:3px solid #0FBF00; padding:10px 14px; margin-bottom:14px; font-size:13px; line-height:1.5;">${escapeHtml(data.recommendations)}</div>`
+                : '';
+            resultDiv.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid #f0f0f0;">
+                    <span style="font-size:18px; font-weight:800; color:${overallColor};">${overallLabel}</span>
+                    <span style="font-size:26px; font-weight:900; color:${overallColor};">${score}/10</span>
+                </div>
+                ${recHtml}${issuesHtml}
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#666; margin-bottom:4px;">Чек-лист:</div>
+                ${itemsHtml}`;
+        } catch(err) {
+            resultDiv.innerHTML = `<div style="color:#ef4444;">⚠️ Ошибка: ${escapeHtml(err.message)}</div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '🔍 Проверить по чек-листу';
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// ── EMAIL WIZARD ──────────────────────────────────────────
+function showEmailWizard() {
+    document.getElementById('wizardCards').style.display = 'none';
+    document.getElementById('emailWizardPanel').style.display = 'grid';
+    window.scrollTo(0, 0);
+}
+function backToWizards() {
+    document.getElementById('emailWizardPanel').style.display = 'none';
+    document.getElementById('wizardCards').style.display = 'block';
+}
+
+async function generateEmail() {
+    const form = document.getElementById('emailWizardForm');
+    const fd = new FormData(form);
+    const data = {};
+    for (const [k, v] of fd.entries()) data[k] = v;
+
+    const btn = document.getElementById('emailGenBtn');
+    const result = document.getElementById('emailResult');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Пишу письмо...';
+    result.innerHTML = '<div style="color:#666; padding:20px; text-align:center;">Готовлю письмо в фирменном стиле Вердэ...</div>';
+
+    try {
+        const res = await fetch('/api/generate-email', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data),
+        });
+        const json = await res.json();
+        if (json.error) {
+            result.innerHTML = `<div style="color:#ef4444; padding:12px;">⚠️ ${escapeHtml(json.error)}</div>`;
+            return;
+        }
+        window._lastEmailHtml = json.html;
+        const blob = new Blob([json.html], {type: 'text/html;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const fileName = 'verde-email-' + new Date().toISOString().slice(0,10) + '.html';
+        result.innerHTML = `
+            <div style="margin-bottom:16px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#888; margin-bottom:4px;">Тема письма</div>
+                <div style="font-size:16px; font-weight:800; color:#111;">${escapeHtml(json.subject)}</div>
+                <div style="font-size:12px; color:#999; margin-top:3px;">Прехедер: ${escapeHtml(json.preheader || '')}</div>
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
+                <a class="btn btn-primary" href="${url}" download="${fileName}">⬇ Скачать HTML</a>
+                <a class="btn btn-secondary" href="${url}" target="_blank">👁 Открыть</a>
+                <button class="btn btn-secondary" onclick="copyEmailHtml()">📋 Скопировать код</button>
+            </div>
+            <div style="font-size:11px; color:#888; margin-bottom:8px;">Скопируйте HTML и вставьте в редактор Битрикс24 / Unisender</div>
+            <iframe style="width:100%; height:520px; border:1px solid #e5e5ea; border-radius:8px; background:#fff;" id="emailPreviewFrame"></iframe>`;
+        setTimeout(() => {
+            const ifr = document.getElementById('emailPreviewFrame');
+            if (ifr) ifr.src = url;
+        }, 50);
+    } catch(err) {
+        result.innerHTML = `<div style="color:#ef4444; padding:12px;">⚠️ Ошибка сети: ${escapeHtml(err.message)}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✉️ Написать письмо';
+    }
+}
+
+function copyEmailHtml() {
+    const html = window._lastEmailHtml || '';
+    if (!html) { alert('Сначала сгенерируйте письмо'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(html).then(() => alert('HTML скопирован'), () => fallbackCopy(html));
+    } else { fallbackCopy(html); }
 }
 
 async function generateKP(e) {
