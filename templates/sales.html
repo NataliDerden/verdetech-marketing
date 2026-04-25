@@ -892,7 +892,6 @@
           <div style="font-size:13px; font-weight:700; color:var(--green-dark); margin-bottom:8px;">Кириллу (Директор)</div>
           <ul style="font-size:12px; color:var(--body); line-height:1.7; padding-left:20px; margin:0;">
             <li>Еженедельный ТОП-20 анализ: кто шевелится, кто молчит</li>
-            <li>Сценарии 60-сек видео для VIP-касаний</li>
             <li>Стратегический дашборд по сегментам и каналам</li>
             <li>Срочные алерты по VIP-клиентам</li>
           </ul>
@@ -954,7 +953,79 @@
       </div>
     </div>
 
-    <!-- 7. С чего начать -->
+    <!-- 7. Bitrix-интеграция -->
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:26px 30px; margin-bottom:18px;">
+      <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:6px;">Раздел 7</div>
+      <h2 style="font-size:22px; font-weight:700; color:var(--ink); margin-bottom:6px;">🔌 Как этот хаб подключается к Bitrix24</h2>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.6;">Сейчас хаб работает автономно — задачи, чеклисты, лидерборд. После подключения Bitrix данные из CRM появятся прямо здесь, и менеджеры перестанут вводить цифры вручную.</div>
+
+      <!-- Шаг 0 — что нужно для старта -->
+      <div style="background:#fffbea; border:1px solid #f59e0b40; border-radius:10px; padding:16px 20px; margin-bottom:20px;">
+        <div style="font-size:13px; font-weight:700; color:#d97706; margin-bottom:8px;">⚡ Шаг 0 — нужен один раз: создать вебхук в Bitrix</div>
+        <ol style="font-size:12px; color:var(--body); line-height:1.8; padding-left:20px; margin:0;">
+          <li>Зайти в Bitrix24 → <b>Разработчикам → Входящий вебхук</b></li>
+          <li>Выдать права: <b>CRM + Задачи + Пользователи</b></li>
+          <li>Скопировать URL вебхука и передать Кириллу или в Систему</li>
+          <li>После этого — все 5 фаз ниже включаются последовательно</li>
+        </ol>
+      </div>
+
+      <!-- Фазы -->
+      <div style="display:flex; flex-direction:column; gap:12px;">
+
+        <div style="display:grid; grid-template-columns:48px 1fr; gap:14px; align-items:start; padding:16px 18px; background:var(--hair); border-radius:10px;">
+          <div style="background:var(--ink); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0;">1</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px;">Задачи из хаба → Bitrix Tasks</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.6;">Когда Кирилл или РОП ставят задачу в хабе — она автоматически создаётся как задача в Bitrix на конкретного сотрудника (по email). Галочка в Bitrix = галочка в хабе. Менеджеру не нужно смотреть два инструмента.</div>
+            <div style="font-size:11px; color:var(--green-dark); margin-top:6px; font-weight:600;">Статус: ожидает вебхук URL → ~1 день работы</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:48px 1fr; gap:14px; align-items:start; padding:16px 18px; background:var(--hair); border-radius:10px;">
+          <div style="background:var(--ink); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0;">2</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px;">Pipeline из Bitrix → Трекер 250→350</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.6;">Вкладка «Трек 250→350» начинает показывать реальные данные: сколько сделок в воронке, на какую сумму, run-rate по факту. Исчезают плановые цифры — появляется правда. Кирилл видит живой дашборд без ручного ввода.</div>
+            <div style="font-size:11px; color:var(--green-dark); margin-top:6px; font-weight:600;">Статус: ~2-3 дня работы после Фазы 1</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:48px 1fr; gap:14px; align-items:start; padding:16px 18px; background:var(--hair); border-radius:10px;">
+          <div style="background:var(--ink); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0;">3</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px;">KPI авто-заполнение из Bitrix</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.6;">Звонки из Bitrix Activity → счётчик «Холодных касаний». Встречи из календаря → «Назначенных встреч». КП-отправки → «КП отправлено». QBR → «QBR проведено». Менеджер звонит — цифры растут автоматически.</div>
+            <div style="font-size:11px; color:var(--green-dark); margin-top:6px; font-weight:600;">Статус: ~3-4 дня после Фазы 2</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:48px 1fr; gap:14px; align-items:start; padding:16px 18px; background:var(--hair); border-radius:10px;">
+          <div style="background:var(--ink); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0;">4</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px;">Авто-КП при переходе сделки в стадию</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.6;">Менеджер переводит сделку в «КП отправляется» — Bitrix дёргает /design, КП генерируется автоматически по данным клиента и уходит ему на email. Менеджер ничего не печатает вручную.</div>
+            <div style="font-size:11px; color:var(--green-dark); margin-top:6px; font-weight:600;">Статус: ~2 дня после Фазы 3</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:48px 1fr; gap:14px; align-items:start; padding:16px 18px; background:var(--hair); border-radius:10px;">
+          <div style="background:var(--ink); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0;">5</div>
+          <div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px;">ТОП-20 аналитика + алерты для АМ и Кирилла</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.6;">Авто-выгрузка ТОП-20 клиентов по выручке с риском ухода. Алерт если ключевой клиент молчит 60+ дней. ABM-листы обновляются автоматически. Анастасия видит «позвони этим сегодня» без ручного анализа.</div>
+            <div style="font-size:11px; color:var(--green-dark); margin-top:6px; font-weight:600;">Статус: ~3 дня после Фазы 4</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:18px; padding:14px 18px; background:var(--green-soft); border:1px solid rgba(15,191,0,0.25); border-radius:10px; font-size:12px; color:var(--body); line-height:1.6;">
+        <b style="color:var(--green-dark);">Итого ~2 недели работы Системы</b> после получения вебхук-URL от Кирилла. Все 5 фаз последовательно. Команда продолжает работать в привычном Bitrix, хаб становится зеркалом и дашбордом сверху.
+      </div>
+    </div>
+
+    <!-- 8. С чего начать -->
     <div style="background:linear-gradient(135deg, #fff 0%, var(--green-soft) 100%); border:2px solid var(--green); border-radius:14px; padding:28px 32px; margin-bottom:24px;">
       <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:6px;">Первый шаг</div>
       <h2 style="font-size:22px; font-weight:700; color:var(--ink); margin-bottom:14px;">С чего начать прямо сейчас</h2>
