@@ -1309,7 +1309,10 @@ function renderWeekView() {
             <div style="font-size:14px; color:var(--body); line-height:1.5;">${contrib.yearGoal || ''}</div>
             ${contrib.yearImpact ? `<div style="font-size:12px; color:var(--muted); margin-top:6px; font-style:italic;">${contrib.yearImpact}</div>` : ''}
           </div>
-          <button onclick="backToRoleSelect()" style="background:none; border:1px solid var(--line); padding:8px 14px; border-radius:6px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap;">← Сменить роль</button>
+          <div style="text-align:center; flex-shrink:0;">
+            <button onclick="backToRoleSelect()" style="display:block; background:var(--ink); border:none; padding:16px 28px; border-radius:12px; font-size:17px; font-weight:700; color:#fff; cursor:pointer; white-space:nowrap; box-shadow:0 3px 12px rgba(0,0,0,0.18); letter-spacing:0.01em; transition:background 0.15s;" onmouseover="this.style.background='#1a1a1a'" onmouseout="this.style.background='var(--ink)'">← Сменить роль</button>
+            <div style="font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; max-width:160px;">Это твоя личная страница.<br>Нажми, чтобы выбрать<br>другого сотрудника.</div>
+          </div>
         </div>
         ${metricsHtml ? `
           <div style="border-top:1px solid var(--hair); padding-top:16px;">
