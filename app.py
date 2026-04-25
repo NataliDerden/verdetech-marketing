@@ -5,6 +5,8 @@ import requests
 import os
 import json
 import re
+import hashlib
+from collections import defaultdict
 from datetime import datetime, timedelta
 from products_catalog import (
     COMPANY_CONTEXT, ALL_PRODUCTS, CATEGORIES, get_product, get_cases_for_industry
@@ -2057,6 +2059,122 @@ def generate_email():
         'preheader': preheader,
         'html': html_email,
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+# СПРОСИ ТЕХНОЛОГА — публичный эндпоинт для Академии Вердэ
+# academy.verdetech.ru/ask.html → POST /api/ask-technologist
+# ═══════════════════════════════════════════════════════════════
+
+_ask_cache = {}
+_ask_ratelimit = defaultdict(list)
+_ASK_RATE_LIMIT = 3
+_ASK_CACHE_MAX = 500
+
+TECHNOLOGIST_SYSTEM_PROMPT = """Ты — «Спроси технолога», консультант по нормативке для пищевых производителей на сайте Академии Вердэ.
+Отвечаешь на русском языке. Отвечаешь коротко и по делу — технолог не читает лекции, ему нужен конкретный ответ.
+Структурируй ответ: сначала главный вывод, потом детали. Используй маркированные списки там, где удобно.
+
+=== КЛЮЧЕВЫЕ ПРАВИЛА ===
+1. Обогащённый продукт (йогурт, мороженое, хлеб, колбаса с добавленными витаминами) = ОБЫЧНЫЙ продукт.
+   Нужна декларация соответствия по отраслевому ТР ТС + ТР ТС 027/2012. НЕ госрегистрация. НЕ спецпитание.
+2. Специализированная продукция (детское питание, лечебное питание, питание спортсменов) = госрегистрация ОБЯЗАТЕЛЬНА.
+3. Заявление «источник [нутриент]» = ≥15% от суточной нормы (СН) на 100г готового продукта.
+4. Заявление «обогащено [нутриент]» = ≥30% от СН на 100г готового продукта.
+5. Нельзя: «нормализует», «восстанавливает», «лечит», «снижает риск болезни».
+
+=== ТР ТС ПО КАТЕГОРИЯМ ===
+Молочные/мороженое: ТР ТС 033/2013 + 021/2011 + 022/2011; при обогащении +027/2012
+Мясные/колбасные: ТР ТС 034/2013 + 021/2011 + 022/2011; при обогащении +027/2012
+Хлебобулочные/кондитерские: ТР ТС 021/2011 + 022/2011; при обогащении +027/2012
+Напитки: ТР ТС 021/2011 + 022/2011; при обогащении +027/2012
+Детское питание: ТР ТС 033/2013 + СанПиН 2.3.2.1940-05 (требуется госрегистрация!)
+Пищевые добавки: ТР ТС 029/2012
+
+=== СУТОЧНЫЕ НОРМЫ (СН) для расчёта заявлений ===
+Витамин D — 5 мкг | Витамин C — 70 мг | Кальций — 1000 мг | Железо — 14 мг | Цинк — 12 мг
+Витамин A — 900 мкг | Витамин E — 15 мг | Йод — 150 мкг | Магний — 400 мг
+B1 — 1,5 мг | B2 — 1,8 мг | B3 — 20 мг | B6 — 1,4 мг | B12 — 2,5 мкг | Фолиевая кислота — 400 мкг
+
+=== СТРУКТУРА ТУ (ГОСТ Р 51740-2016) ===
+Обязательные разделы: 1. Область применения; 2. Требования к качеству (органолептика / физхим / безопасность / микробиология);
+3. Требования к сырью; 4. Маркировка; 5. Упаковка; 6. Правила приёмки; 7. Методы контроля;
+8. Транспортирование и хранение; 9. Пищевая ценность. Приложения А (пищевая ценность) и Б (перечень НТД).
+
+=== О ВЕРДЭ (упоминай только если уместно) ===
+ООО «Вердэ» производит V Smart Plus — витаминно-минеральные премиксы для обогащения пищевых продуктов.
+Помогают законно написать «обогащено кальцием» или «источник витамина D» без госрегистрации.
+Академия Вердэ: academy.verdetech.ru
+
+Если вопрос не про нормативку / ТР ТС / ТУ / маркировку / декларирование / обогащение —
+вежливо скажи, что специализируешься только на этих темах, и предложи задать другой вопрос."""
+
+
+def _ask_get_ip():
+    return request.headers.get('X-Forwarded-For', request.remote_addr or '').split(',')[0].strip()
+
+
+def _ask_cors(resp):
+    resp.headers['Access-Control-Allow-Origin'] = 'https://academy.verdetech.ru'
+    resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return resp
+
+
+@app.route('/api/ask-technologist', methods=['POST', 'OPTIONS'])
+def ask_technologist():
+    if request.method == 'OPTIONS':
+        return _ask_cors(app.make_default_options_response())
+
+    ip = _ask_get_ip()
+    now = datetime.utcnow()
+    cutoff = now - timedelta(hours=1)
+    _ask_ratelimit[ip] = [t for t in _ask_ratelimit[ip] if t > cutoff]
+    if len(_ask_ratelimit[ip]) >= _ASK_RATE_LIMIT:
+        return _ask_cors(jsonify({'error': 'Лимит: не более 3 вопросов в час. Попробуйте позже.'})), 429
+
+    data = request.get_json() or {}
+    question = (data.get('question') or '').strip()[:1000]
+    if len(question) < 5:
+        return _ask_cors(jsonify({'error': 'Введите вопрос (минимум 5 символов)'})), 400
+
+    qhash = hashlib.md5(question.lower().encode()).hexdigest()
+    if qhash in _ask_cache:
+        return _ask_cors(jsonify({'answer': _ask_cache[qhash]}))
+
+    _ask_ratelimit[ip].append(now)
+
+    try:
+        api_resp = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://academy.verdetech.ru',
+                'X-Title': 'Спроси технолога — Академия Вердэ',
+            },
+            json={
+                'model': 'anthropic/claude-sonnet-4-5',
+                'messages': [
+                    {'role': 'system', 'content': TECHNOLOGIST_SYSTEM_PROMPT},
+                    {'role': 'user', 'content': question},
+                ],
+                'max_tokens': 700,
+            },
+            timeout=30,
+        )
+        api_resp.raise_for_status()
+        answer = api_resp.json()['choices'][0]['message']['content']
+    except requests.exceptions.Timeout:
+        return _ask_cors(jsonify({'error': 'Сервер думает дольше обычного. Попробуйте ещё раз.'})), 504
+    except Exception:
+        return _ask_cors(jsonify({'error': 'Технические неполадки. Попробуйте через минуту.'})), 500
+
+    if len(_ask_cache) >= _ASK_CACHE_MAX:
+        del _ask_cache[next(iter(_ask_cache))]
+    _ask_cache[qhash] = answer
+
+    return _ask_cors(jsonify({'answer': answer}))
 
 
 if __name__ == '__main__':
