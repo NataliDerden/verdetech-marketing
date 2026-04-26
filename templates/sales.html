@@ -299,6 +299,13 @@
 
       <!-- Персональное приветствие + вклад в 350М -->
       <div id="personalHero"></div>
+
+      <!-- ━━━ ДИСЦИПЛИНА ДНЯ · УТРО ━━━ -->
+      <!-- Манифест коммерческого блока + стоп-лист отговорок -->
+      <div id="manifestoBlock"></div>
+      <!-- Утренний ритуал: стоп-чек вчерашней фразы + коммит дня -->
+      <div id="morningRitual"></div>
+
       <!-- Трекер коммерческого блока (только для Кирилла) -->
       <div id="directorTracker"></div>
 
@@ -311,11 +318,22 @@
       <!-- 3 ключевых действия -->
       <div id="topActions"></div>
 
+      <!-- ━━━ ДИСЦИПЛИНА ДНЯ · ДЕНЬ ━━━ -->
+      <!-- Карточка "15 свободных минут — сделай одно из" -->
+      <div id="quickWinCard"></div>
+
       <!-- Неделя: нав + задачи -->
       <div class="week-nav" id="weekNav"></div>
       <div class="week-header" id="weekHeader"></div>
       <div class="task-list" id="taskList"></div>
       <div id="fridayCheckpoint"></div>
+
+      <!-- ━━━ ДИСЦИПЛИНА ДНЯ · ВЕЧЕР ━━━ -->
+      <!-- Хвосты + 2 вопроса рефлексии + чек-ин коммита -->
+      <div id="eveningRitual"></div>
+
+      <!-- ━━━ ПЯТНИЦА — КОЭФФИЦИЕНТ АГЕНТНОСТИ ━━━ -->
+      <div id="fridayAgency"></div>
 
       <!-- Навигация к другим вкладкам -->
       <div id="quickNav"></div>
@@ -344,6 +362,9 @@
       <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:10px;">Кластерное соревнование · Охотники vs Земледельцы</div>
       <div id="clustersRow" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;"></div>
     </div>
+
+    <!-- ── ТАБЛО ДИСЦИПЛИНЫ КОМАНДЫ ── -->
+    <div id="teamDisciplineBoard" style="margin-bottom:20px;"></div>
 
     <!-- ── ЛИДЕРБОРД ── -->
     <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-bottom:20px;">
@@ -1245,6 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('page-team').classList.contains('active')) {
       loadScores();
       loadFeed();
+      loadTeamDiscipline();
     }
   }, 30000);
 });
@@ -1323,6 +1345,603 @@ function selectRole(roleId) {
 function updateRoleIndicator() {
   const role = ROLES.find(r => r.id === selectedRole);
   document.getElementById('currentRoleIndicator').textContent = role ? role.name : 'Роль не выбрана';
+}
+
+// ───────── ДИСЦИПЛИНА ДНЯ ─────────
+// Опирается на 30 правил Замесина: 5 (формула), 12 (целостность), 13 (рефлексия),
+// 18 (хвосты), 21 (мёртвые цели), 23 (подвешенность), 26 (важность), 27 (локус), 30 (психогигиена).
+
+// Стоп-лист отговорок: фразы Жертвы → переформулировка Хозяина (правило 27)
+const VICTIM_PHRASES = [
+  { victim: 'Рынок падает', owner: 'Скольким клиентам я позвонил сегодня?' },
+  { victim: 'У клиента нет бюджета', owner: 'Я показывал ROI? Звонил трижды?' },
+  { victim: 'Это сложный клиент', owner: 'Какой маленький следующий шаг?' },
+  { victim: 'Сейчас не сезон', owner: 'Что я контролирую прямо сейчас?' },
+  { victim: 'У всех проблемы', owner: 'Что делает мой план продаж сегодня?' },
+  { victim: 'Клиент думает', owner: 'Какая дата следующего конкретного шага?' },
+  { victim: 'Решение зависит не от нас', owner: 'Кто ЛПР? Я говорил с ним лично?' },
+  { victim: 'Я попробую', owner: 'Я сделаю и приму результат' },
+];
+
+// 15-минутные действия — берутся как варианты, когда у тебя окно (правило 6)
+const QUICK_WINS_15MIN = [
+  'Отправить голосовое одному VIP — узнать как дела',
+  'Написать одно холодное сообщение в WhatsApp с конкретным оффером',
+  'Прочитать карточку CRM перед сегодняшним звонком — найти зацепку',
+  'Закрыть один хвост из списка — позвонить, написать, отправить',
+  'Записать аудио с инсайтом по сделке в командный чат',
+  'Перепроверить статус 3 подвешенных сделок — назначить дату',
+];
+
+let DAILY_ENTRIES = {};   // { 'YYYY-MM-DD': {...} } — для текущей роли
+let TAILS = [];           // открытые + закрытые хвосты для текущей роли
+
+function todayKey() {
+  // Локальная дата в формате YYYY-MM-DD
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function yesterdayKey() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function todayDow() {
+  // 1=Пн, 7=Вс
+  return ((new Date().getDay() + 6) % 7) + 1;
+}
+
+async function loadDailyEntries() {
+  if (!selectedRole) return;
+  try {
+    const res = await fetch(`/api/sales-daily?role=${encodeURIComponent(selectedRole)}&days=14`);
+    if (!res.ok) return;
+    const data = await res.json();
+    DAILY_ENTRIES = data.entries || {};
+  } catch (e) { console.error(e); }
+}
+
+async function loadTails() {
+  if (!selectedRole) return;
+  try {
+    const res = await fetch(`/api/sales-tails?role=${encodeURIComponent(selectedRole)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    TAILS = data.tails || [];
+  } catch (e) { console.error(e); }
+}
+
+async function loadDisciplineData() {
+  await loadDailyEntries();
+  await loadTails();
+}
+
+// ───── РОСЛИ В КРИЗИСЫ — ТОПЛИВО ДЛЯ ГОЛОВЫ ─────
+// Цель: каждый день видишь подтверждение, что «рынок падает» — это не приговор, а перераспределение клиентов.
+// Меняется состав ротируемых историй (по дням года), чтобы не приедалось.
+const GROWTH_IN_CRISIS = [
+  {
+    name: 'Магнит',
+    crisis: 'Кризис 2008-2009',
+    move: 'Пока конкуренты резали косты — выкупали освободившиеся торговые точки и агрессивно открывали магазины.',
+    result: 'Стали №1 розницы в России и обогнали X5 по числу магазинов.',
+    fit: 'У каждого клиента в этот момент кто-то теряется. Кто звонит — забирает.',
+  },
+  {
+    name: 'Мираторг',
+    crisis: 'Санкции 2014-2015',
+    move: 'Не ждали, что «само рассосётся» — вертикально интегрировались, использовали программу импортозамещения как точку входа в новые сегменты.',
+    result: 'Превратились из импортёра в одного из крупнейших мясных холдингов страны.',
+    fit: 'Импортозамещение работает и для нас — место конкурентов из ЕС открыто прямо сейчас.',
+  },
+  {
+    name: 'Черноголовка',
+    crisis: 'Уход Coca-Cola и Pepsi 2022',
+    move: 'За 6 месяцев захватили освободившиеся места на полках сетей. Не «попробовали», а агрессивно зашли.',
+    result: 'Кратный рост выручки, новые SKU, расширение в HoReCa.',
+    fit: 'Когда конкурент «думает» — ты уже стоишь у клиента в холодильнике.',
+  },
+  {
+    name: 'Splat',
+    crisis: 'Кризисы 2008 и 2014',
+    move: 'Вместо ценовой войны — фокус на инновации и эмоциональную упаковку (письмо в каждой пачке от основателя).',
+    result: 'Российский бренд занял долю в категории, где доминировали Procter & Gamble и Colgate.',
+    fit: 'Технология + история = премия к цене даже в кризис. Это про Verde.',
+  },
+  {
+    name: 'Wildberries',
+    crisis: 'Ковид-2020',
+    move: 'Пока остальные считали потери — вкладывали в логистику и пункты выдачи.',
+    result: 'За 2020 рост х5, обогнали Ozon, стали маркетплейсом №1.',
+    fit: 'Кризис вскрывает старые модели и расчищает место новым решениям.',
+  },
+  {
+    name: 'P&G',
+    crisis: 'Великая депрессия 1930-х',
+    move: 'Вместо сокращения рекламы — увеличили её. Запустили мыльные оперы как формат.',
+    result: 'Вышли из десятилетия глобальным лидером FMCG.',
+    fit: 'Кто продолжает касаться клиентов в кризис — собирает их после кризиса.',
+  },
+  {
+    name: 'Hyundai',
+    crisis: 'Кризис 2008-2009',
+    move: 'Запустили «Hyundai Assurance» — вернёшь машину если потеряешь работу. Сняли страх клиента.',
+    result: 'Доля рынка выросла, пока конкуренты теряли продажи.',
+    fit: 'Сними страх клиента — получи рынок. Гарантии, тест-партии, рассрочка — всё работает.',
+  },
+  {
+    name: 'ЭкоНива',
+    crisis: 'Санкции 2014',
+    move: 'Расширили молочное стадо в момент, когда импорт молочки рухнул. Заняли освободившиеся полки сетей.',
+    result: 'Стали крупнейшим производителем сырого молока в стране.',
+    fit: 'Окно открыто 12-18 месяцев. Кто сейчас не возьмёт — потом войдёт уже за деньги.',
+  },
+];
+
+const POWER_QUOTES = [
+  { q: 'Бойся, когда другие жадны, и будь жадным, когда другие боятся.', a: 'Уоррен Баффет' },
+  { q: 'Возможности приходят в кризисах, не в стабильности.', a: 'Ричард Брэнсон' },
+  { q: 'Только параноики выживают.', a: 'Энди Гроув, Intel' },
+  { q: 'Лучший способ предсказать будущее — создать его.', a: 'Питер Друкер' },
+  { q: 'Ваш фокус определяет вашу реальность.', a: 'Джефф Безос' },
+  { q: 'Кризис — лучшее благо, которое может случиться с человеком и страной, потому что он несёт прогресс.', a: 'Альберт Эйнштейн' },
+];
+
+function renderGrowthInCrisis() {
+  // На странице выводим 3 истории + 1 цитату. Ротация — по дню года, чтобы каждое утро было новое.
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  const startIdx = dayOfYear % GROWTH_IN_CRISIS.length;
+  const stories = [];
+  for (let i = 0; i < 3; i++) {
+    stories.push(GROWTH_IN_CRISIS[(startIdx + i) % GROWTH_IN_CRISIS.length]);
+  }
+  const quote = POWER_QUOTES[dayOfYear % POWER_QUOTES.length];
+
+  const expanded = localStorage.getItem('growthBlockExpanded') !== '0';  // по умолчанию открыт
+
+  // Контейнер встраиваем внутрь manifestoBlock — чтобы быть отдельным блоком после манифеста
+  // Используем отдельный div с динамическим созданием, если его нет
+  let el = document.getElementById('growthInCrisis');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'growthInCrisis';
+    const mblock = document.getElementById('manifestoBlock');
+    if (mblock && mblock.parentNode) {
+      mblock.parentNode.insertBefore(el, mblock.nextSibling);
+    }
+  }
+
+  const storyCards = stories.map(s => `
+    <div style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+        <div style="font-size:15px; font-weight:700; color:var(--ink);">${s.name}</div>
+        <div style="font-size:10px; font-weight:700; color:#dc2626; letter-spacing:0.1em; text-transform:uppercase; background:#fef2f2; padding:3px 8px; border-radius:99px;">${s.crisis}</div>
+      </div>
+      <div style="font-size:12px; color:var(--body); line-height:1.55;"><b style="color:var(--green-dark);">Что сделали:</b> ${s.move}</div>
+      <div style="font-size:12px; color:var(--body); line-height:1.55;"><b style="color:var(--green-dark);">Результат:</b> ${s.result}</div>
+      <div style="font-size:11px; color:var(--muted); line-height:1.5; padding-top:8px; border-top:1px dashed var(--hair); font-style:italic;">→ ${s.fit}</div>
+    </div>
+  `).join('');
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg, #f0fff4 0%, #fffbea 100%); border:1px solid #0FBF0033; border-radius:14px; padding:22px 26px; margin-bottom:18px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:${expanded ? '14px' : '0'};">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green-dark);">⚡ Они выросли когда другие падали</div>
+          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-top:2px;">Топливо на сегодня — 3 истории</h3>
+          <div style="font-size:12px; color:var(--muted); margin-top:2px;">Кризис не съедает рынок. Он перераспределяет клиентов между теми, кто звонит, и теми, кто оправдывается.</div>
+        </div>
+        <button onclick="toggleGrowthBlock()" style="background:#fff; border:1px solid var(--line); padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; color:var(--body); white-space:nowrap;">${expanded ? '▴ Свернуть' : '▾ Показать'}</button>
+      </div>
+
+      ${expanded ? `
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">${storyCards}</div>
+
+        <div style="margin-top:16px; padding:14px 18px; background:rgba(11,11,12,0.92); border-radius:10px; color:#fff;">
+          <div style="font-size:13px; line-height:1.6; font-style:italic; margin-bottom:6px;">«${quote.q}»</div>
+          <div style="font-size:11px; opacity:0.7; letter-spacing:0.1em; text-transform:uppercase; font-weight:700;">— ${quote.a}</div>
+        </div>
+
+        <div style="margin-top:14px; padding:12px 16px; background:rgba(15,191,0,0.08); border-left:3px solid var(--green); border-radius:8px; font-size:13px; line-height:1.55; color:var(--body);">
+          <b style="color:var(--green-dark);">Главное правило сегодня:</b> когда поймал себя на «рынок падает» — посмотри на этот блок. Эти компании не ждали улучшения. Они <b>забрали клиентов</b> у тех, кто ждал.
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function toggleGrowthBlock() {
+  const cur = localStorage.getItem('growthBlockExpanded') !== '0';
+  localStorage.setItem('growthBlockExpanded', cur ? '0' : '1');
+  renderGrowthInCrisis();
+}
+
+// ───── МАНИФЕСТ + СТОП-ЛИСТ ─────
+function renderManifesto() {
+  const el = document.getElementById('manifestoBlock');
+  if (!el) return;
+  const stopListExpanded = localStorage.getItem('stopListExpanded') === '1';
+  const stopRows = VICTIM_PHRASES.map(p => `
+    <tr>
+      <td style="padding:8px 12px; border-bottom:1px solid #2a2a2c; color:#dc2626; font-weight:600; vertical-align:top; width:42%;">«${p.victim}»</td>
+      <td style="padding:8px 12px; border-bottom:1px solid #2a2a2c; color:#b8f5a0; font-weight:600; vertical-align:top;">→ ${p.owner}</td>
+    </tr>
+  `).join('');
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg, #0B0B0C 0%, #1a1a1c 100%); border-radius:14px; padding:24px 28px; margin-bottom:18px; color:#fff; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
+      <div style="font-size:11px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.7; margin-bottom:10px;">Закон коммерческого блока</div>
+      <div style="font-size:20px; font-weight:700; line-height:1.45; margin-bottom:6px;">Я причина результата, а не рынок.</div>
+      <div style="font-size:14px; opacity:0.85; line-height:1.55;">
+        Если не получается — меняю подход, не цель.<br>
+        Не «попробую», а «сделаю и приму результат».
+      </div>
+      <button onclick="toggleStopList()" style="margin-top:16px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fff; padding:9px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; letter-spacing:0.04em;">${stopListExpanded ? '▴ Свернуть стоп-лист' : '▾ Развернуть стоп-лист отговорок'}</button>
+      ${stopListExpanded ? `
+        <div style="margin-top:14px; background:rgba(0,0,0,0.3); border-radius:10px; padding:10px 4px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; opacity:0.6; padding:4px 12px 8px;">Жертва говорит → Хозяин говорит</div>
+          <table style="width:100%; border-collapse:collapse; font-size:13px;">${stopRows}</table>
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+function toggleStopList() {
+  const cur = localStorage.getItem('stopListExpanded') === '1';
+  localStorage.setItem('stopListExpanded', cur ? '0' : '1');
+  renderManifesto();
+}
+
+// ───── УТРЕННИЙ РИТУАЛ: стоп-чек + коммит дня ─────
+function renderMorningRitual() {
+  const el = document.getElementById('morningRitual');
+  if (!el) return;
+  const today = todayKey();
+  const yest = yesterdayKey();
+  const todayRec = DAILY_ENTRIES[today] || {};
+  const yestRec = DAILY_ENTRIES[yest] || {};
+
+  const morningDone = !!todayRec.ts_morning;
+  const tsLabel = todayRec.ts_morning ? new Date(todayRec.ts_morning).toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '';
+  const yestCommit = yestRec.morning_commit || '';
+  const yestKept = yestRec.commit_done;
+
+  el.innerHTML = `
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 26px; margin-bottom:18px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green-dark);">Утро · ${new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'})}</div>
+          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-top:2px;">Утренний ритуал — 3 минуты</h3>
+        </div>
+        ${morningDone ? `<span style="background:var(--green-soft); color:var(--green-dark); font-size:11px; font-weight:700; padding:4px 10px; border-radius:99px;">✓ Зафиксировано в ${tsLabel}</span>` : ''}
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:16px;">Открыл день — прошёл ритуал. Закрыл день — ответил на 2 вопроса. Так становится видна динамика.</div>
+
+      ${yestCommit ? `
+        <div style="background:var(--paper); border:1px dashed var(--line); border-radius:10px; padding:12px 14px; margin-bottom:14px;">
+          <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px;">Вчера ты обещал себе:</div>
+          <div style="font-size:13px; color:var(--body); margin-bottom:8px; font-style:italic;">«${escapeHtml(yestCommit)}»</div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span style="font-size:12px; color:var(--muted);">Сделал?</span>
+            <button onclick="setCommitDone('${yest}', true)" style="background:${yestKept === true ? 'var(--green)' : '#fff'}; color:${yestKept === true ? '#fff' : 'var(--green-dark)'}; border:1px solid var(--green); padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">Да</button>
+            <button onclick="setCommitDone('${yest}', false)" style="background:${yestKept === false ? '#dc2626' : '#fff'}; color:${yestKept === false ? '#fff' : '#dc2626'}; border:1px solid #dc2626; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">Нет</button>
+            ${yestKept === false ? `<span style="font-size:11px; color:var(--muted); margin-left:6px;">Ок. Сегодня — другое решение.</span>` : ''}
+          </div>
+        </div>
+      ` : ''}
+
+      <div style="display:grid; grid-template-columns:1fr; gap:14px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:6px;">1. Какую запрещённую фразу ты ловил в себе вчера?</label>
+          <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Назвал — обезоружил. Если ничего не было — оставь пусто.</div>
+          <input id="morningStopPhrase" type="text" value="${escapeHtml(todayRec.morning_stop_phrase || '')}" placeholder="например: «у клиента нет бюджета» — а сам не звонил третий раз" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px;">
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:6px;">2. Сегодня я сделаю (одно конкретное, с измеримым результатом)</label>
+          <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Формула: «Я <b>сделаю X</b>, чтобы <b>получить Y</b>» — без «попробую» и «постараюсь».</div>
+          <textarea id="morningCommit" placeholder="Сегодня я позвоню 5 VIP-клиентам и получу от каждого ДА/НЕТ по следующему шагу" style="width:100%; min-height:60px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(todayRec.morning_commit || '')}</textarea>
+        </div>
+        <button onclick="saveMorning()" style="background:var(--ink); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; align-self:flex-start; width:100%;">${morningDone ? 'Обновить утро' : '✓ Зафиксировать утро'}</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveMorning() {
+  if (!selectedRole) return;
+  const commit = document.getElementById('morningCommit').value.trim();
+  const stop = document.getElementById('morningStopPhrase').value.trim();
+  try {
+    const res = await fetch('/api/sales-daily', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: selectedRole, date: todayKey(), section: 'morning', commit, stop_phrase: stop}),
+    });
+    if (!res.ok) { alert('Ошибка сохранения'); return; }
+    await loadDailyEntries();
+    renderMorningRitual();
+  } catch (e) { console.error(e); alert('Ошибка сети'); }
+}
+
+async function setCommitDone(date, done) {
+  if (!selectedRole) return;
+  try {
+    await fetch('/api/sales-daily', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: selectedRole, date, section: 'commit_check', done}),
+    });
+    await loadDailyEntries();
+    renderMorningRitual();
+    renderEveningRitual();
+  } catch (e) { console.error(e); }
+}
+
+// ───── 15 МИНУТ — БЫСТРАЯ ПОБЕДА (правило 6) ─────
+function renderQuickWin() {
+  const el = document.getElementById('quickWinCard');
+  if (!el) return;
+  // Открытый хвост = приоритетное действие
+  const openTails = TAILS.filter(t => !t.closed);
+  // Случайный шаблон + 1 хвост (если есть)
+  const shuffled = [...QUICK_WINS_15MIN].sort(() => Math.random() - 0.5).slice(0, 3);
+  const tailItem = openTails.length > 0 ? openTails[0] : null;
+
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg, #fffbea 0%, #fff 100%); border:1px solid #f59e0b40; border-radius:14px; padding:18px 22px; margin-bottom:18px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <div style="font-size:18px;">⏱️</div>
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#d97706;">У тебя 15 минут?</div>
+          <div style="font-size:14px; font-weight:700; color:var(--ink);">Сделай одно из этого — и день уже не пустой</div>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        ${tailItem ? `
+          <div style="background:#fff; border:1.5px solid var(--green); border-radius:8px; padding:10px 14px; font-size:13px; color:var(--body);">
+            <span style="font-size:10px; font-weight:700; color:var(--green-dark); letter-spacing:0.12em; text-transform:uppercase;">⚡ Твой хвост</span><br>
+            <span style="font-weight:600;">${escapeHtml(tailItem.text)}</span>${tailItem.promised_to ? ` <span style="color:var(--muted); font-size:11px;">— обещал ${escapeHtml(tailItem.promised_to)}</span>` : ''}
+          </div>
+        ` : ''}
+        ${shuffled.map(w => `<div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:9px 14px; font-size:13px; color:var(--body);">${w}</div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ───── ВЕЧЕРНИЙ РИТУАЛ: хвосты + 2 вопроса + чек-ин коммита ─────
+function renderEveningRitual() {
+  const el = document.getElementById('eveningRitual');
+  if (!el) return;
+  const today = todayKey();
+  const rec = DAILY_ENTRIES[today] || {};
+  const eveningDone = !!rec.ts_evening;
+  const tsLabel = rec.ts_evening ? new Date(rec.ts_evening).toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '';
+
+  const openTails = TAILS.filter(t => !t.closed);
+  const closedTails = TAILS.filter(t => t.closed);
+
+  const tailsHtml = openTails.length === 0 && closedTails.length === 0
+    ? `<div style="padding:14px; text-align:center; color:var(--faint); font-size:12px;">Хвостов нет. Если что-то обещал кому-то и ещё не сделал — добавь сюда.</div>`
+    : `
+      ${openTails.map(t => {
+        const ageDays = Math.floor((Date.now() - new Date(t.created.replace('Z','')).getTime()) / 86400000);
+        const aged = ageDays > 7;
+        return `
+          <div style="display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-bottom:1px solid var(--hair); ${aged ? 'background:#fef2f2;' : ''}">
+            <input type="checkbox" onchange="toggleTail('${t.id}')" style="margin-top:3px; cursor:pointer;">
+            <div style="flex:1;">
+              <div style="font-size:13px; color:var(--ink); font-weight:600;">${escapeHtml(t.text)}</div>
+              <div style="font-size:11px; color:${aged ? '#dc2626' : 'var(--muted)'}; margin-top:2px;">
+                ${t.promised_to ? `обещал ${escapeHtml(t.promised_to)} · ` : ''}висит ${ageDays === 0 ? 'сегодня' : `${ageDays} дн`}${aged ? ' · ⚠ давит' : ''}
+              </div>
+            </div>
+            <button onclick="deleteTail('${t.id}')" title="Удалить (передумал давать обещание)" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:14px; padding:4px;">×</button>
+          </div>
+        `;
+      }).join('')}
+      ${closedTails.length > 0 ? `
+        <details style="padding:8px 14px;">
+          <summary style="cursor:pointer; font-size:11px; color:var(--muted); font-weight:600;">Закрытые (${closedTails.length})</summary>
+          <div style="margin-top:8px;">
+            ${closedTails.slice(0, 10).map(t => `
+              <div style="display:flex; align-items:center; gap:10px; padding:6px 0; font-size:12px; color:var(--faint); text-decoration:line-through;">
+                <input type="checkbox" checked onchange="toggleTail('${t.id}')" style="cursor:pointer;">
+                <span>${escapeHtml(t.text)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </details>
+      ` : ''}
+    `;
+
+  el.innerHTML = `
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 26px; margin-bottom:18px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#6d28d9;">Вечер · закрой день</div>
+          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-top:2px;">Вечерний ритуал — 5 минут</h3>
+        </div>
+        ${eveningDone ? `<span style="background:#f3eafe; color:#6d28d9; font-size:11px; font-weight:700; padding:4px 10px; border-radius:99px;">✓ Закрыт в ${tsLabel}</span>` : ''}
+      </div>
+
+      <!-- Хвосты -->
+      <div style="background:var(--paper); border:1px solid var(--line); border-radius:10px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--hair);">
+          <div>
+            <div style="font-size:12px; font-weight:700; color:var(--ink);">🪢 Твои хвосты</div>
+            <div style="font-size:11px; color:var(--muted);">Обещания клиентам и команде, которые ещё не выполнены. ${openTails.length === 0 ? 'Список пуст — это хорошо.' : `Открыто: ${openTails.length}.`}</div>
+          </div>
+        </div>
+        ${tailsHtml}
+        <div style="padding:10px 14px; border-top:1px solid var(--hair); display:flex; gap:8px; flex-wrap:wrap;">
+          <input id="newTailText" type="text" placeholder="Что обещал и не сделал?" style="flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; font-family:inherit;">
+          <input id="newTailPromisedTo" type="text" placeholder="Кому?" style="width:120px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; font-family:inherit;">
+          <button onclick="addTail()" style="background:var(--ink); color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">+ Добавить</button>
+        </div>
+      </div>
+
+      <!-- 2 вопроса (правило 13) -->
+      <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;">1. В чём сегодня продвинулся к цели?</label>
+          <textarea id="eveningProgress" placeholder="Что конкретно сдвинулось? Один пункт или несколько." style="width:100%; min-height:55px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(rec.evening_progress || '')}</textarea>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;">2. Как сегодня позаботился о ресурсе (себе)?</label>
+          <textarea id="eveningCare" placeholder="Сон / спорт / еда / прогулка / семья. Без этого 350М не пробиваются." style="width:100%; min-height:55px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(rec.evening_care || '')}</textarea>
+        </div>
+      </div>
+
+      <button onclick="saveEvening()" style="background:#6d28d9; color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; width:100%;">${eveningDone ? 'Обновить вечер' : '✓ Закрыть день'}</button>
+    </div>
+  `;
+}
+
+async function saveEvening() {
+  if (!selectedRole) return;
+  const progress = document.getElementById('eveningProgress').value.trim();
+  const care = document.getElementById('eveningCare').value.trim();
+  try {
+    const res = await fetch('/api/sales-daily', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: selectedRole, date: todayKey(), section: 'evening', progress, care}),
+    });
+    if (!res.ok) { alert('Ошибка сохранения'); return; }
+    await loadDailyEntries();
+    renderEveningRitual();
+  } catch (e) { console.error(e); alert('Ошибка сети'); }
+}
+
+async function addTail() {
+  if (!selectedRole) return;
+  const text = document.getElementById('newTailText').value.trim();
+  const promised_to = document.getElementById('newTailPromisedTo').value.trim();
+  if (!text) return;
+  try {
+    await fetch('/api/sales-tails', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({role: selectedRole, text, promised_to}),
+    });
+    document.getElementById('newTailText').value = '';
+    document.getElementById('newTailPromisedTo').value = '';
+    await loadTails();
+    renderEveningRitual();
+    renderQuickWin();
+  } catch (e) { console.error(e); }
+}
+
+async function toggleTail(id) {
+  try {
+    await fetch(`/api/sales-tails/${id}`, {method: 'POST'});
+    await loadTails();
+    renderEveningRitual();
+    renderQuickWin();
+  } catch (e) { console.error(e); }
+}
+
+async function deleteTail(id) {
+  if (!confirm('Удалить хвост? (передумал давать это обещание)')) return;
+  try {
+    await fetch(`/api/sales-tails/${id}`, {method: 'DELETE'});
+    await loadTails();
+    renderEveningRitual();
+    renderQuickWin();
+  } catch (e) { console.error(e); }
+}
+
+// ───── ПЯТНИЦА: КОЭФФИЦИЕНТ АГЕНТНОСТИ ─────
+function renderFridayAgency() {
+  const el = document.getElementById('fridayAgency');
+  if (!el) return;
+  const dow = todayDow();
+  // Показываем всегда, но в пятницу/субботу/воскресенье выделяем как актуальный пересмотр
+  const isReviewDay = dow >= 5;
+
+  // Считаем по локальным DAILY_ENTRIES за последние 7 дней
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0,10));
+  }
+  let morningCount = 0, eveningCount = 0, commitDoneCount = 0, commitTotal = 0;
+  let stopPhrasesCount = 0;
+  const reflections = [];
+  dates.forEach(d => {
+    const r = DAILY_ENTRIES[d];
+    if (!r) return;
+    if (r.morning_commit) morningCount++;
+    if (r.evening_progress || r.evening_care) eveningCount++;
+    if (r.commit_done !== null && r.commit_done !== undefined) {
+      commitTotal++;
+      if (r.commit_done) commitDoneCount++;
+    }
+    if (r.morning_stop_phrase) stopPhrasesCount++;
+    if (r.evening_progress) reflections.push({date: d, text: r.evening_progress});
+  });
+  const openTailsCount = TAILS.filter(t => !t.closed).length;
+  const oldOpenTails = TAILS.filter(t => !t.closed && (Date.now() - new Date(t.created.replace('Z','')).getTime()) > 7*86400000).length;
+
+  const morningPct = Math.round(100 * morningCount / 7);
+  const eveningPct = Math.round(100 * eveningCount / 7);
+  const keptPct = commitTotal ? Math.round(100 * commitDoneCount / commitTotal) : 0;
+  const tailsPct = Math.max(0, 100 - oldOpenTails * 20);
+  const agency = Math.round((morningPct + eveningPct + keptPct + tailsPct) / 4);
+
+  const color = agency >= 70 ? 'var(--green)' : agency >= 40 ? '#d97706' : '#dc2626';
+  const status = agency >= 70 ? 'Высокая' : agency >= 40 ? 'Средняя' : 'Низкая';
+
+  el.innerHTML = `
+    <div style="background:${isReviewDay ? 'linear-gradient(135deg, #0B0B0C 0%, #1a3a1a 100%)' : '#fff'}; ${isReviewDay ? 'color:#fff;' : 'border:1px solid var(--line);'} border-radius:14px; padding:24px 28px; margin-top:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:14px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; ${isReviewDay ? 'color:#b8f5a0;' : 'color:var(--muted);'} margin-bottom:6px;">${isReviewDay ? '⚡ Время честного пересмотра' : 'Коэффициент агентности'}</div>
+          <h3 style="font-size:20px; font-weight:700; ${isReviewDay ? 'color:#fff;' : 'color:var(--ink);'}">Твоя позиция за неделю</h3>
+          <div style="font-size:12px; ${isReviewDay ? 'color:rgba(255,255,255,0.7);' : 'color:var(--muted);'} margin-top:4px;">Это не KPI продаж. Это KPI того, насколько ты автор своей недели.</div>
+        </div>
+        <div style="text-align:center; min-width:120px;">
+          <div style="font-size:48px; font-weight:700; color:${color}; line-height:1;">${agency}<span style="font-size:20px; opacity:0.6;">%</span></div>
+          <div style="font-size:11px; ${isReviewDay ? 'color:rgba(255,255,255,0.8);' : 'color:var(--muted);'} margin-top:4px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">${status} агентность</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+        ${[
+          {label:'Утра зафиксированы', val:morningPct, hint:`${morningCount}/7 дней`},
+          {label:'Вечера закрыты', val:eveningPct, hint:`${eveningCount}/7 дней`},
+          {label:'Слово=дело', val:keptPct, hint:commitTotal ? `${commitDoneCount}/${commitTotal} обещаний` : 'нет данных'},
+          {label:'Хвосты не висят', val:tailsPct, hint:oldOpenTails ? `${oldOpenTails} давит >7 дн` : `всего открыто: ${openTailsCount}`},
+        ].map(m => `
+          <div style="${isReviewDay ? 'background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);' : 'background:var(--paper); border:1px solid var(--line);'} border-radius:10px; padding:12px 14px;">
+            <div style="font-size:11px; font-weight:700; ${isReviewDay ? 'color:rgba(255,255,255,0.7);' : 'color:var(--muted);'} margin-bottom:4px;">${m.label}</div>
+            <div style="font-size:22px; font-weight:700; ${isReviewDay ? 'color:#b8f5a0;' : 'color:var(--green-dark);'}">${m.val}%</div>
+            <div style="font-size:11px; ${isReviewDay ? 'color:rgba(255,255,255,0.6);' : 'color:var(--faint);'} margin-top:2px;">${m.hint}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      ${isReviewDay ? `
+        <div style="margin-top:18px; padding:16px 18px; background:rgba(255,255,255,0.06); border-left:3px solid #b8f5a0; border-radius:8px;">
+          <div style="font-size:12px; font-weight:700; color:#b8f5a0; margin-bottom:6px; letter-spacing:0.1em; text-transform:uppercase;">Честный вопрос на пятницу</div>
+          <div style="font-size:13px; line-height:1.6; color:rgba(255,255,255,0.92);">
+            Если коэффициент <60% — это не «много задач». Это позиция Жертвы.
+            Что я выберу <b>в понедельник</b>: тот же подход или один новый ритуал?
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
 // ───────── ДИРЕКТОРСКИЙ ТРЕКЕР ─────────
@@ -1421,9 +2040,11 @@ function renderCurrentWeekBadge() {
 }
 
 // ───────── WEEKLY TASKS ─────────
-function showWeeklyTasks() {
+async function showWeeklyTasks() {
   document.getElementById('roleSelector').style.display = 'none';
   document.getElementById('weeklyTasksView').style.display = 'block';
+  // Подтягиваем данные дисциплины ДО первого рендера, чтобы не было пустых форм
+  await loadDisciplineData();
   renderWeekView();
 }
 
@@ -1481,6 +2102,11 @@ function renderWeekView() {
     `;
   }
 
+  // ─── ДИСЦИПЛИНА ДНЯ: утро ───
+  renderManifesto();
+  renderGrowthInCrisis();
+  renderMorningRitual();
+
   // ─── ДИРЕКТОРСКИЙ ТРЕКЕР (только Кирилл) ───
   renderDirectorTracker();
 
@@ -1513,6 +2139,9 @@ function renderWeekView() {
       topActionsEl.innerHTML = '';
     }
   }
+
+  // ─── ДИСЦИПЛИНА ДНЯ: день ───
+  renderQuickWin();
 
   // Header
   document.getElementById('weekHeader').innerHTML = `
@@ -1580,6 +2209,10 @@ function renderWeekView() {
   // ─── ЗАДАЧИ ОТ РУКОВОДИТЕЛЯ + ФОРМА НАЗНАЧЕНИЯ ───
   renderAssignedTasks();
   renderAssignerForm();
+
+  // ─── ДИСЦИПЛИНА ДНЯ: вечер + пятница ───
+  renderEveningRitual();
+  renderFridayAgency();
 
   // ─── НАВИГАЦИЯ К ДРУГИМ ВКЛАДКАМ ───
   const quickNavEl = document.getElementById('quickNav');
@@ -2184,6 +2817,105 @@ function renderTeamTab() {
   populateShoutoutTargets();
   loadScores();
   loadFeed();
+  loadTeamDiscipline();
+}
+
+// ───── ТАБЛО ДИСЦИПЛИНЫ КОМАНДЫ ─────
+let TEAM_DISCIPLINE = {};
+
+async function loadTeamDiscipline() {
+  try {
+    const res = await fetch('/api/sales-discipline');
+    if (!res.ok) return;
+    const data = await res.json();
+    TEAM_DISCIPLINE = data.summary || {};
+    renderTeamDisciplineBoard();
+  } catch (e) { console.error(e); }
+}
+
+function renderTeamDisciplineBoard() {
+  const el = document.getElementById('teamDisciplineBoard');
+  if (!el) return;
+
+  // Берём только людей (без claude/am2/natalia)
+  const people = ROLES.filter(r => r.id !== 'claude' && r.id !== 'natalia' && r.id !== 'am2');
+  // Сортируем по агентности убыв.; те, у кого нет данных — внизу
+  const ranked = people.map(r => {
+    const d = TEAM_DISCIPLINE[r.id];
+    return { role: r, data: d, agency: d ? d.agency_coef : -1 };
+  }).sort((a, b) => b.agency - a.agency);
+
+  const hasAny = ranked.some(x => x.agency >= 0);
+
+  const rows = ranked.map(entry => {
+    const r = entry.role;
+    const d = entry.data;
+    if (!d) {
+      return `
+        <div style="display:grid; grid-template-columns:1fr 80px 80px 80px 80px 90px; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--hair); opacity:0.4;">
+          <div style="font-size:13px; font-weight:600; color:var(--ink);">${r.name.split('·')[0]}</div>
+          <div style="font-size:11px; color:var(--faint); text-align:right; grid-column:2 / span 5;">— ещё не начал ритуал —</div>
+        </div>
+      `;
+    }
+    const ac = d.agency_coef;
+    const acColor = ac >= 70 ? '#0FBF00' : ac >= 40 ? '#d97706' : '#dc2626';
+    return `
+      <div style="display:grid; grid-template-columns:1fr 80px 80px 80px 80px 90px; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--hair);">
+        <div>
+          <div style="font-size:13px; font-weight:700; color:var(--ink);">${r.name.split('·')[0]}</div>
+          <div style="font-size:11px; color:var(--muted); margin-top:2px;">активен ${d.days_active}/7 дн${d.stop_phrases_caught > 0 ? ` · поймал ${d.stop_phrases_caught} отговорок` : ''}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:14px; font-weight:700; color:var(--ink);">${d.morning_pct}%</div>
+          <div style="font-size:10px; color:var(--faint);">УТРО</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:14px; font-weight:700; color:var(--ink);">${d.evening_pct}%</div>
+          <div style="font-size:10px; color:var(--faint);">ВЕЧЕР</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:14px; font-weight:700; color:var(--ink);">${d.kept_pct}%</div>
+          <div style="font-size:10px; color:var(--faint);">СЛОВО=ДЕЛО</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:14px; font-weight:700; color:${d.old_open_tails > 0 ? '#dc2626' : 'var(--ink)'};">${d.open_tails}</div>
+          <div style="font-size:10px; color:var(--faint);">ХВОСТЫ${d.old_open_tails ? ` (${d.old_open_tails}⚠)` : ''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px; font-weight:700; color:${acColor}; line-height:1;">${ac}<span style="font-size:12px; opacity:0.6;">%</span></div>
+          <div style="font-size:10px; color:var(--faint); font-weight:700; letter-spacing:0.08em;">АГЕНТНОСТЬ</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:24px 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h2 style="font-size:20px; font-weight:700; color:var(--ink);">🎯 Дисциплина дня — кто держит позицию автора</h2>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px; max-width:680px;">Это не KPI продаж. Это видимая позиция Жертва ↔ Хозяин по 7-дневному окну. Высокая агентность сегодня = выручка через 4-8 недель.</div>
+        </div>
+        <button onclick="loadTeamDiscipline()" style="background:#fff; border:1px solid var(--line); padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; color:var(--body);">↻ Обновить</button>
+      </div>
+      ${hasAny ? `
+        <div style="display:grid; grid-template-columns:1fr 80px 80px 80px 80px 90px; gap:12px; padding:12px 0; border-bottom:2px solid var(--ink); font-size:10px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:0.1em;">
+          <div>Сотрудник</div>
+          <div style="text-align:center;">Утро 7д</div>
+          <div style="text-align:center;">Вечер 7д</div>
+          <div style="text-align:center;">Кепт</div>
+          <div style="text-align:center;">Хвосты</div>
+          <div style="text-align:right;">Коэф.</div>
+        </div>
+        ${rows}
+      ` : `
+        <div style="padding:30px 10px; text-align:center; color:var(--faint); font-size:13px;">
+          Никто ещё не зафиксировал утро или вечер. Первый, кто сделает — задаст планку команде.
+        </div>
+      `}
+    </div>
+  `;
 }
 
 function renderSprintBanner() {

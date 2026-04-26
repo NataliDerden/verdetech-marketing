@@ -845,6 +845,8 @@ def sales_hub():
 SALES_TEAM_FEED_FILE = 'sales_team_feed.jsonl'
 SALES_TEAM_SCORES_FILE = 'sales_team_scores.json'
 SALES_CUSTOM_TASKS_FILE = 'sales_custom_tasks.json'
+SALES_DAILY_FILE = 'sales_daily.json'   # утро/вечер ритуал по {role}_{YYYY-MM-DD}
+SALES_TAILS_FILE = 'sales_tails.json'   # хвосты — обещания клиентам/команде
 
 # Кто кому может назначать задачи
 ASSIGN_PERMISSIONS = {
@@ -1084,6 +1086,268 @@ def sales_custom_task_update(task_id):
         task['done_at'] = (datetime.utcnow().isoformat(timespec='seconds') + 'Z') if task['done'] else None
     _write_custom_tasks(data_store)
     return jsonify({'ok': True, 'task': task})
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Дисциплина дня: утро / вечер / хвосты / коэффициент агентности
+# Опирается на 30 правил Замесина (правила 5, 12, 13, 18, 21, 23, 26, 27, 30)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def _read_daily():
+    if not os.path.exists(SALES_DAILY_FILE):
+        return {}
+    try:
+        with open(SALES_DAILY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _write_daily(data):
+    try:
+        with open(SALES_DAILY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[sales-daily] write error: {e}')
+
+
+def _read_tails():
+    if not os.path.exists(SALES_TAILS_FILE):
+        return {'tails': []}
+    try:
+        with open(SALES_TAILS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {'tails': []}
+
+
+def _write_tails(data):
+    try:
+        with open(SALES_TAILS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[sales-tails] write error: {e}')
+
+
+@app.route('/api/sales-daily', methods=['GET', 'POST'])
+def sales_daily():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    daily = _read_daily()
+
+    if request.method == 'GET':
+        role = request.args.get('role', '').strip()
+        days = int(request.args.get('days', '14'))
+        if not role:
+            return jsonify({'entries': {}})
+        # Возвращаем все записи за последние N дней
+        from datetime import timedelta
+        today = datetime.utcnow().date()
+        result = {}
+        for i in range(days):
+            d = (today - timedelta(days=i)).isoformat()
+            key = f'{role}_{d}'
+            if key in daily:
+                result[d] = daily[key]
+        return jsonify({'entries': result})
+
+    body = request.get_json() or {}
+    role = (body.get('role') or '').strip()
+    date = (body.get('date') or '').strip() or datetime.utcnow().date().isoformat()
+    section = (body.get('section') or '').strip()  # 'morning' | 'evening' | 'commit_check'
+
+    if not role:
+        return jsonify({'error': 'role required'}), 400
+
+    key = f'{role}_{date}'
+    rec = daily.get(key, {
+        'role': role, 'date': date,
+        'morning_commit': '', 'morning_stop_phrase': '',
+        'evening_progress': '', 'evening_care': '',
+        'commit_done': None,  # null = не отвечал, true/false = ответил
+        'ts_morning': '', 'ts_evening': '',
+    })
+
+    now = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+    if section == 'morning':
+        rec['morning_commit'] = (body.get('commit') or '').strip()
+        rec['morning_stop_phrase'] = (body.get('stop_phrase') or '').strip()
+        rec['ts_morning'] = now
+    elif section == 'evening':
+        rec['evening_progress'] = (body.get('progress') or '').strip()
+        rec['evening_care'] = (body.get('care') or '').strip()
+        rec['ts_evening'] = now
+    elif section == 'commit_check':
+        v = body.get('done')
+        rec['commit_done'] = bool(v) if v is not None else None
+    else:
+        return jsonify({'error': 'unknown section'}), 400
+
+    daily[key] = rec
+    _write_daily(daily)
+    return jsonify({'ok': True, 'entry': rec})
+
+
+@app.route('/api/sales-tails', methods=['GET', 'POST'])
+def sales_tails():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    store = _read_tails()
+
+    if request.method == 'GET':
+        role = request.args.get('role', '').strip()
+        only_open = request.args.get('open', '') == '1'
+        items = store.get('tails', [])
+        if role:
+            items = [t for t in items if t.get('role') == role]
+        if only_open:
+            items = [t for t in items if not t.get('closed')]
+        items = sorted(items, key=lambda x: (x.get('closed') or '', x.get('created', '')), reverse=False)
+        # Открытые сверху, среди них старые сверху (давят дольше)
+        items_open = sorted([t for t in items if not t.get('closed')], key=lambda x: x.get('created', ''))
+        items_closed = sorted([t for t in items if t.get('closed')], key=lambda x: x.get('closed'), reverse=True)
+        return jsonify({'tails': items_open + items_closed})
+
+    body = request.get_json() or {}
+    role = (body.get('role') or '').strip()
+    text = (body.get('text') or '').strip()
+    promised_to = (body.get('promised_to') or '').strip()  # клиент / команда / себе
+
+    if not role or not text:
+        return jsonify({'error': 'role and text required'}), 400
+
+    import uuid
+    new_tail = {
+        'id': uuid.uuid4().hex[:12],
+        'role': role,
+        'text': text,
+        'promised_to': promised_to,
+        'created': datetime.utcnow().isoformat(timespec='seconds') + 'Z',
+        'closed': None,
+    }
+    store.setdefault('tails', []).append(new_tail)
+    _write_tails(store)
+    return jsonify({'ok': True, 'tail': new_tail})
+
+
+@app.route('/api/sales-tails/<tail_id>', methods=['POST', 'DELETE'])
+def sales_tail_update(tail_id):
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    store = _read_tails()
+    tails = store.get('tails', [])
+    tail = next((t for t in tails if t.get('id') == tail_id), None)
+    if not tail:
+        return jsonify({'error': 'хвост не найден'}), 404
+
+    if request.method == 'DELETE':
+        store['tails'] = [t for t in tails if t.get('id') != tail_id]
+        _write_tails(store)
+        return jsonify({'ok': True, 'deleted': tail_id})
+
+    # POST — toggle close
+    if tail.get('closed'):
+        tail['closed'] = None
+    else:
+        tail['closed'] = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+    _write_tails(store)
+    return jsonify({'ok': True, 'tail': tail})
+
+
+@app.route('/api/sales-discipline', methods=['GET'])
+def sales_discipline():
+    """Командное табло: коэффициент агентности по каждой роли за последние 7 дней.
+
+    Метрики (правила Замесина):
+    - правило 5 (формула): % дней с заполненным утренним коммитом
+    - правило 12 (целостность слова): % коммитов отмеченных как выполненные
+    - правило 13 (вечерняя рефлексия): % дней с заполненной вечерней рефлексией
+    - правило 18 (хвосты): открытых vs закрытых хвостов
+    - правило 27 (локус контроля): засветился ли в стоп-чеке (не алиби)
+    """
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    from datetime import timedelta
+    daily = _read_daily()
+    tails_store = _read_tails()
+    tails = tails_store.get('tails', [])
+
+    today = datetime.utcnow().date()
+    days_window = 7
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(days_window)]
+
+    # Собрать все роли, которые хоть раз заходили
+    roles_seen = set()
+    for k in daily.keys():
+        # ключ вида role_YYYY-MM-DD
+        if '_' in k:
+            roles_seen.add(k.rsplit('_', 1)[0])
+    for t in tails:
+        roles_seen.add(t.get('role', ''))
+
+    summary = {}
+    for role in roles_seen:
+        if not role:
+            continue
+        morning_count = 0
+        evening_count = 0
+        commit_done_count = 0
+        commit_total = 0
+        stop_phrases = []
+        for d in dates:
+            rec = daily.get(f'{role}_{d}')
+            if not rec:
+                continue
+            if rec.get('morning_commit'):
+                morning_count += 1
+            if rec.get('evening_progress') or rec.get('evening_care'):
+                evening_count += 1
+            cd = rec.get('commit_done')
+            if cd is not None:
+                commit_total += 1
+                if cd:
+                    commit_done_count += 1
+            sp = rec.get('morning_stop_phrase')
+            if sp:
+                stop_phrases.append({'date': d, 'phrase': sp})
+
+        open_tails = [t for t in tails if t.get('role') == role and not t.get('closed')]
+        closed_tails_7d = [
+            t for t in tails
+            if t.get('role') == role and t.get('closed') and t['closed'][:10] in dates
+        ]
+
+        # Коэффициент агентности — простой средний по 4 показателям, 0..100
+        morning_pct = round(100 * morning_count / days_window)
+        evening_pct = round(100 * evening_count / days_window)
+        kept_pct = round(100 * commit_done_count / commit_total) if commit_total else 0
+        # Хвосты: чем больше открытых висит >7 дней — хуже. Простая логика:
+        old_open = sum(
+            1 for t in open_tails
+            if (datetime.utcnow() - datetime.fromisoformat(t['created'].rstrip('Z'))).days > 7
+        )
+        tails_pct = max(0, 100 - old_open * 20)  # каждый просроченный -20%
+
+        agency_coef = round((morning_pct + evening_pct + kept_pct + tails_pct) / 4)
+
+        summary[role] = {
+            'agency_coef': agency_coef,
+            'morning_pct': morning_pct,
+            'evening_pct': evening_pct,
+            'kept_pct': kept_pct,
+            'tails_pct': tails_pct,
+            'open_tails': len(open_tails),
+            'old_open_tails': old_open,
+            'closed_tails_7d': len(closed_tails_7d),
+            'stop_phrases_caught': len(stop_phrases),
+            'days_active': sum(1 for d in dates if daily.get(f'{role}_{d}')),
+        }
+
+    return jsonify({'summary': summary, 'window_days': days_window})
 
 
 BITRIX_WEBHOOK_URL = os.environ.get('BITRIX_WEBHOOK_URL', '')
