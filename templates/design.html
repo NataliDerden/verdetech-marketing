@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Дизайн-хаб — Verde Tech</title>
+<!-- BX24 SDK: загружается только когда страница открыта внутри Битрикс24 iframe -->
+<script src="//api.bitrix24.com/api/v1/"></script>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -682,6 +684,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const prefillEl = document.getElementById('bitrixPrefill');
     if (prefillEl) {
         try { applyPrefill(JSON.parse(prefillEl.textContent)); } catch(e) {}
+    }
+
+    // Регистрация вкладок «КП-генератор» в карточках сделки и лида Битрикса.
+    // Срабатывает один раз при первом открытии приложения внутри Битрикс24.
+    if (typeof BX24 !== 'undefined' && !sessionStorage.getItem('verde_kp_placements_bound')) {
+        try {
+            BX24.init(function() {
+                const handler = window.location.origin + '/design';
+                ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'].forEach(function(placement) {
+                    BX24.callMethod('placement.bind', {
+                        PLACEMENT: placement,
+                        HANDLER: handler,
+                        TITLE: 'КП-генератор',
+                    }, function(res) {
+                        console.log('[verde] placement.bind ' + placement + ':', res.data ? res.data() : res);
+                    });
+                });
+                sessionStorage.setItem('verde_kp_placements_bound', '1');
+            });
+        } catch (e) {
+            console.warn('[verde] BX24 placement.bind failed:', e);
+        }
     }
 
     // Авто-включение цен при стадии "на согласовании" или "реактивация"
