@@ -822,9 +822,10 @@ def is_from_bitrix():
     ref = request.headers.get('Referer', '') or ''
     if 'bitrix24.' in ref:
         return True
-    # Битрикс при первой загрузке Local App POST'ит auth-параметры
-    if request.form.get('AUTH_ID') or request.form.get('DOMAIN') or request.form.get('member_id'):
-        return True
+    # Битрикс при первой загрузке Local App шлёт auth-параметры (POST или GET)
+    for src in (request.form, request.args):
+        if src.get('AUTH_ID') or src.get('DOMAIN') or src.get('member_id'):
+            return True
     if request.args.get('bitrix') == '1':
         return True
     # Кросс-доменная загрузка как iframe (типично для Local App)
@@ -866,8 +867,24 @@ def design_hub():
         session['team_logged_in'] = True
 
     # При первой загрузке из Битрикса — регистрируем вкладку в карточке сделки/лида
-    auth_id = request.form.get('AUTH_ID')
-    domain = request.form.get('DOMAIN')
+    auth_id = request.form.get('AUTH_ID') or request.args.get('AUTH_ID')
+    domain = request.form.get('DOMAIN') or request.args.get('DOMAIN')
+
+    # Логируем что прислал Битрикс — для диагностики
+    try:
+        log_path = os.path.join(os.path.dirname(__file__), 'bitrix_debug.log')
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(f'\n=== {datetime.now().isoformat()} ===\n')
+            f.write(f'method: {request.method}\n')
+            f.write(f'path: {request.path}\n')
+            f.write(f'form keys: {list(request.form.keys())}\n')
+            f.write(f'args keys: {list(request.args.keys())}\n')
+            f.write(f'AUTH_ID: {(auth_id or "")[:20]}...\n')
+            f.write(f'DOMAIN: {domain}\n')
+            f.write(f'Referer: {request.headers.get("Referer", "")}\n')
+    except Exception:
+        pass
+
     if auth_id and domain:
         handler_url = request.host_url.rstrip('/') + '/design'
         bind_bitrix_placements(domain, auth_id, handler_url)
@@ -1964,6 +1981,20 @@ def fetch_bitrix_deal(deal_id):
         'manager_email': mgr_email,
         'deal_id': deal_id,
     }
+
+
+@app.route('/api/bitrix-debug', methods=['GET'])
+def bitrix_debug():
+    """Возвращает последние 5КБ debug-лога Битрикса. Без авторизации — внутренний tool."""
+    try:
+        log_path = os.path.join(os.path.dirname(__file__), 'bitrix_debug.log')
+        if not os.path.exists(log_path):
+            return 'Log пуст — Битрикс ещё не открывал /design.', 200, {'Content-Type': 'text/plain; charset=utf-8'}
+        with open(log_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content[-5000:], 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    except Exception as e:
+        return f'error: {e}', 500
 
 
 @app.route('/api/bitrix-webhook', methods=['POST'])
