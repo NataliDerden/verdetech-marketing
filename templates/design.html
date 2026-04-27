@@ -705,11 +705,8 @@ document.addEventListener('DOMContentLoaded', () => {
             BX24.init(function() {
                 console.log('[verde] BX24.init() callback сработал');
 
-                // 1. Чистая регистрация вкладок: list → unbind все → bind ровно по одной
-                if (!sessionStorage.getItem('verde_kp_placements_bound_v3')) {
-                    cleanRebindPlacements();
-                    sessionStorage.setItem('verde_kp_placements_bound_v3', '1');
-                }
+                // 1. Чистая регистрация вкладок: всегда проверяем и чиним если надо
+                cleanRebindPlacements();
 
                 // 2. Авто-префилл данными из сделки/лида
                 let placementInfo = null;
@@ -753,7 +750,15 @@ document.addEventListener('DOMContentLoaded', () => {
         BX24.callMethod('placement.list', {}, function(res) {
             const list = (res && !res.error()) ? (res.data() || []) : [];
             const ours = list.filter(it => it.handler === ourHandler);
-            console.log('[verde] всего placement-ов в системе:', list.length, ', наших:', ours.length);
+            console.log('[verde] всего placement-ов:', list.length, ', наших:', ours.length);
+
+            // Если уже ровно по одному для каждого нужного места — ничего не делаем
+            const dealsCount = ours.filter(p => p.placement === 'CRM_DEAL_DETAIL_TAB').length;
+            const leadsCount = ours.filter(p => p.placement === 'CRM_LEAD_DETAIL_TAB').length;
+            if (dealsCount === 1 && leadsCount === 1 && ours.length === 2) {
+                console.log('[verde] вкладки уже зарегистрированы корректно');
+                return;
+            }
 
             const finishBind = function() {
                 const batchBind = {};
@@ -887,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const urlField = document.querySelector('input[name="client_url"]');
                 if (urlField && !urlField.value) urlField.value = d.WEB[0].VALUE || '';
             }
-            // Тащим последние комментарии в "Задача клиента"
+            // Тащим последние комментарии в "Задача клиента"; если нет — структурированный fallback
             BX24.callMethod('crm.timeline.comment.list', {
                 filter: {
                     ENTITY_ID: entityId,
@@ -896,19 +901,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 order: {CREATED: 'DESC'},
                 select: ['COMMENT', 'CREATED'],
             }, function(cres) {
-                console.log('[verde] crm.timeline.comment.list:',
-                    cres && !cres.error() ? (cres.data() || []).length + ' штук' : (cres && cres.error()));
-                if (!cres || cres.error()) return;
-                const comments = cres.data() || [];
-                if (!comments.length) return;
-                const text = comments.slice(0, 5)
-                    .map(c => (c.COMMENT || '').replace(/<[^>]+>/g, '').trim())
-                    .filter(Boolean)
-                    .join('\n---\n');
                 const sit = document.querySelector('textarea[name="situation"]');
-                if (sit && !sit.value && text) {
-                    sit.value = text.slice(0, 1500);
-                    console.log('[verde] подставили ' + comments.length + ' комментариев в Задачу клиента');
+                if (!sit || sit.value) return;
+
+                const comments = (cres && !cres.error()) ? (cres.data() || []) : [];
+                console.log('[verde] crm.timeline.comment.list:', comments.length, 'комментариев');
+
+                if (comments.length) {
+                    const text = comments.slice(0, 5)
+                        .map(c => (c.COMMENT || '').replace(/<[^>]+>/g, '').trim())
+                        .filter(Boolean)
+                        .join('\n---\n');
+                    if (text) {
+                        sit.value = text.slice(0, 1500);
+                        console.log('[verde] подставили ' + comments.length + ' комментариев');
+                        return;
+                    }
+                }
+
+                // Fallback: комментариев нет — собираем сухие данные сделки чтобы менеджеру было на что опереться
+                const lines = [];
+                if (d.TITLE) lines.push('Сделка: ' + d.TITLE);
+                if (d.OPPORTUNITY && +d.OPPORTUNITY > 0) {
+                    lines.push('Сумма: ' + d.OPPORTUNITY + ' ' + (d.CURRENCY_ID || 'RUB'));
+                }
+                if (d.STAGE_ID) lines.push('Стадия: ' + d.STAGE_ID);
+                if (d.TYPE_ID) lines.push('Тип сделки: ' + d.TYPE_ID);
+                if (d.SOURCE_ID) lines.push('Источник лида: ' + d.SOURCE_ID);
+                if (lines.length) {
+                    sit.value = lines.join('\n') + '\n\n[Комментариев в таймлайне нет — допишите задачу клиента руками или скопируйте из Sales-навигатора]';
+                    console.log('[verde] подставили fallback из полей сделки');
                 }
             });
         });
