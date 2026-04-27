@@ -784,135 +784,177 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('[verde] установлен режим:', kpMode);
             }
         }
-        // Получаем данные сущности
-        BX24.callMethod('crm.' + entityType + '.get', {ID: entityId}, function(res) {
-            if (!res || res.error()) {
-                console.warn('[verde] crm.' + entityType + '.get failed:', res ? res.error() : null);
+        // Загружаем весь контекст сделки/лида одним batch — ускоряем и анализируем
+        loadFullBitrixContext(entityType, entityId);
+    }
+
+    function loadFullBitrixContext(entityType, entityId) {
+        const ownerTypeId = entityType === 'deal' ? 2 : 1;  // 2=сделка, 1=лид в crm.activity
+        const batch = {
+            entity: ['crm.' + entityType + '.get', {ID: entityId}],
+            comments: ['crm.timeline.comment.list', {
+                filter: {ENTITY_ID: entityId, ENTITY_TYPE: entityType},
+                order: {CREATED: 'DESC'},
+                select: ['COMMENT', 'CREATED', 'AUTHOR_ID'],
+            }],
+            activities: ['crm.activity.list', {
+                filter: {OWNER_ID: entityId, OWNER_TYPE_ID: ownerTypeId},
+                order: {CREATED: 'DESC'},
+                select: ['SUBJECT', 'TYPE_ID', 'CREATED', 'DESCRIPTION', 'COMMUNICATIONS'],
+            }],
+        };
+        if (entityType === 'deal') {
+            batch.contacts = ['crm.deal.contact.items.get', {ID: entityId}];
+            batch.products = ['crm.deal.productrows.get', {ID: entityId}];
+        }
+        BX24.callBatch(batch, function(r) {
+            const deal = (r.entity && !r.entity.error()) ? r.entity.data() : {};
+            const comments = (r.comments && !r.comments.error()) ? (r.comments.data() || []) : [];
+            const activities = (r.activities && !r.activities.error()) ? (r.activities.data() || []) : [];
+            const contactsLinks = (r.contacts && !r.contacts.error()) ? (r.contacts.data() || []) : [];
+            const products = (r.products && !r.products.error()) ? (r.products.data() || []) : [];
+            console.log('[verde] контекст:', {
+                comments: comments.length, activities: activities.length,
+                contacts: contactsLinks.length, products: products.length,
+            });
+            // Догружаем компанию и детали контактов
+            const detailBatch = {};
+            if (deal.COMPANY_ID) detailBatch.company = ['crm.company.get', {ID: deal.COMPANY_ID}];
+            contactsLinks.slice(0, 3).forEach(function(c, i) {
+                detailBatch['contact_' + i] = ['crm.contact.get', {ID: c.CONTACT_ID}];
+            });
+            if (Object.keys(detailBatch).length === 0) {
+                buildAndFillSituation(deal, null, [], comments, activities, products, entityType);
                 return;
             }
-            const d = res.data() || {};
-            console.log('[verde] данные ' + entityType + ':', d);
-
-            // Логируем все ключи + длинные текстовые поля (где может прятаться анализ Sales-навигатора)
-            console.log('[verde] все поля сделки:', Object.keys(d).join(', '));
-            const longFields = [];
-            Object.entries(d).forEach(function(pair) {
-                const k = pair[0], v = pair[1];
-                if (typeof v === 'string' && v.length > 80) {
-                    longFields.push({key: k, len: v.length, preview: v.slice(0, 200).replace(/\s+/g, ' ')});
+            BX24.callBatch(detailBatch, function(dr) {
+                const company = (dr.company && !dr.company.error()) ? dr.company.data() : null;
+                const contactList = [];
+                for (let i = 0; i < 5; i++) {
+                    const k = 'contact_' + i;
+                    if (dr[k] && !dr[k].error()) contactList.push(dr[k].data());
                 }
-            });
-            if (longFields.length) {
-                console.log('[verde] длинные текстовые поля (возможно Sales-навигатор):', longFields);
-            } else {
-                console.log('[verde] длинных текстовых полей нет — Sales-навигатор хранит данные не в сделке');
-            }
-
-            // Ищем анализ Sales-навигатора в кастомных полях (UF_*)
-            // Sales-навигатор сохраняет структурированный текст с маркерами «Заголовок:» «Сделка №:» «Менеджер:»
-            let salesNavAnalysis = '';
-            let salesNavTitle = '';
-            for (const key in d) {
-                const v = d[key];
-                if (typeof v === 'string' && v.length > 200 &&
-                    (v.includes('Заголовок:') || v.includes('Менеджер:') ||
-                     v.includes('Чек сделки') || v.includes('Потенциал'))) {
-                    salesNavAnalysis = v;
-                    // Вытаскиваем заголовок если есть
-                    const titleMatch = v.match(/Заголовок:\s*([^\n]+)/);
-                    if (titleMatch) salesNavTitle = titleMatch[1].trim();
-                    console.log('[verde] нашли анализ Sales-навигатора в поле:', key);
-                    break;
-                }
-            }
-
-            const clientField = document.querySelector('input[name="client_name"]');
-            // Если есть привязанная компания — её название приоритетнее всего (даже над тем что
-            // могли уже подставить раньше). Компания подгружается асинхронно ниже.
-            // А пока ставим временный fallback из заголовка сделки/лида.
-            if (clientField && !clientField.value) {
-                if (salesNavTitle) {
-                    clientField.value = salesNavTitle.replace(/^Сделка\s*№?\s*\d+:\s*/i, '').trim();
-                } else if (d.NAME && d.LAST_NAME) {
-                    clientField.value = (d.NAME + ' ' + d.LAST_NAME).trim();
-                } else {
-                    clientField.value = d.TITLE || d.NAME || '';
-                }
-            }
-
-            // Задача клиента — анализ Sales-навигатора (если есть)
-            if (salesNavAnalysis) {
-                const sit = document.querySelector('textarea[name="situation"]');
-                if (sit && !sit.value) {
-                    sit.value = salesNavAnalysis.slice(0, 2500);
-                    console.log('[verde] подставили Sales-навигатор анализ в Задачу клиента');
-                }
-            }
-            // Если у сделки привязана компания — её название приоритетнее заголовка сделки
-            if (entityType === 'deal' && d.COMPANY_ID) {
-                BX24.callMethod('crm.company.get', {ID: d.COMPANY_ID}, function(cres) {
-                    console.log('[verde] crm.company.get:', cres && cres.data ? cres.data() : cres);
-                    if (cres && !cres.error()) {
-                        const c = cres.data() || {};
-                        // Безусловно перезаписываем — название компании > заголовок сделки
-                        if (clientField && c.TITLE) clientField.value = c.TITLE;
-                        const urlField = document.querySelector('input[name="client_url"]');
-                        if (urlField && !urlField.value && Array.isArray(c.WEB) && c.WEB.length) {
-                            urlField.value = c.WEB[0].VALUE || '';
-                        }
-                        applyIndustryFromBitrix(c.INDUSTRY);
-                    }
-                });
-            }
-            // Для лида/сделки сразу тащим indutsry если есть
-            if (d.INDUSTRY) applyIndustryFromBitrix(d.INDUSTRY);
-            // Сайт прямо у лида
-            if (entityType === 'lead' && Array.isArray(d.WEB) && d.WEB.length) {
-                const urlField = document.querySelector('input[name="client_url"]');
-                if (urlField && !urlField.value) urlField.value = d.WEB[0].VALUE || '';
-            }
-            // Тащим последние комментарии в "Задача клиента"; если нет — структурированный fallback
-            BX24.callMethod('crm.timeline.comment.list', {
-                filter: {
-                    ENTITY_ID: entityId,
-                    ENTITY_TYPE: entityType,
-                },
-                order: {CREATED: 'DESC'},
-                select: ['COMMENT', 'CREATED'],
-            }, function(cres) {
-                const sit = document.querySelector('textarea[name="situation"]');
-                if (!sit || sit.value) return;
-
-                const comments = (cres && !cres.error()) ? (cres.data() || []) : [];
-                console.log('[verde] crm.timeline.comment.list:', comments.length, 'комментариев');
-
-                if (comments.length) {
-                    const text = comments.slice(0, 5)
-                        .map(c => (c.COMMENT || '').replace(/<[^>]+>/g, '').trim())
-                        .filter(Boolean)
-                        .join('\n---\n');
-                    if (text) {
-                        sit.value = text.slice(0, 1500);
-                        console.log('[verde] подставили ' + comments.length + ' комментариев');
-                        return;
-                    }
-                }
-
-                // Fallback: комментариев нет — собираем сухие данные сделки чтобы менеджеру было на что опереться
-                const lines = [];
-                if (d.TITLE) lines.push('Сделка: ' + d.TITLE);
-                if (d.OPPORTUNITY && +d.OPPORTUNITY > 0) {
-                    lines.push('Сумма: ' + d.OPPORTUNITY + ' ' + (d.CURRENCY_ID || 'RUB'));
-                }
-                if (d.STAGE_ID) lines.push('Стадия: ' + d.STAGE_ID);
-                if (d.TYPE_ID) lines.push('Тип сделки: ' + d.TYPE_ID);
-                if (d.SOURCE_ID) lines.push('Источник лида: ' + d.SOURCE_ID);
-                if (lines.length) {
-                    sit.value = lines.join('\n') + '\n\n[Комментариев в таймлайне нет — допишите задачу клиента руками или скопируйте из Sales-навигатора]';
-                    console.log('[verde] подставили fallback из полей сделки');
-                }
+                buildAndFillSituation(deal, company, contactList, comments, activities, products, entityType);
             });
         });
+    }
+
+    function buildAndFillSituation(deal, company, contacts, comments, activities, products, entityType) {
+        // Заполнение полей формы
+        const clientField = document.querySelector('input[name="client_name"]');
+        if (clientField) {
+            // Приоритет: компания → ФИО контакта → заголовок сделки
+            let name = '';
+            if (company && company.TITLE) name = company.TITLE;
+            else if (contacts.length && (contacts[0].NAME || contacts[0].LAST_NAME)) {
+                name = [contacts[0].LAST_NAME, contacts[0].NAME, contacts[0].SECOND_NAME]
+                    .filter(Boolean).join(' ');
+            }
+            else name = deal.TITLE || '';
+            if (name) clientField.value = name;
+        }
+        // Сайт компании
+        const urlField = document.querySelector('input[name="client_url"]');
+        if (urlField && !urlField.value && company && Array.isArray(company.WEB) && company.WEB.length) {
+            urlField.value = company.WEB[0].VALUE || '';
+        }
+        // Отрасль
+        if (company && company.INDUSTRY) applyIndustryFromBitrix(company.INDUSTRY);
+
+        // Собираем структурированную «Задачу клиента»
+        const sit = document.querySelector('textarea[name="situation"]');
+        if (!sit || sit.value && !sit.value.includes('[Комментариев в таймлайне нет')) {
+            // Если уже что-то напечатано (НЕ наш fallback) — не трогаем
+            return;
+        }
+        const lines = [];
+        // 1. Заголовок и описание
+        lines.push('— СДЕЛКА —');
+        if (deal.TITLE) lines.push('Название: ' + deal.TITLE);
+        if (deal.OPPORTUNITY && parseFloat(deal.OPPORTUNITY) > 0) {
+            lines.push('Сумма: ' + deal.OPPORTUNITY + ' ' + (deal.CURRENCY_ID || 'RUB'));
+        }
+        if (deal.STAGE_ID) lines.push('Стадия: ' + deal.STAGE_ID);
+        if (deal.TYPE_ID) lines.push('Тип сделки: ' + deal.TYPE_ID);
+        if (deal.SOURCE_ID) lines.push('Источник: ' + deal.SOURCE_ID);
+
+        // 2. Компания
+        if (company) {
+            lines.push('');
+            lines.push('— КОМПАНИЯ —');
+            if (company.TITLE) lines.push(company.TITLE);
+            if (company.INDUSTRY) lines.push('Отрасль: ' + company.INDUSTRY);
+            if (company.EMPLOYEES) lines.push('Сотрудников: ' + company.EMPLOYEES);
+            if (company.REVENUE) lines.push('Выручка: ' + company.REVENUE);
+            if (Array.isArray(company.WEB) && company.WEB.length) {
+                lines.push('Сайт: ' + company.WEB[0].VALUE);
+            }
+            if (company.COMMENTS) lines.push('Заметки: ' + company.COMMENTS.replace(/<[^>]+>/g, '').slice(0, 300));
+        }
+
+        // 3. Контакты
+        if (contacts.length) {
+            lines.push('');
+            lines.push('— КОНТАКТЫ —');
+            contacts.slice(0, 3).forEach(function(c) {
+                const name = [c.LAST_NAME, c.NAME, c.SECOND_NAME].filter(Boolean).join(' ');
+                const post = c.POST ? ' (' + c.POST + ')' : '';
+                let line = name + post;
+                const phone = Array.isArray(c.PHONE) && c.PHONE.length ? c.PHONE[0].VALUE : '';
+                const email = Array.isArray(c.EMAIL) && c.EMAIL.length ? c.EMAIL[0].VALUE : '';
+                if (phone) line += ' · ' + phone;
+                if (email) line += ' · ' + email;
+                lines.push(line);
+            });
+        }
+
+        // 4. Продукты в сделке
+        if (products.length) {
+            lines.push('');
+            lines.push('— ПРОДУКТЫ В СДЕЛКЕ —');
+            products.slice(0, 5).forEach(function(p) {
+                const qty = p.QUANTITY ? ' × ' + p.QUANTITY : '';
+                const price = p.PRICE ? ' (' + p.PRICE + ' ' + (p.CURRENCY_ID || '₽') + ')' : '';
+                lines.push((p.PRODUCT_NAME || 'Товар') + qty + price);
+            });
+        }
+
+        // 5. Активности (звонки, встречи, письма)
+        if (activities.length) {
+            lines.push('');
+            lines.push('— АКТИВНОСТИ —');
+            const typeMap = {1: 'Встреча', 2: 'Звонок', 3: 'Задача', 4: 'Email'};
+            activities.slice(0, 5).forEach(function(a) {
+                const type = typeMap[a.TYPE_ID] || ('Тип ' + a.TYPE_ID);
+                const date = (a.CREATED || '').slice(0, 10);
+                const subj = a.SUBJECT || '';
+                let line = '[' + date + '] ' + type + ': ' + subj;
+                if (a.DESCRIPTION) {
+                    const desc = a.DESCRIPTION.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+                    if (desc) line += ' — ' + desc.slice(0, 200);
+                }
+                lines.push(line);
+            });
+        }
+
+        // 6. Комментарии таймлайна
+        if (comments.length) {
+            lines.push('');
+            lines.push('— КОММЕНТАРИИ —');
+            comments.slice(0, 5).forEach(function(c) {
+                const date = (c.CREATED || '').slice(0, 10);
+                const text = (c.COMMENT || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+                if (text) lines.push('[' + date + '] ' + text.slice(0, 300));
+            });
+        }
+
+        // 7. Подсказка менеджеру
+        lines.push('');
+        lines.push('---');
+        lines.push('[Допиши задачу клиента (что у него болит, что хочет купить) — Claude использует весь этот контекст]');
+
+        sit.value = lines.join('\n');
+        console.log('[verde] заполнили задачу клиента контекстом:', lines.length, 'строк');
     }
 
     function applyIndustryFromBitrix(bitrixIndustry) {
