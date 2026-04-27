@@ -144,6 +144,23 @@ def _make_display(bulk: str, small: str) -> str:
     return f'{price} ₽/кг' if price else ''
 
 
+def find_products_by_keywords(keywords: list, max_items: int = 50) -> list:
+    """Ищет в прайсе продукты, чьё название или категория содержат любое из keywords.
+    Возвращает список словарей с name, cat, и ценой."""
+    keywords_lower = [k.lower() for k in keywords if k]
+    if not keywords_lower:
+        return []
+    matches = []
+    for entry in PRICE_MAP.values():
+        name_lc = entry['name'].lower()
+        cat_lc = entry['cat'].lower()
+        if any(k in name_lc or k in cat_lc for k in keywords_lower):
+            matches.append(entry)
+            if len(matches) >= max_items:
+                break
+    return matches
+
+
 def get_category_pricelist(category: str = '') -> list:
     """
     Возвращает отформатированный список позиций из прайса для слайда-прайслиста.

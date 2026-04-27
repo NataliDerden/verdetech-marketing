@@ -17,7 +17,7 @@ except ImportError:
     PRODUCT_SPECS = {}
 
 try:
-    from products_prices import lookup_price, format_price, get_category_pricelist, PRICE_VALID_UNTIL
+    from products_prices import lookup_price, format_price, get_category_pricelist, find_products_by_keywords, PRICE_VALID_UNTIL
 except ImportError:
     def lookup_price(_): return None
     def format_price(_): return {}
@@ -182,8 +182,27 @@ INDUSTRY_BOOST_KEYWORDS = {
 }
 
 
-def build_catalog_index_for_prompt(industry=None, max_items=150):
-    """Компактный каталог для передачи Claude — с отраслевым бустом."""
+SPICE_TRIGGER_WORDS = [
+    'специ', 'пряност', 'перец', 'паприк', 'розмарин', 'чеснок', 'базилик',
+    'орегано', 'тимьян', 'тимиан', 'кориандр', 'тмин', 'кардамон', 'имбир',
+    'куркум', 'гвоздик', 'мускат', 'корица', 'лавр', 'фенхель', 'укроп',
+    'петрушк', 'майоран', 'шалфей', 'сушён', 'сушен', 'сухой лук', 'лук сушён',
+    'морковь сушён', 'смесь приправ', 'смесь специй', 'приправ',
+]
+SPICE_PRIORITY_KEYWORDS = SPICE_TRIGGER_WORDS + [
+    'специ', 'пряност', 'сушён', 'сушен', 'смесь', 'приправ',
+]
+
+
+def situation_mentions_spices(situation_text: str, products_context: str = '') -> bool:
+    """Возвращает True если в задаче клиента или продуктах сделки упомянуты специи/пряности."""
+    blob = (situation_text + ' ' + products_context).lower()
+    return any(kw in blob for kw in SPICE_TRIGGER_WORDS)
+
+
+def build_catalog_index_for_prompt(industry=None, max_items=150, force_spices=False):
+    """Компактный каталог для передачи Claude — с отраслевым бустом.
+    force_spices=True добавляет в приоритет категории Специи / Пряности / Сушёные овощи."""
     items = []
     # Курированные всегда в индексе (это самые продаваемые)
     for p in ALL_PRODUCTS:
@@ -199,6 +218,8 @@ def build_catalog_index_for_prompt(industry=None, max_items=150):
     industry_kw = INDUSTRY_BOOST_KEYWORDS.get(industry, [])
     base_kw = ['технолог', 'комплексная', 'эмультек', 'фреш', 'супер', 'умн', 'краситель', 'стабилизатор', 'маринад', 'рассол', 'витамин', 'инулин']
     priority_keywords = list(set(industry_kw + base_kw))
+    if force_spices:
+        priority_keywords = list(set(priority_keywords + SPICE_PRIORITY_KEYWORDS))
 
     # Сначала приоритетные по keywords
     added_ids = {i['id'] for i in items}
@@ -2208,9 +2229,20 @@ def generate_kp():
     industry = data['industry']
     industry_forms = INDUSTRY_MAP.get(industry, {'genitive': industry.lower(), 'dative': industry.lower()})
 
+    # Если в задаче клиента упомянуты специи/пряности — форсируем их в каталог
+    situation_for_match = data.get('situation', '')
+    spice_context = situation_mentions_spices(situation_for_match)
+
     # Строим компактный каталог для Claude — только ключевые данные
     # Ограничиваем релевантными категориями чтобы не перегружать промпт
-    catalog_index = build_catalog_index_for_prompt(industry)
+    catalog_index = build_catalog_index_for_prompt(industry, force_spices=spice_context)
+
+    # Если упомянуты специи — добавляем релевантные позиции из ПРАЙСА (с ценами!)
+    pricelist_spice_products = []
+    if spice_context:
+        # Тащим все продукты из прайса, где категория или название содержит специи/пряности/сушёные/перец/чеснок/розмарин/...
+        pricelist_spice_products = find_products_by_keywords(SPICE_TRIGGER_WORDS, max_items=80)
+        print(f'[generate_kp] Контекст специй: подгружено {len(pricelist_spice_products)} позиций из прайса', flush=True)
 
     # Дополнительная кастомная выгода (если указана пользователем)
     custom_benefit = data.get('main_benefit', '').strip()
@@ -2330,6 +2362,12 @@ SALES ENABLEMENT:
 
 === КАТАЛОГ VERDE TECH (все 800+ продукта — для поиска по ID и именам) ===
 {json.dumps(catalog_index, ensure_ascii=False, indent=2)}
+
+{("=== ПРЯМЫЕ ПОЗИЦИИ ИЗ ПРАЙСА VERDE TECH ПОД ЗАПРОС КЛИЕНТА (специи/пряности/сушёные овощи) ===" + chr(10) +
+"Клиент явно ищет специи/пряности — РЕКОМЕНДУЙ продукты ИМЕННО ИЗ ЭТОГО списка. " +
+"Они уже есть на складе с актуальными ценами. НЕ предлагай V Smart Plus вместо них." + chr(10) +
+json.dumps([{'name': p['name'], 'cat': p['cat'], 'price_per_kg_no_vat': p.get('bulk_no_vat') or p.get('small_no_vat')} for p in pricelist_spice_products], ensure_ascii=False, indent=2)
+) if pricelist_spice_products else ''}
 
 === КЛИЕНТ И СДЕЛКА ===
 Клиент: {data['client_name']}
