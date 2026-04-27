@@ -705,28 +705,10 @@ document.addEventListener('DOMContentLoaded', () => {
             BX24.init(function() {
                 console.log('[verde] BX24.init() callback сработал');
 
-                // 1. Регистрация вкладок (один раз за сессию)
-                if (!sessionStorage.getItem('verde_kp_placements_bound_v2')) {
-                    const handler = window.location.origin + '/design';
-                    const placements = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
-                    // Сначала размонтируем старые регистрации (на случай дубликатов)
-                    placements.forEach(function(placement) {
-                        BX24.callMethod('placement.unbind', {
-                            PLACEMENT: placement,
-                            HANDLER: handler,
-                        }, function() {
-                            // потом биндим заново — одну штуку
-                            BX24.callMethod('placement.bind', {
-                                PLACEMENT: placement,
-                                HANDLER: handler,
-                                TITLE: 'КП-генератор',
-                            }, function(res) {
-                                console.log('[verde] placement.bind ' + placement + ':',
-                                    res && res.data ? res.data() : res);
-                            });
-                        });
-                    });
-                    sessionStorage.setItem('verde_kp_placements_bound_v2', '1');
+                // 1. Чистая регистрация вкладок: list → unbind все → bind ровно по одной
+                if (!sessionStorage.getItem('verde_kp_placements_bound_v3')) {
+                    cleanRebindPlacements();
+                    sessionStorage.setItem('verde_kp_placements_bound_v3', '1');
                 }
 
                 // 2. Авто-префилл данными из сделки/лида
@@ -763,6 +745,46 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.warn('[verde] BX24 init exception:', e);
         }
+    }
+
+    function cleanRebindPlacements() {
+        const ourHandler = window.location.origin + '/design';
+        const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
+        BX24.callMethod('placement.list', {}, function(res) {
+            const list = (res && !res.error()) ? (res.data() || []) : [];
+            console.log('[verde] текущие placement-ы:', list);
+            // Сносим все наши
+            const oursToUnbind = list.filter(it => it.handler === ourHandler);
+            let unbindLeft = oursToUnbind.length;
+            const afterUnbind = function() {
+                // Биндим ровно по одной для каждого нужного места
+                want.forEach(function(p) {
+                    BX24.callMethod('placement.bind', {
+                        PLACEMENT: p,
+                        HANDLER: ourHandler,
+                        TITLE: 'КП-генератор',
+                    }, function(rr) {
+                        console.log('[verde] bind ' + p + ':', rr && rr.data ? rr.data() : rr,
+                            rr && rr.error ? rr.error() : '');
+                    });
+                });
+            };
+            if (unbindLeft === 0) {
+                afterUnbind();
+            } else {
+                oursToUnbind.forEach(function(it) {
+                    BX24.callMethod('placement.unbind', {
+                        PLACEMENT: it.placement,
+                        HANDLER: ourHandler,
+                    }, function(rr) {
+                        console.log('[verde] unbind ' + it.placement + ':',
+                            rr && rr.error ? rr.error() : 'ok');
+                        unbindLeft--;
+                        if (unbindLeft === 0) afterUnbind();
+                    });
+                });
+            }
+        });
     }
 
     function prefillFromBitrixEntity(entityType, entityId, kpMode) {
