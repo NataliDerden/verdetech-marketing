@@ -706,19 +706,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('[verde] BX24.init() callback сработал');
 
                 // 1. Регистрация вкладок (один раз за сессию)
-                if (!sessionStorage.getItem('verde_kp_placements_bound')) {
+                if (!sessionStorage.getItem('verde_kp_placements_bound_v2')) {
                     const handler = window.location.origin + '/design';
-                    ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'].forEach(function(placement) {
-                        BX24.callMethod('placement.bind', {
+                    const placements = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
+                    // Сначала размонтируем старые регистрации (на случай дубликатов)
+                    placements.forEach(function(placement) {
+                        BX24.callMethod('placement.unbind', {
                             PLACEMENT: placement,
                             HANDLER: handler,
-                            TITLE: 'КП-генератор',
-                        }, function(res) {
-                            console.log('[verde] placement.bind ' + placement + ':',
-                                res && res.data ? res.data() : res);
+                        }, function() {
+                            // потом биндим заново — одну штуку
+                            BX24.callMethod('placement.bind', {
+                                PLACEMENT: placement,
+                                HANDLER: handler,
+                                TITLE: 'КП-генератор',
+                            }, function(res) {
+                                console.log('[verde] placement.bind ' + placement + ':',
+                                    res && res.data ? res.data() : res);
+                            });
                         });
                     });
-                    sessionStorage.setItem('verde_kp_placements_bound', '1');
+                    sessionStorage.setItem('verde_kp_placements_bound_v2', '1');
                 }
 
                 // 2. Авто-префилл данными из сделки/лида
@@ -775,11 +783,44 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const d = res.data() || {};
             console.log('[verde] данные ' + entityType + ':', d);
-            // Название клиента
+
+            // Ищем анализ Sales-навигатора в кастомных полях (UF_*)
+            // Sales-навигатор сохраняет структурированный текст с маркерами «Заголовок:» «Сделка №:» «Менеджер:»
+            let salesNavAnalysis = '';
+            let salesNavTitle = '';
+            for (const key in d) {
+                const v = d[key];
+                if (typeof v === 'string' && v.length > 200 &&
+                    (v.includes('Заголовок:') || v.includes('Менеджер:') ||
+                     v.includes('Чек сделки') || v.includes('Потенциал'))) {
+                    salesNavAnalysis = v;
+                    // Вытаскиваем заголовок если есть
+                    const titleMatch = v.match(/Заголовок:\s*([^\n]+)/);
+                    if (titleMatch) salesNavTitle = titleMatch[1].trim();
+                    console.log('[verde] нашли анализ Sales-навигатора в поле:', key);
+                    break;
+                }
+            }
+
+            // Название клиента: приоритет Sales-навигатор → Company → Title сделки
             const clientField = document.querySelector('input[name="client_name"]');
             if (clientField && !clientField.value) {
-                const title = d.TITLE || d.COMPANY_TITLE || d.NAME || '';
+                let title = '';
+                // Sales-навигатор заголовок часто формата "Сделка №X: ..." — берём только содержательную часть
+                if (salesNavTitle) {
+                    title = salesNavTitle.replace(/^Сделка\s*№?\s*\d+:\s*/i, '').trim();
+                }
+                if (!title) title = d.COMPANY_TITLE || d.TITLE || d.NAME || '';
                 if (title) clientField.value = title;
+            }
+
+            // Задача клиента — анализ Sales-навигатора (если есть) или комменты
+            if (salesNavAnalysis) {
+                const sit = document.querySelector('textarea[name="situation"]');
+                if (sit && !sit.value) {
+                    sit.value = salesNavAnalysis.slice(0, 2500);
+                    console.log('[verde] подставили Sales-навигатор анализ в Задачу клиента');
+                }
             }
             // Если у сделки привязана компания — тащим её данные (имя/сайт/индустрия)
             if (entityType === 'deal' && d.COMPANY_ID) {
