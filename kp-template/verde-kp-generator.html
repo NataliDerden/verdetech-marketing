@@ -180,9 +180,15 @@
   .price-list-table td.price-val { text-align:right; font-family:'Instrument Serif', Georgia, serif; font-size:14px; color:var(--ink); white-space:nowrap; }
   .price-list-table td.price-na { text-align:right; color:var(--faint); font-size:11px; }
 
+  /* Редактируемые элементы */
+  [contenteditable="true"]:focus { outline:2px solid var(--green); outline-offset:2px; background:rgba(15,191,0,0.04); border-radius:2px; }
+  [contenteditable="true"]:hover { background:rgba(15,191,0,0.03); border-radius:2px; cursor:text; }
+  .edit-hint { position:fixed; top:60px; right:20px; padding:8px 14px; background:rgba(15,191,0,0.95); color:var(--white); font-size:11px; font-weight:600; letter-spacing:0.05em; border-radius:999px; z-index:99; }
+
   @media print {
     body { background:var(--white); }
-    .bar { display:none; }
+    .bar, .edit-hint { display:none; }
+    [contenteditable="true"]:hover, [contenteditable="true"]:focus { outline:none; background:transparent; }
     .deck { padding:0; max-width:none; }
     .slide { border-radius:0; margin:0; box-shadow:none; page-break-after:always; min-height:100vh; }
     .slide.slide-pricelist { min-height:0; page-break-after:auto; page-break-inside:auto; }
@@ -198,8 +204,12 @@
     <svg viewBox="0 0 64 64" fill="#0FBF00"><ellipse cx="32" cy="16" rx="8" ry="14"/><ellipse cx="48" cy="32" rx="14" ry="8"/><ellipse cx="32" cy="48" rx="8" ry="14"/><ellipse cx="16" cy="32" rx="14" ry="8"/></svg>
     {{ client_name }} · {{ doc_id }}
   </div>
-  <button onclick="downloadKP()">Скачать HTML</button>
+  <div style="display:flex; gap:8px;">
+    <button onclick="window.print()" style="background:var(--green);">📄 Скачать PDF</button>
+    <button onclick="downloadKP()" style="background:var(--ink); color:var(--white);">⬇ HTML</button>
+  </div>
 </div>
+<div class="edit-hint">✏ Кликни на любой текст в КП — можешь редактировать прямо здесь</div>
 
 <div class="deck">
 
@@ -281,25 +291,10 @@
   <div class="slide-footer"><span>02 · Выгоды и рынки</span><span>Для кого это решение</span></div>
 </div>
 
-<!-- 4 HOW IT WORKS -->
+<!-- 4 WHAT PREVENTS GROWTH -->
 <div class="slide">
   <div class="slide-inner">
-    <div class="eyebrow">03 · Как работает</div>
-    <h2>Три этапа — от&nbsp;сырья до&nbsp;готового продукта</h2>
-    <p class="lead" style="margin-top:8px;">{{ tech_lead }}</p>
-    <div class="tech-timeline">
-      <div class="tech-step"><div class="t-num">01</div><div><h4>{{ tech_step1_title }}</h4><p>{{ tech_step1_desc }}</p></div></div>
-      <div class="tech-step"><div class="t-num">02</div><div><h4>{{ tech_step2_title }}</h4><p>{{ tech_step2_desc }}</p></div></div>
-      <div class="tech-step"><div class="t-num">03</div><div><h4>{{ tech_step3_title }}</h4><p>{{ tech_step3_desc }}</p></div></div>
-    </div>
-  </div>
-  <div class="slide-footer"><span>03 · Технология</span><span>Протоколы — по&nbsp;запросу</span></div>
-</div>
-
-<!-- 5 WHAT PREVENTS GROWTH -->
-<div class="slide">
-  <div class="slide-inner">
-    <div class="eyebrow">04 · Что мешает расти</div>
+    <div class="eyebrow">03 · Что мешает расти</div>
     <h2>Три барьера роста в&nbsp;{{ industry_genitive }} в&nbsp;2026 году</h2>
     <p class="lead" style="margin-top:8px;">Это то, что мы&nbsp;слышим на&nbsp;каждой встрече. Наше решение снимает эти барьеры.</p>
     <div class="pains-list">
@@ -308,13 +303,13 @@
       <div class="pain"><div class="idx">03</div><h4>{{ pain3_title }}</h4><p>{{ pain3_desc }}</p></div>
     </div>
   </div>
-  <div class="slide-footer"><span>04 · Барьеры роста</span></div>
+  <div class="slide-footer"><span>03 · Барьеры роста</span></div>
 </div>
 
 <!-- 6 CONVENIENT & FAST -->
 <div class="slide">
   <div class="slide-inner">
-    <div class="eyebrow">05 · Почему с&nbsp;нами</div>
+    <div class="eyebrow">04 · Почему с&nbsp;нами</div>
     <h2>Удобно и&nbsp;быстро</h2>
     <p class="lead" style="margin-top:8px;">Собственное производство в&nbsp;СПб, R&amp;D под&nbsp;клиента, минимум бюрократии.</p>
     <div class="conv-layout">
@@ -332,13 +327,42 @@
       <strong>уже работают с&nbsp;нами.</strong>
     </div>
   </div>
-  <div class="slide-footer"><span>05 · Почему Verde</span></div>
+  <div class="slide-footer"><span>04 · Почему Verde</span></div>
 </div>
 
-<!-- 8 TRENDS -->
+<!-- 5 COMPETITORS -->
 <div class="slide">
   <div class="slide-inner">
-    <div class="eyebrow">07 · Тренды 2026–2028</div>
+    <div class="eyebrow">05 · Verde vs конкуренты</div>
+    <h2>Чем мы&nbsp;отличаемся от&nbsp;других игроков</h2>
+    <p class="lead" style="margin-top:8px;">Сравнение с&nbsp;основными конкурентами в&nbsp;{{ industry_genitive }}.</p>
+    <div class="comp-table">
+      <div class="comp-row h">
+        <div class="c">Конкурент</div>
+        <div class="c">Скорость</div>
+        <div class="c">Их слабость vs Verde</div>
+      </div>
+      {% for cm in (competitors or [])[:4] %}
+      <div class="comp-row">
+        <div class="c">{{ cm.get('name','') }}</div>
+        <div class="c weak">{{ cm.get('speed','') }}</div>
+        <div class="c weak">{{ cm.get('weakness','') }}</div>
+      </div>
+      {% endfor %}
+      <div class="comp-row" style="border-bottom:1px solid var(--ink);">
+        <div class="c verde">Verde Tech</div>
+        <div class="c verde">5 раб. дней</div>
+        <div class="c verde">Собственное R&amp;D, NDA на рецептуру, образцы бесплатно</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer"><span>05 · Конкуренты</span><span>Данные по открытым источникам</span></div>
+</div>
+
+<!-- 6 TRENDS -->
+<div class="slide">
+  <div class="slide-inner">
+    <div class="eyebrow">06 · Тренды 2026–2028</div>
     <h2>Куда движется {{ industry_genitive }}</h2>
     <p class="lead" style="margin-top:8px;">Стратегический взгляд — не&nbsp;про&nbsp;нашу продажу, а&nbsp;про&nbsp;вашу подготовку.</p>
     <div class="trends-list">
@@ -347,17 +371,17 @@
       <div class="trend-row"><div class="ty">{{ trend3_year }}</div><div><h4>{{ trend3_title }}</h4><p>{{ trend3_impact }}</p></div></div>
     </div>
   </div>
-  <div class="slide-footer"><span>07 · Тренд-радар</span></div>
+  <div class="slide-footer"><span>06 · Тренд-радар</span></div>
 </div>
 
 <!-- 9 NEXT STEP + CONTACT -->
 <div class="slide">
   <div class="slide-inner">
-    <div class="eyebrow">08 · Следующий шаг</div>
+    <div class="eyebrow">07 · Следующий шаг</div>
     <h2>{{ next_headline }}</h2>
     <p class="lead" style="margin-top:8px;">→ {{ next_action }}</p>
     <div class="steps-row">
-      <div class="step-col"><div class="s-num">Неделя 1</div><h4>Образец + пилот</h4><p>500&nbsp;г + протокол. Ваш технолог закладывает на&nbsp;линию.</p></div>
+      <div class="step-col"><div class="s-num">Неделя 1</div><h4>Образец + пилот</h4><p>{{ sample_amount }} {{ product_name }} + протокол. Ваш технолог закладывает на&nbsp;линию.</p></div>
       <div class="step-col"><div class="s-num">Неделя 2</div><h4>Замер KPI</h4><p>Проба на&nbsp;100&nbsp;кг. Фиксируем выход и&nbsp;готовим акт.</p></div>
       <div class="step-col"><div class="s-num">Неделя 3</div><h4>Договор + поставка</h4><p>Первая коммерческая партия на&nbsp;ваш склад.</p></div>
     </div>
@@ -377,10 +401,10 @@
       </div>
     </div>
     <div class="reqs">
-      ООО «Вердэ» · ИНН 7842103837 · ОГРН 1127847022637 · 197375, г.&nbsp;Санкт-Петербург, ул.&nbsp;Вербная, д.&nbsp;27, лит.&nbsp;А · +7&nbsp;(812)&nbsp;607&nbsp;64&nbsp;28 · info@verdespb.ru
+      ООО «Вердэ» · ИНН 7842103837 · 197375, г.&nbsp;Санкт-Петербург, ул.&nbsp;Вербная, д.&nbsp;27, лит.&nbsp;А · +7&nbsp;(812)&nbsp;606‑73‑83 · sales@verdetech.ru
     </div>
   </div>
-  <div class="slide-footer"><span>06 · Контакты</span><span>Действует до&nbsp;{{ expiry_date }}</span></div>
+  <div class="slide-footer"><span>07 · Контакты</span><span>Действует до&nbsp;{{ expiry_date }}</span></div>
 </div>
 
 </div>
@@ -400,6 +424,36 @@ function downloadKP() {
   document.body.removeChild(a);
   URL.revokeObjectURL(a.href);
 }
+
+// Делаем ключевые тексты редактируемыми
+document.addEventListener('DOMContentLoaded', () => {
+  const editableSelectors = [
+    '.slide h2', '.slide h3', '.slide h4',
+    '.slide .lead', '.slide .r-sub', '.slide .r-meta',
+    '.slide .pain p', '.slide .pain h4',
+    '.slide .benefit-item .txt',
+    '.slide .market-item .m-title', '.slide .market-item .m-why',
+    '.slide .conv-row .key', '.slide .conv-row .val',
+    '.slide .case .res', '.slide .case .nm',
+    '.slide .comp-row .c',
+    '.slide .trend-row h4', '.slide .trend-row p',
+    '.slide .rec-bundle-item h4', '.slide .rec-bundle-item p', '.slide .rec-bundle-item .role',
+    '.slide .step-col h4', '.slide .step-col p',
+    '.slide .ccard .nm', '.slide .ccard .role', '.slide .ccard .ln',
+    '.contact-main .m-name', '.contact-main .m-role', '.contact-main .m-ln',
+    '.bonus-block li', '.bonus-block h4',
+    '.exec-point .value', '.exec-point .label',
+    '.faq-item .q', '.faq-item .a',
+    '.understanding-quote',
+    '.r-eyebrow', '.eyebrow'
+  ];
+  editableSelectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      el.setAttribute('contenteditable', 'true');
+      el.setAttribute('spellcheck', 'false');
+    });
+  });
+});
 </script>
 
 </body>

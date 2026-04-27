@@ -2348,6 +2348,24 @@ SALES ENABLEMENT:
     except FileNotFoundError:
         return jsonify({'error': 'Шаблон КП не найден на сервере'}), 500
 
+    # Подбираем объём бесплатного образца по категории продукта
+    def calculate_sample_amount(product_name, product_category):
+        """Возвращает осмысленный объём образца под категорию продукта."""
+        text = (product_name + ' ' + product_category).lower()
+        if 'рассол' in text or 'инъект' in text or 'засолк' in text:
+            return '3-5 кг'  # рассолы шприцуются — нужен большой объём для теста
+        if 'маринад' in text or 'смес' in text and 'пряност' in text:
+            return '1-2 кг'  # маринады — на партию 30-50 кг сырья
+        if 'красител' in text or 'ароматизатор' in text:
+            return '500 г - 1 кг'
+        if 'витамин' in text or 'smart plus' in text or 'инулин' in text or 'премикс' in text:
+            return '500 г'  # премиксы — компактные дозировки
+        if 'специ' in text or 'экстракт' in text:
+            return '500 г - 1 кг'
+        if 'эмультек' in text or 'фреш' in text or 'стабилизатор' in text:
+            return '1-2 кг'
+        return '1 кг'  # дефолт
+
     # Claude выбрал продукт — подтягиваем его из каталога
     picked = ai_data.get('primary_product', {}) or {}
     picked_id = picked.get('id', '')
@@ -2509,6 +2527,7 @@ SALES ENABLEMENT:
         'roi_payback': ai_data.get('roi_payback', ''),
         'markets': ai_data.get('markets', []),
         'competitors': ai_data.get('competitors', []),
+        'sample_amount': calculate_sample_amount(product.get('name',''), product.get('category','')),
         'doc_id': f"KP-{datetime.now().strftime('%Y%m%d-%H%M')}-{data['client_name'][:3].upper()}",
         'expiry_date': (datetime.now() + timedelta(days=30)).strftime('%d.%m.%Y'),
         'include_prices': include_prices,
