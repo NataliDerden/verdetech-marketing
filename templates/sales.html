@@ -211,6 +211,66 @@
   .page-content { display: none; }
   .page-content.active { display: block; }
 
+  /* ═══ WORK LAYOUT (двухколоночный фокус + сайдбар) ═══ */
+  .work-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 18px;
+    align-items: start;
+  }
+  .work-sidebar { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 110px; }
+  @media (max-width: 1100px) {
+    .work-layout { grid-template-columns: 1fr; }
+    .work-sidebar { position: static; }
+  }
+
+  /* ═══ COLLAPSIBLE SIDEBAR CARD ═══ */
+  .sb-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; transition: border-color 0.15s;
+  }
+  .sb-card:hover { border-color: #d4d4d8; }
+  .sb-card-head {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+    cursor: pointer; user-select: none;
+  }
+  .sb-card-head .sb-icon { font-size: 16px; flex-shrink: 0; line-height: 1; }
+  .sb-card-head .sb-title { font-size: 13px; font-weight: 700; color: var(--ink); flex: 1; }
+  .sb-card-head .sb-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
+    background: var(--hair); color: var(--body); white-space: nowrap;
+  }
+  .sb-card-head .sb-badge.green  { background: var(--green-soft); color: var(--green-dark); }
+  .sb-card-head .sb-badge.amber  { background: #fffbea; color: #b07e00; }
+  .sb-card-head .sb-badge.red    { background: #fef2f2; color: #dc2626; }
+  .sb-card-head .sb-chev {
+    font-size: 12px; color: var(--faint); transition: transform 0.2s;
+  }
+  .sb-card.open .sb-chev { transform: rotate(180deg); }
+  .sb-body { display: none; padding: 0 14px 14px; border-top: 1px solid var(--hair); }
+  .sb-card.open .sb-body { display: block; }
+
+  /* ═══ MANIFESTO BAR (тонкая полоса вверху, не блок) ═══ */
+  .manifesto-bar {
+    background: linear-gradient(135deg, #0B0B0C 0%, #1a1a1c 100%);
+    color: #fff; border-radius: 10px; padding: 10px 16px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 14px; font-size: 13px;
+  }
+  .manifesto-bar .mf-tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; opacity: 0.7;
+    background: rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 4px;
+  }
+  .manifesto-bar .mf-text { flex: 1; min-width: 200px; opacity: 0.9; line-height: 1.45; }
+  .manifesto-bar .mf-text b { color: #b8f5a0; font-weight: 700; }
+  .manifesto-bar button {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+    color: #fff; padding: 6px 11px; border-radius: 6px; font-size: 11px;
+    font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .manifesto-bar button:hover { background: rgba(255,255,255,0.18); }
+
   /* ═══ RESPONSIVE ═══ */
   @media (max-width: 768px) {
     .top-bar { padding: 12px 16px; }
@@ -276,7 +336,7 @@
           </div>
         </div>
         <div style="margin-top:22px; padding-top:18px; border-top:1px solid rgba(255,255,255,0.15); font-size:13px; opacity:0.85; max-width:700px; line-height:1.6;">
-          <b style="color:#b8f5a0;">Как достигнем:</b> 65 новых клиентов в 6 нишах (рассолы, маринады, бульоны, Халяль, снеки, витамины) + рост заказов у действующих 300 клиентов (ТОП-20 под личным ABM, остальные через QBR и кросс-сейл).
+          <b style="color:#b8f5a0;">Как достигнем:</b> 65 новых клиентов в отраслях мясо · птица · рыба · молочка · снеки · HoReCa, продаём 5 продуктовых направлений (рассолы без фосфатов, маринады, сухие бульоны, ароматизаторы, витамины-фортификация). Усилители — Халяль/экспорт там, где подходит клиенту. Плюс рост заказов у действующих 300 клиентов (ТОП-20 под личным ABM, остальные через QBR и кросс-сейл).
         </div>
       </div>
     </div>
@@ -297,43 +357,52 @@
     <!-- ───── РОЛЬ ВЫБРАНА: персональный дашборд ───── -->
     <div id="weeklyTasksView" style="display:none;">
 
-      <!-- Персональное приветствие + вклад в 350М -->
-      <div id="personalHero"></div>
-
-      <!-- ━━━ ДИСЦИПЛИНА ДНЯ · УТРО ━━━ -->
-      <!-- Манифест коммерческого блока + стоп-лист отговорок -->
+      <!-- Манифест полосой (не огромный блок) -->
       <div id="manifestoBlock"></div>
-      <!-- Утренний ритуал: стоп-чек вчерашней фразы + коммит дня -->
-      <div id="morningRitual"></div>
 
-      <!-- Трекер коммерческого блока (только для Кирилла) -->
-      <div id="directorTracker"></div>
+      <!-- ───── ДВУХКОЛОНОЧНЫЙ LAYOUT: фокус в центре, ритуалы в сайдбаре ───── -->
+      <div class="work-layout">
 
-      <!-- Задачи от руководителя (только если есть) -->
-      <div id="assignedTasksBlock"></div>
+        <!-- ──── ЦЕНТР: на чём сегодня держится фокус ──── -->
+        <div class="work-main">
+          <!-- Персональное приветствие — компактное -->
+          <div id="personalHero"></div>
 
-      <!-- Форма назначения задач (только для Кирилла и РОПа) -->
-      <div id="assignerFormBlock"></div>
+          <!-- Задачи от руководителя -->
+          <div id="assignedTasksBlock"></div>
 
-      <!-- 3 ключевых действия -->
-      <div id="topActions"></div>
+          <!-- Форма назначения (Кирилл/РОП) -->
+          <div id="assignerFormBlock"></div>
 
-      <!-- ━━━ ДИСЦИПЛИНА ДНЯ · ДЕНЬ ━━━ -->
-      <!-- Карточка "15 свободных минут — сделай одно из" -->
-      <div id="quickWinCard"></div>
+          <!-- 3 ключевых действия — главное -->
+          <div id="topActions"></div>
 
-      <!-- Неделя: нав + задачи -->
-      <div class="week-nav" id="weekNav"></div>
-      <div class="week-header" id="weekHeader"></div>
-      <div class="task-list" id="taskList"></div>
-      <div id="fridayCheckpoint"></div>
+          <!-- Неделя: нав + задачи -->
+          <div class="week-nav" id="weekNav"></div>
+          <div class="week-header" id="weekHeader"></div>
+          <div class="task-list" id="taskList"></div>
+          <div id="fridayCheckpoint"></div>
+        </div>
 
-      <!-- ━━━ ДИСЦИПЛИНА ДНЯ · ВЕЧЕР ━━━ -->
-      <!-- Хвосты + 2 вопроса рефлексии + чек-ин коммита -->
-      <div id="eveningRitual"></div>
+        <!-- ──── САЙДБАР: ритуалы и дисциплина (свёрнуты по умолчанию) ──── -->
+        <div class="work-sidebar">
+          <!-- Зачем это (антидот скептику) -->
+          <div id="whyThis"></div>
+          <!-- Утренний ритуал -->
+          <div id="morningRitual"></div>
+          <!-- Карточка «15 свободных минут» -->
+          <div id="quickWinCard"></div>
+          <!-- Хвосты + 2 вопроса рефлексии + чек-ин коммита -->
+          <div id="eveningRitual"></div>
+          <!-- Трекер коммерческого блока (только для Кирилла) -->
+          <div id="directorTracker"></div>
+          <!-- Коэффициент агентности (всегда виден, в пятницу expanded) -->
+          <div id="fridayAgency"></div>
+          <!-- Кейсы кризисного роста — переименовать как «Бенчмарки рынка» -->
+          <div id="growthInCrisis"></div>
+        </div>
 
-      <!-- ━━━ ПЯТНИЦА — КОЭФФИЦИЕНТ АГЕНТНОСТИ ━━━ -->
-      <div id="fridayAgency"></div>
+      </div>
 
       <!-- Навигация к другим вкладкам -->
       <div id="quickNav"></div>
@@ -541,7 +610,7 @@
         <div style="background:var(--hair); border-radius:10px; padding:14px 16px;">
           <div style="font-size:22px; font-weight:700; color:var(--green-dark);">+160 отгрузок</div>
           <div style="font-size:13px; font-weight:600; color:var(--ink); margin-top:4px;">65 новых клиентов × ~2.5 заказа в 1-й год</div>
-          <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.5;">Рассолы, маринады, бульоны, Халяль, снеки, витамины — по каждому сегменту план ниже</div>
+          <div style="font-size:11px; color:var(--muted); margin-top:4px; line-height:1.5;">5 продуктовых направлений × отрасли мясо/птица/рыба/молочка/снеки/HoReCa — план по сегментам ниже</div>
         </div>
         <div style="background:var(--hair); border-radius:10px; padding:14px 16px;">
           <div style="font-size:22px; font-weight:700; color:var(--green-dark);">+340 отгрузок</div>
@@ -785,7 +854,7 @@
             <div style="font-size:26px; font-weight:700; color:var(--ink);">+55М ₽</div>
           </div>
           <div style="font-size:12px; color:var(--muted); max-width:380px; line-height:1.6;">
-            <b>Что делаем:</b> QBR раз в 6 недель с ТОП-100 · персональный ABM для ТОП-20 · письмо-реактивация если клиент молчит 60+ дней · кросс-сейл рассолы ↔ ароматизаторы ↔ Халяль
+            <b>Что делаем:</b> QBR раз в 6 недель с ТОП-100 · персональный ABM для ТОП-20 · письмо-реактивация если клиент молчит 60+ дней · кросс-сейл рассолы ↔ маринады ↔ ароматизаторы ↔ бульоны (Халяль/Кошер — как сертификация-усилитель в подходящих отраслях)
           </div>
         </div>
       </div>
@@ -1123,8 +1192,8 @@ const ROLE_CONTRIBUTIONS = {
     },
   },
   manager_meat: {
-    yearGoal: '22 новых клиента из всех 6 сегментов → ~+16М ₽ за год',
-    weeklyFocus: 'Универсал: работаешь по всем сегментам — мясо, ПФ, консервы, Халяль, снеки, молочка',
+    yearGoal: '22 новых клиента в отраслях мясо/ПФ/консервы/снеки/молочка → ~+16М ₽ за год',
+    weeklyFocus: 'Отрасли: мясопереработка, полуфабрикаты, консервы, снеки, молочка. Продукты: рассолы, маринады, бульоны, ароматизаторы',
     metrics: [
       { label: 'Холодные касания', weekTarget: '60-80 в неделю' },
       { label: 'Новые встречи', weekTarget: '4-6 в неделю' },
@@ -1145,8 +1214,8 @@ const ROLE_CONTRIBUTIONS = {
     },
   },
   manager_export: {
-    yearGoal: '22 новых клиента из всех 6 сегментов → ~+16М ₽ за год',
-    weeklyFocus: 'Универсал: все 6 сегментов. Особый фокус — Халяль/экспорт когда есть лиды',
+    yearGoal: '22 новых клиента в отраслях мясо/птица/рыба/молочка → ~+16М ₽ за год',
+    weeklyFocus: 'Отрасли: мясо, птица, рыба, молочка. Особый фокус — клиенты с экспортом (СНГ/Казахстан/арабские) — там Халяль-сертификация открывает двери',
     metrics: [
       { label: 'Холодные касания', weekTarget: '60-80 в неделю' },
       { label: 'Новые встречи', weekTarget: '4-6 в неделю' },
@@ -1495,102 +1564,70 @@ const POWER_QUOTES = [
   { q: 'Кризис — лучшее благо, которое может случиться с человеком и страной, потому что он несёт прогресс.', a: 'Альберт Эйнштейн' },
 ];
 
+// ───── БЕНЧМАРКИ РЫНКА — компактная сайдбар-карточка ─────
+// Не «вдохновение», а аналог: что делали те, кто рос в кризис в твоей нише.
+// 1 история в день, ротация по дню года. Цитата опционально.
 function renderGrowthInCrisis() {
-  // На странице выводим 3 истории + 1 цитату. Ротация — по дню года, чтобы каждое утро было новое.
+  const el = document.getElementById('growthInCrisis');
+  if (!el) return;
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-  const startIdx = dayOfYear % GROWTH_IN_CRISIS.length;
-  const stories = [];
-  for (let i = 0; i < 3; i++) {
-    stories.push(GROWTH_IN_CRISIS[(startIdx + i) % GROWTH_IN_CRISIS.length]);
-  }
+  const idx = dayOfYear % GROWTH_IN_CRISIS.length;
+  const story = GROWTH_IN_CRISIS[idx];
   const quote = POWER_QUOTES[dayOfYear % POWER_QUOTES.length];
-
-  const expanded = localStorage.getItem('growthBlockExpanded') !== '0';  // по умолчанию открыт
-
-  // Контейнер встраиваем внутрь manifestoBlock — чтобы быть отдельным блоком после манифеста
-  // Используем отдельный div с динамическим созданием, если его нет
-  let el = document.getElementById('growthInCrisis');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'growthInCrisis';
-    const mblock = document.getElementById('manifestoBlock');
-    if (mblock && mblock.parentNode) {
-      mblock.parentNode.insertBefore(el, mblock.nextSibling);
-    }
-  }
-
-  const storyCards = stories.map(s => `
-    <div style="background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:8px;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-        <div style="font-size:15px; font-weight:700; color:var(--ink);">${s.name}</div>
-        <div style="font-size:10px; font-weight:700; color:#dc2626; letter-spacing:0.1em; text-transform:uppercase; background:#fef2f2; padding:3px 8px; border-radius:99px;">${s.crisis}</div>
-      </div>
-      <div style="font-size:12px; color:var(--body); line-height:1.55;"><b style="color:var(--green-dark);">Что сделали:</b> ${s.move}</div>
-      <div style="font-size:12px; color:var(--body); line-height:1.55;"><b style="color:var(--green-dark);">Результат:</b> ${s.result}</div>
-      <div style="font-size:11px; color:var(--muted); line-height:1.5; padding-top:8px; border-top:1px dashed var(--hair); font-style:italic;">→ ${s.fit}</div>
-    </div>
-  `).join('');
+  const expanded = localStorage.getItem('growthInCrisisExpanded') === '1';
 
   el.innerHTML = `
-    <div style="background:linear-gradient(135deg, #f0fff4 0%, #fffbea 100%); border:1px solid #0FBF0033; border-radius:14px; padding:22px 26px; margin-bottom:18px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:${expanded ? '14px' : '0'};">
-        <div>
-          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green-dark);">⚡ Они выросли когда другие падали</div>
-          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-top:2px;">Топливо на сегодня — 3 истории</h3>
-          <div style="font-size:12px; color:var(--muted); margin-top:2px;">Кризис не съедает рынок. Он перераспределяет клиентов между теми, кто звонит, и теми, кто оправдывается.</div>
-        </div>
-        <button onclick="toggleGrowthBlock()" style="background:#fff; border:1px solid var(--line); padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; color:var(--body); white-space:nowrap;">${expanded ? '▴ Свернуть' : '▾ Показать'}</button>
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('growthInCrisis', 'growthInCrisisExpanded')">
+        <span class="sb-icon">📚</span>
+        <span class="sb-title">Бенчмарк дня: ${story.name}</span>
+        <span class="sb-badge">кейс</span>
+        <span class="sb-chev">▾</span>
       </div>
-
-      ${expanded ? `
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">${storyCards}</div>
-
-        <div style="margin-top:16px; padding:14px 18px; background:rgba(11,11,12,0.92); border-radius:10px; color:#fff;">
-          <div style="font-size:13px; line-height:1.6; font-style:italic; margin-bottom:6px;">«${quote.q}»</div>
-          <div style="font-size:11px; opacity:0.7; letter-spacing:0.1em; text-transform:uppercase; font-weight:700;">— ${quote.a}</div>
+      <div class="sb-body">
+        <div style="padding-top:12px;">
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:8px;">
+            <div style="font-size:14px; font-weight:700; color:var(--ink);">${story.name}</div>
+            <div style="font-size:9px; font-weight:700; color:#dc2626; letter-spacing:0.08em; text-transform:uppercase; background:#fef2f2; padding:2px 6px; border-radius:99px;">${story.crisis}</div>
+          </div>
+          <div style="font-size:12px; color:var(--body); line-height:1.55; margin-bottom:6px;"><b style="color:var(--green-dark);">Ход:</b> ${story.move}</div>
+          <div style="font-size:12px; color:var(--body); line-height:1.55; margin-bottom:8px;"><b style="color:var(--green-dark);">Итог:</b> ${story.result}</div>
+          <div style="font-size:11px; color:var(--muted); line-height:1.5; padding:8px 10px; background:var(--paper); border-left:3px solid var(--green); border-radius:5px;">→ ${story.fit}</div>
+          <div style="margin-top:10px; padding:10px 12px; background:#0B0B0C; border-radius:7px; color:#fff;">
+            <div style="font-size:11px; line-height:1.5; font-style:italic; margin-bottom:4px;">«${quote.q}»</div>
+            <div style="font-size:9px; opacity:0.65; letter-spacing:0.1em; text-transform:uppercase; font-weight:700;">— ${quote.a}</div>
+          </div>
         </div>
-
-        <div style="margin-top:14px; padding:12px 16px; background:rgba(15,191,0,0.08); border-left:3px solid var(--green); border-radius:8px; font-size:13px; line-height:1.55; color:var(--body);">
-          <b style="color:var(--green-dark);">Главное правило сегодня:</b> когда поймал себя на «рынок падает» — посмотри на этот блок. Эти компании не ждали улучшения. Они <b>забрали клиентов</b> у тех, кто ждал.
-        </div>
-      ` : ''}
+      </div>
     </div>
   `;
 }
 
-function toggleGrowthBlock() {
-  const cur = localStorage.getItem('growthBlockExpanded') !== '0';
-  localStorage.setItem('growthBlockExpanded', cur ? '0' : '1');
-  renderGrowthInCrisis();
-}
-
-// ───── МАНИФЕСТ + СТОП-ЛИСТ ─────
+// ───── МАНИФЕСТ ПОЛОСОЙ + СВОРАЧИВАЕМЫЙ СПИСОК ФРАЗ-ЛОВУШЕК ─────
+// Антидот к коуч-тону: не «правила», а «оптика воронки».
+// Не «жертва ↔ хозяин», а «фразы-ловушки» — нейтрально, проверяемо.
 function renderManifesto() {
   const el = document.getElementById('manifestoBlock');
   if (!el) return;
   const stopListExpanded = localStorage.getItem('stopListExpanded') === '1';
   const stopRows = VICTIM_PHRASES.map(p => `
     <tr>
-      <td style="padding:8px 12px; border-bottom:1px solid #2a2a2c; color:#dc2626; font-weight:600; vertical-align:top; width:42%;">«${p.victim}»</td>
-      <td style="padding:8px 12px; border-bottom:1px solid #2a2a2c; color:#b8f5a0; font-weight:600; vertical-align:top;">→ ${p.owner}</td>
+      <td style="padding:7px 10px; border-bottom:1px solid #2a2a2c; color:#fca5a5; vertical-align:top; width:42%; font-size:12px;">«${p.victim}»</td>
+      <td style="padding:7px 10px; border-bottom:1px solid #2a2a2c; color:#b8f5a0; vertical-align:top; font-size:12px;">→ ${p.owner}</td>
     </tr>
   `).join('');
   el.innerHTML = `
-    <div style="background:linear-gradient(135deg, #0B0B0C 0%, #1a1a1c 100%); border-radius:14px; padding:24px 28px; margin-bottom:18px; color:#fff; box-shadow:0 4px 20px rgba(0,0,0,0.15);">
-      <div style="font-size:11px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.7; margin-bottom:10px;">Закон коммерческого блока</div>
-      <div style="font-size:20px; font-weight:700; line-height:1.45; margin-bottom:6px;">Я причина результата, а не рынок.</div>
-      <div style="font-size:14px; opacity:0.85; line-height:1.55;">
-        Если не получается — меняю подход, не цель.<br>
-        Не «попробую», а «сделаю и приму результат».
-      </div>
-      <button onclick="toggleStopList()" style="margin-top:16px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fff; padding:9px 16px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; letter-spacing:0.04em;">${stopListExpanded ? '▴ Свернуть стоп-лист' : '▾ Развернуть стоп-лист отговорок'}</button>
-      ${stopListExpanded ? `
-        <div style="margin-top:14px; background:rgba(0,0,0,0.3); border-radius:10px; padding:10px 4px;">
-          <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; opacity:0.6; padding:4px 12px 8px;">Жертва говорит → Хозяин говорит</div>
-          <table style="width:100%; border-collapse:collapse; font-size:13px;">${stopRows}</table>
-        </div>
-      ` : ''}
+    <div class="manifesto-bar">
+      <span class="mf-tag">Принцип</span>
+      <div class="mf-text"><b>Воронка — функция действий, не рынка.</b> Цифры этой недели — следствие звонков прошлой.</div>
+      <button onclick="toggleStopList()">${stopListExpanded ? '▴ Скрыть фразы-ловушки' : '▾ Фразы-ловушки воронки'}</button>
     </div>
+    ${stopListExpanded ? `
+      <div style="background:#0B0B0C; border-radius:10px; padding:10px 6px; margin-bottom:14px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.55); padding:6px 14px 8px;">Если поймал в речи (своей или менеджера) — вот что вместо</div>
+        <table style="width:100%; border-collapse:collapse;">${stopRows}</table>
+      </div>
+    ` : ''}
   `;
 }
 
@@ -1600,7 +1637,47 @@ function toggleStopList() {
   renderManifesto();
 }
 
-// ───── УТРЕННИЙ РИТУАЛ: стоп-чек + коммит дня ─────
+// ───── ЗАЧЕМ ЭТО (антидот скептику) — мост для «да не, что мне эта машина» ─────
+function renderWhyThis() {
+  const el = document.getElementById('whyThis');
+  if (!el) return;
+  const expanded = localStorage.getItem('whyThisExpanded') === '1';
+  el.innerHTML = `
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('whyThis', 'whyThisExpanded')">
+        <span class="sb-icon">🛠</span>
+        <span class="sb-title">Зачем это вообще</span>
+        <span class="sb-chev">▾</span>
+      </div>
+      <div class="sb-body">
+        <div style="font-size:12.5px; line-height:1.6; color:var(--body); padding-top:12px;">
+          Это не курс по самопомощи. Это <b>оптика на воронку</b>.<br><br>
+          3 минуты утром = одна строка «что сделаю». 5 минут вечером = «что сделал и где течёт». На неделе — видишь куда уходят часы и какие сделки тонут. <b>Замри 3 минуты в день — выиграешь 30 в неделю.</b><br><br>
+          Не работаешь на инструмент — он работает на тебя. Если через 2 недели не помогает — выкинем без обид.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Универсальный toggle для sidebar-карточек
+function toggleSb(renderFn, lsKey) {
+  const cur = localStorage.getItem(lsKey) === '1';
+  localStorage.setItem(lsKey, cur ? '0' : '1');
+  // Map function name → render function
+  const map = {
+    whyThis: renderWhyThis,
+    morningRitual: renderMorningRitual,
+    quickWinCard: renderQuickWin,
+    eveningRitual: renderEveningRitual,
+    fridayAgency: renderFridayAgency,
+    growthInCrisis: renderGrowthInCrisis,
+    directorTracker: renderDirectorTracker,
+  };
+  if (map[renderFn]) map[renderFn]();
+}
+
+// ───── УТРЕННИЙ РИТУАЛ — компактная сайдбар-карточка ─────
 function renderMorningRitual() {
   const el = document.getElementById('morningRitual');
   if (!el) return;
@@ -1610,46 +1687,41 @@ function renderMorningRitual() {
   const yestRec = DAILY_ENTRIES[yest] || {};
 
   const morningDone = !!todayRec.ts_morning;
-  const tsLabel = todayRec.ts_morning ? new Date(todayRec.ts_morning).toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '';
   const yestCommit = yestRec.morning_commit || '';
   const yestKept = yestRec.commit_done;
+  // Открыто по умолчанию утром если не зафиксировано
+  const lsVal = localStorage.getItem('morningRitualExpanded');
+  const expanded = lsVal === '1' || (lsVal === null && !morningDone);
+  const badgeClass = morningDone ? 'green' : 'amber';
+  const badgeText = morningDone ? 'готово' : '3 мин';
 
   el.innerHTML = `
-    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 26px; margin-bottom:18px;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
-        <div>
-          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green-dark);">Утро · ${new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'long'})}</div>
-          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-top:2px;">Утренний ритуал — 3 минуты</h3>
-        </div>
-        ${morningDone ? `<span style="background:var(--green-soft); color:var(--green-dark); font-size:11px; font-weight:700; padding:4px 10px; border-radius:99px;">✓ Зафиксировано в ${tsLabel}</span>` : ''}
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('morningRitual', 'morningRitualExpanded')">
+        <span class="sb-icon">☀️</span>
+        <span class="sb-title">Утренний ритуал</span>
+        <span class="sb-badge ${badgeClass}">${badgeText}</span>
+        <span class="sb-chev">▾</span>
       </div>
-      <div style="font-size:12px; color:var(--muted); margin-bottom:16px;">Открыл день — прошёл ритуал. Закрыл день — ответил на 2 вопроса. Так становится видна динамика.</div>
-
-      ${yestCommit ? `
-        <div style="background:var(--paper); border:1px dashed var(--line); border-radius:10px; padding:12px 14px; margin-bottom:14px;">
-          <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px;">Вчера ты обещал себе:</div>
-          <div style="font-size:13px; color:var(--body); margin-bottom:8px; font-style:italic;">«${escapeHtml(yestCommit)}»</div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <span style="font-size:12px; color:var(--muted);">Сделал?</span>
-            <button onclick="setCommitDone('${yest}', true)" style="background:${yestKept === true ? 'var(--green)' : '#fff'}; color:${yestKept === true ? '#fff' : 'var(--green-dark)'}; border:1px solid var(--green); padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">Да</button>
-            <button onclick="setCommitDone('${yest}', false)" style="background:${yestKept === false ? '#dc2626' : '#fff'}; color:${yestKept === false ? '#fff' : '#dc2626'}; border:1px solid #dc2626; padding:5px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">Нет</button>
-            ${yestKept === false ? `<span style="font-size:11px; color:var(--muted); margin-left:6px;">Ок. Сегодня — другое решение.</span>` : ''}
+      <div class="sb-body">
+        ${yestCommit ? `
+          <div style="background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-top:12px; margin-bottom:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:4px;">Вчера обещал:</div>
+            <div style="font-size:12px; color:var(--body); margin-bottom:8px; font-style:italic;">«${escapeHtml(yestCommit)}»</div>
+            <div style="display:flex; gap:6px;">
+              <button onclick="setCommitDone('${yest}', true)" style="flex:1; background:${yestKept === true ? 'var(--green)' : '#fff'}; color:${yestKept === true ? '#fff' : 'var(--green-dark)'}; border:1px solid var(--green); padding:5px 8px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer;">Сделал</button>
+              <button onclick="setCommitDone('${yest}', false)" style="flex:1; background:${yestKept === false ? '#dc2626' : '#fff'}; color:${yestKept === false ? '#fff' : '#dc2626'}; border:1px solid #dc2626; padding:5px 8px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer;">Не сделал</button>
+            </div>
           </div>
-        </div>
-      ` : ''}
+        ` : `<div style="height:12px;"></div>`}
 
-      <div style="display:grid; grid-template-columns:1fr; gap:14px;">
-        <div>
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:6px;">1. Какую запрещённую фразу ты ловил в себе вчера?</label>
-          <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Назвал — обезоружил. Если ничего не было — оставь пусто.</div>
-          <input id="morningStopPhrase" type="text" value="${escapeHtml(todayRec.morning_stop_phrase || '')}" placeholder="например: «у клиента нет бюджета» — а сам не звонил третий раз" style="width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px;">
-        </div>
-        <div>
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:6px;">2. Сегодня я сделаю (одно конкретное, с измеримым результатом)</label>
-          <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">Формула: «Я <b>сделаю X</b>, чтобы <b>получить Y</b>» — без «попробую» и «постараюсь».</div>
-          <textarea id="morningCommit" placeholder="Сегодня я позвоню 5 VIP-клиентам и получу от каждого ДА/НЕТ по следующему шагу" style="width:100%; min-height:60px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(todayRec.morning_commit || '')}</textarea>
-        </div>
-        <button onclick="saveMorning()" style="background:var(--ink); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; align-self:flex-start; width:100%;">${morningDone ? 'Обновить утро' : '✓ Зафиксировать утро'}</button>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink); margin-bottom:4px;">Поймал фразу-ловушку вчера?</label>
+        <input id="morningStopPhrase" type="text" value="${escapeHtml(todayRec.morning_stop_phrase || '')}" placeholder="например: «клиент думает» — а сам не назначил дату" style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-family:inherit; font-size:12px; margin-bottom:10px;">
+
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink); margin-bottom:4px;">Сегодня сделаю (с результатом):</label>
+        <textarea id="morningCommit" placeholder="Я позвоню 5 VIP и получу от каждого ДА/НЕТ + дату следующего шага" style="width:100%; min-height:55px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-family:inherit; font-size:12px; resize:vertical; margin-bottom:8px;">${escapeHtml(todayRec.morning_commit || '')}</textarea>
+
+        <button onclick="saveMorning()" style="background:var(--ink); color:#fff; border:none; padding:9px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; width:100%;">${morningDone ? 'Обновить' : '✓ Зафиксировать утро'}</button>
       </div>
     </div>
   `;
@@ -1685,75 +1757,85 @@ async function setCommitDone(date, done) {
   } catch (e) { console.error(e); }
 }
 
-// ───── 15 МИНУТ — БЫСТРАЯ ПОБЕДА (правило 6) ─────
+// ───── 15 МИНУТ — компактная сайдбар-карточка ─────
 function renderQuickWin() {
   const el = document.getElementById('quickWinCard');
   if (!el) return;
-  // Открытый хвост = приоритетное действие
   const openTails = TAILS.filter(t => !t.closed);
-  // Случайный шаблон + 1 хвост (если есть)
   const shuffled = [...QUICK_WINS_15MIN].sort(() => Math.random() - 0.5).slice(0, 3);
   const tailItem = openTails.length > 0 ? openTails[0] : null;
+  const expanded = localStorage.getItem('quickWinExpanded') === '1';
 
   el.innerHTML = `
-    <div style="background:linear-gradient(135deg, #fffbea 0%, #fff 100%); border:1px solid #f59e0b40; border-radius:14px; padding:18px 22px; margin-bottom:18px;">
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-        <div style="font-size:18px;">⏱️</div>
-        <div>
-          <div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#d97706;">У тебя 15 минут?</div>
-          <div style="font-size:14px; font-weight:700; color:var(--ink);">Сделай одно из этого — и день уже не пустой</div>
-        </div>
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('quickWinCard', 'quickWinExpanded')">
+        <span class="sb-icon">⏱</span>
+        <span class="sb-title">15 минут — что сделать</span>
+        ${tailItem ? `<span class="sb-badge red">хвост</span>` : `<span class="sb-badge">${shuffled.length}</span>`}
+        <span class="sb-chev">▾</span>
       </div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        ${tailItem ? `
-          <div style="background:#fff; border:1.5px solid var(--green); border-radius:8px; padding:10px 14px; font-size:13px; color:var(--body);">
-            <span style="font-size:10px; font-weight:700; color:var(--green-dark); letter-spacing:0.12em; text-transform:uppercase;">⚡ Твой хвост</span><br>
-            <span style="font-weight:600;">${escapeHtml(tailItem.text)}</span>${tailItem.promised_to ? ` <span style="color:var(--muted); font-size:11px;">— обещал ${escapeHtml(tailItem.promised_to)}</span>` : ''}
-          </div>
-        ` : ''}
-        ${shuffled.map(w => `<div style="background:#fff; border:1px solid var(--line); border-radius:8px; padding:9px 14px; font-size:13px; color:var(--body);">${w}</div>`).join('')}
+      <div class="sb-body">
+        <div style="display:flex; flex-direction:column; gap:6px; padding-top:12px;">
+          ${tailItem ? `
+            <div style="background:#fff; border:1.5px solid var(--green); border-radius:7px; padding:8px 12px; font-size:12px;">
+              <div style="font-size:9px; font-weight:700; color:var(--green-dark); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:2px;">⚡ Твой хвост</div>
+              <div style="font-weight:600; color:var(--ink); line-height:1.4;">${escapeHtml(tailItem.text)}</div>
+              ${tailItem.promised_to ? `<div style="color:var(--muted); font-size:11px; margin-top:2px;">обещал ${escapeHtml(tailItem.promised_to)}</div>` : ''}
+            </div>
+          ` : ''}
+          ${shuffled.map(w => `<div style="background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:8px 12px; font-size:12px; color:var(--body); line-height:1.4;">${w}</div>`).join('')}
+        </div>
       </div>
     </div>
   `;
 }
 
-// ───── ВЕЧЕРНИЙ РИТУАЛ: хвосты + 2 вопроса + чек-ин коммита ─────
+// ───── ВЕЧЕРНИЙ РИТУАЛ — компактная сайдбар-карточка ─────
 function renderEveningRitual() {
   const el = document.getElementById('eveningRitual');
   if (!el) return;
   const today = todayKey();
   const rec = DAILY_ENTRIES[today] || {};
   const eveningDone = !!rec.ts_evening;
-  const tsLabel = rec.ts_evening ? new Date(rec.ts_evening).toLocaleString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '';
 
   const openTails = TAILS.filter(t => !t.closed);
+  const oldOpen = openTails.filter(t => (Date.now() - new Date(t.created.replace('Z','')).getTime()) > 7*86400000).length;
   const closedTails = TAILS.filter(t => t.closed);
+  const expanded = localStorage.getItem('eveningRitualExpanded') === '1';
+
+  // Бейдж: красный если давит хвост >7 дней, иначе количество открытых хвостов
+  let badgeClass = 'green', badgeText = 'готово';
+  if (!eveningDone) {
+    if (oldOpen > 0) { badgeClass = 'red'; badgeText = `${oldOpen} давит`; }
+    else if (openTails.length > 0) { badgeClass = 'amber'; badgeText = `${openTails.length} хв.`; }
+    else { badgeClass = 'amber'; badgeText = '5 мин'; }
+  }
 
   const tailsHtml = openTails.length === 0 && closedTails.length === 0
-    ? `<div style="padding:14px; text-align:center; color:var(--faint); font-size:12px;">Хвостов нет. Если что-то обещал кому-то и ещё не сделал — добавь сюда.</div>`
+    ? `<div style="padding:10px; text-align:center; color:var(--faint); font-size:11px;">Хвостов нет. Если что-то обещал — добавь.</div>`
     : `
       ${openTails.map(t => {
         const ageDays = Math.floor((Date.now() - new Date(t.created.replace('Z','')).getTime()) / 86400000);
         const aged = ageDays > 7;
         return `
-          <div style="display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-bottom:1px solid var(--hair); ${aged ? 'background:#fef2f2;' : ''}">
-            <input type="checkbox" onchange="toggleTail('${t.id}')" style="margin-top:3px; cursor:pointer;">
-            <div style="flex:1;">
-              <div style="font-size:13px; color:var(--ink); font-weight:600;">${escapeHtml(t.text)}</div>
-              <div style="font-size:11px; color:${aged ? '#dc2626' : 'var(--muted)'}; margin-top:2px;">
-                ${t.promised_to ? `обещал ${escapeHtml(t.promised_to)} · ` : ''}висит ${ageDays === 0 ? 'сегодня' : `${ageDays} дн`}${aged ? ' · ⚠ давит' : ''}
+          <div style="display:flex; align-items:flex-start; gap:8px; padding:7px 10px; border-bottom:1px solid var(--hair); ${aged ? 'background:#fef2f2;' : ''}">
+            <input type="checkbox" onchange="toggleTail('${t.id}')" style="margin-top:2px; cursor:pointer; flex-shrink:0;">
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:12px; color:var(--ink); font-weight:600; line-height:1.4;">${escapeHtml(t.text)}</div>
+              <div style="font-size:10px; color:${aged ? '#dc2626' : 'var(--muted)'}; margin-top:1px;">
+                ${t.promised_to ? `${escapeHtml(t.promised_to)} · ` : ''}${ageDays === 0 ? 'сегодня' : `${ageDays} дн`}${aged ? ' ⚠' : ''}
               </div>
             </div>
-            <button onclick="deleteTail('${t.id}')" title="Удалить (передумал давать обещание)" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:14px; padding:4px;">×</button>
+            <button onclick="deleteTail('${t.id}')" title="Удалить" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:13px; padding:0 2px; flex-shrink:0;">×</button>
           </div>
         `;
       }).join('')}
       ${closedTails.length > 0 ? `
-        <details style="padding:8px 14px;">
-          <summary style="cursor:pointer; font-size:11px; color:var(--muted); font-weight:600;">Закрытые (${closedTails.length})</summary>
-          <div style="margin-top:8px;">
-            ${closedTails.slice(0, 10).map(t => `
-              <div style="display:flex; align-items:center; gap:10px; padding:6px 0; font-size:12px; color:var(--faint); text-decoration:line-through;">
+        <details style="padding:6px 10px;">
+          <summary style="cursor:pointer; font-size:10px; color:var(--muted); font-weight:600;">Закрытые (${closedTails.length})</summary>
+          <div style="margin-top:6px;">
+            ${closedTails.slice(0, 5).map(t => `
+              <div style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:11px; color:var(--faint); text-decoration:line-through;">
                 <input type="checkbox" checked onchange="toggleTail('${t.id}')" style="cursor:pointer;">
                 <span>${escapeHtml(t.text)}</span>
               </div>
@@ -1764,44 +1846,35 @@ function renderEveningRitual() {
     `;
 
   el.innerHTML = `
-    <div style="background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px 26px; margin-bottom:18px;">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-        <div>
-          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#6d28d9;">Вечер · закрой день</div>
-          <h3 style="font-size:18px; font-weight:700; color:var(--ink); margin-top:2px;">Вечерний ритуал — 5 минут</h3>
-        </div>
-        ${eveningDone ? `<span style="background:#f3eafe; color:#6d28d9; font-size:11px; font-weight:700; padding:4px 10px; border-radius:99px;">✓ Закрыт в ${tsLabel}</span>` : ''}
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('eveningRitual', 'eveningRitualExpanded')">
+        <span class="sb-icon">🌙</span>
+        <span class="sb-title">Вечер: хвосты + закрытие</span>
+        <span class="sb-badge ${badgeClass}">${badgeText}</span>
+        <span class="sb-chev">▾</span>
       </div>
-
-      <!-- Хвосты -->
-      <div style="background:var(--paper); border:1px solid var(--line); border-radius:10px; margin-bottom:16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--hair);">
-          <div>
-            <div style="font-size:12px; font-weight:700; color:var(--ink);">🪢 Твои хвосты</div>
-            <div style="font-size:11px; color:var(--muted);">Обещания клиентам и команде, которые ещё не выполнены. ${openTails.length === 0 ? 'Список пуст — это хорошо.' : `Открыто: ${openTails.length}.`}</div>
+      <div class="sb-body">
+        <!-- Хвосты компактно -->
+        <div style="background:var(--paper); border:1px solid var(--line); border-radius:8px; margin-top:12px; margin-bottom:12px;">
+          <div style="padding:8px 10px; border-bottom:1px solid var(--hair); font-size:11px; font-weight:700; color:var(--ink);">🪢 Хвосты ${openTails.length > 0 ? `(${openTails.length})` : ''}</div>
+          ${tailsHtml}
+          <div style="padding:8px 10px; border-top:1px solid var(--hair); display:flex; flex-direction:column; gap:5px;">
+            <input id="newTailText" type="text" placeholder="Что обещал?" style="padding:6px 8px; border:1px solid var(--line); border-radius:5px; font-size:11px; font-family:inherit;">
+            <div style="display:flex; gap:5px;">
+              <input id="newTailPromisedTo" type="text" placeholder="Кому?" style="flex:1; padding:6px 8px; border:1px solid var(--line); border-radius:5px; font-size:11px; font-family:inherit;">
+              <button onclick="addTail()" style="background:var(--ink); color:#fff; border:none; padding:6px 12px; border-radius:5px; font-size:11px; font-weight:700; cursor:pointer;">+</button>
+            </div>
           </div>
         </div>
-        ${tailsHtml}
-        <div style="padding:10px 14px; border-top:1px solid var(--hair); display:flex; gap:8px; flex-wrap:wrap;">
-          <input id="newTailText" type="text" placeholder="Что обещал и не сделал?" style="flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; font-family:inherit;">
-          <input id="newTailPromisedTo" type="text" placeholder="Кому?" style="width:120px; padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; font-family:inherit;">
-          <button onclick="addTail()" style="background:var(--ink); color:#fff; border:none; padding:8px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">+ Добавить</button>
-        </div>
-      </div>
 
-      <!-- 2 вопроса (правило 13) -->
-      <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:14px;">
-        <div>
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;">1. В чём сегодня продвинулся к цели?</label>
-          <textarea id="eveningProgress" placeholder="Что конкретно сдвинулось? Один пункт или несколько." style="width:100%; min-height:55px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(rec.evening_progress || '')}</textarea>
-        </div>
-        <div>
-          <label style="display:block; font-size:12px; font-weight:700; color:var(--ink); margin-bottom:4px;">2. Как сегодня позаботился о ресурсе (себе)?</label>
-          <textarea id="eveningCare" placeholder="Сон / спорт / еда / прогулка / семья. Без этого 350М не пробиваются." style="width:100%; min-height:55px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; resize:vertical;">${escapeHtml(rec.evening_care || '')}</textarea>
-        </div>
-      </div>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink); margin-bottom:4px;">1. В чём продвинулся к цели?</label>
+        <textarea id="eveningProgress" placeholder="Что конкретно сдвинулось" style="width:100%; min-height:48px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; font-family:inherit; font-size:12px; resize:vertical; margin-bottom:8px;">${escapeHtml(rec.evening_progress || '')}</textarea>
 
-      <button onclick="saveEvening()" style="background:#6d28d9; color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; width:100%;">${eveningDone ? 'Обновить вечер' : '✓ Закрыть день'}</button>
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--ink); margin-bottom:4px;">2. Как позаботился о ресурсе?</label>
+        <textarea id="eveningCare" placeholder="Сон / спорт / еда / прогулка" style="width:100%; min-height:48px; padding:7px 10px; border:1px solid var(--line); border-radius:6px; font-family:inherit; font-size:12px; resize:vertical; margin-bottom:8px;">${escapeHtml(rec.evening_care || '')}</textarea>
+
+        <button onclick="saveEvening()" style="background:#6d28d9; color:#fff; border:none; padding:9px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; width:100%;">${eveningDone ? 'Обновить' : '✓ Закрыть день'}</button>
+      </div>
     </div>
   `;
 }
@@ -1860,15 +1933,13 @@ async function deleteTail(id) {
   } catch (e) { console.error(e); }
 }
 
-// ───── ПЯТНИЦА: КОЭФФИЦИЕНТ АГЕНТНОСТИ ─────
+// ───── КОЭФФИЦИЕНТ АГЕНТНОСТИ — компактная сайдбар-карточка ─────
 function renderFridayAgency() {
   const el = document.getElementById('fridayAgency');
   if (!el) return;
   const dow = todayDow();
-  // Показываем всегда, но в пятницу/субботу/воскресенье выделяем как актуальный пересмотр
   const isReviewDay = dow >= 5;
 
-  // Считаем по локальным DAILY_ENTRIES за последние 7 дней
   const dates = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date();
@@ -1876,8 +1947,6 @@ function renderFridayAgency() {
     dates.push(d.toISOString().slice(0,10));
   }
   let morningCount = 0, eveningCount = 0, commitDoneCount = 0, commitTotal = 0;
-  let stopPhrasesCount = 0;
-  const reflections = [];
   dates.forEach(d => {
     const r = DAILY_ENTRIES[d];
     if (!r) return;
@@ -1887,8 +1956,6 @@ function renderFridayAgency() {
       commitTotal++;
       if (r.commit_done) commitDoneCount++;
     }
-    if (r.morning_stop_phrase) stopPhrasesCount++;
-    if (r.evening_progress) reflections.push({date: d, text: r.evening_progress});
   });
   const openTailsCount = TAILS.filter(t => !t.closed).length;
   const oldOpenTails = TAILS.filter(t => !t.closed && (Date.now() - new Date(t.created.replace('Z','')).getTime()) > 7*86400000).length;
@@ -1899,47 +1966,47 @@ function renderFridayAgency() {
   const tailsPct = Math.max(0, 100 - oldOpenTails * 20);
   const agency = Math.round((morningPct + eveningPct + keptPct + tailsPct) / 4);
 
-  const color = agency >= 70 ? 'var(--green)' : agency >= 40 ? '#d97706' : '#dc2626';
-  const status = agency >= 70 ? 'Высокая' : agency >= 40 ? 'Средняя' : 'Низкая';
+  const color = agency >= 70 ? '#0FBF00' : agency >= 40 ? '#d97706' : '#dc2626';
+  const badgeClass = agency >= 70 ? 'green' : agency >= 40 ? 'amber' : 'red';
+  // По пятницам открыто по умолчанию
+  const lsVal = localStorage.getItem('fridayAgencyExpanded');
+  const expanded = lsVal === '1' || (lsVal === null && isReviewDay);
 
   el.innerHTML = `
-    <div style="background:${isReviewDay ? 'linear-gradient(135deg, #0B0B0C 0%, #1a3a1a 100%)' : '#fff'}; ${isReviewDay ? 'color:#fff;' : 'border:1px solid var(--line);'} border-radius:14px; padding:24px 28px; margin-top:18px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; flex-wrap:wrap; gap:14px;">
-        <div>
-          <div style="font-size:11px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; ${isReviewDay ? 'color:#b8f5a0;' : 'color:var(--muted);'} margin-bottom:6px;">${isReviewDay ? '⚡ Время честного пересмотра' : 'Коэффициент агентности'}</div>
-          <h3 style="font-size:20px; font-weight:700; ${isReviewDay ? 'color:#fff;' : 'color:var(--ink);'}">Твоя позиция за неделю</h3>
-          <div style="font-size:12px; ${isReviewDay ? 'color:rgba(255,255,255,0.7);' : 'color:var(--muted);'} margin-top:4px;">Это не KPI продаж. Это KPI того, насколько ты автор своей недели.</div>
-        </div>
-        <div style="text-align:center; min-width:120px;">
-          <div style="font-size:48px; font-weight:700; color:${color}; line-height:1;">${agency}<span style="font-size:20px; opacity:0.6;">%</span></div>
-          <div style="font-size:11px; ${isReviewDay ? 'color:rgba(255,255,255,0.8);' : 'color:var(--muted);'} margin-top:4px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">${status} агентность</div>
-        </div>
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('fridayAgency', 'fridayAgencyExpanded')">
+        <span class="sb-icon">📈</span>
+        <span class="sb-title">${isReviewDay ? 'Пятница: пересмотр' : 'Дисциплина за 7 дн'}</span>
+        <span class="sb-badge ${badgeClass}">${agency}%</span>
+        <span class="sb-chev">▾</span>
       </div>
-
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
-        ${[
-          {label:'Утра зафиксированы', val:morningPct, hint:`${morningCount}/7 дней`},
-          {label:'Вечера закрыты', val:eveningPct, hint:`${eveningCount}/7 дней`},
-          {label:'Слово=дело', val:keptPct, hint:commitTotal ? `${commitDoneCount}/${commitTotal} обещаний` : 'нет данных'},
-          {label:'Хвосты не висят', val:tailsPct, hint:oldOpenTails ? `${oldOpenTails} давит >7 дн` : `всего открыто: ${openTailsCount}`},
-        ].map(m => `
-          <div style="${isReviewDay ? 'background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);' : 'background:var(--paper); border:1px solid var(--line);'} border-radius:10px; padding:12px 14px;">
-            <div style="font-size:11px; font-weight:700; ${isReviewDay ? 'color:rgba(255,255,255,0.7);' : 'color:var(--muted);'} margin-bottom:4px;">${m.label}</div>
-            <div style="font-size:22px; font-weight:700; ${isReviewDay ? 'color:#b8f5a0;' : 'color:var(--green-dark);'}">${m.val}%</div>
-            <div style="font-size:11px; ${isReviewDay ? 'color:rgba(255,255,255,0.6);' : 'color:var(--faint);'} margin-top:2px;">${m.hint}</div>
-          </div>
-        `).join('')}
-      </div>
-
-      ${isReviewDay ? `
-        <div style="margin-top:18px; padding:16px 18px; background:rgba(255,255,255,0.06); border-left:3px solid #b8f5a0; border-radius:8px;">
-          <div style="font-size:12px; font-weight:700; color:#b8f5a0; margin-bottom:6px; letter-spacing:0.1em; text-transform:uppercase;">Честный вопрос на пятницу</div>
-          <div style="font-size:13px; line-height:1.6; color:rgba(255,255,255,0.92);">
-            Если коэффициент <60% — это не «много задач». Это позиция Жертвы.
-            Что я выберу <b>в понедельник</b>: тот же подход или один новый ритуал?
-          </div>
+      <div class="sb-body">
+        <div style="text-align:center; padding:14px 0 10px;">
+          <div style="font-size:48px; font-weight:700; color:${color}; line-height:1;">${agency}<span style="font-size:18px; opacity:0.6;">%</span></div>
+          <div style="font-size:10px; color:var(--muted); margin-top:4px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;">7-дневный коэф.</div>
         </div>
-      ` : ''}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px;">
+          ${[
+            {label:'Утро', val:morningPct, hint:`${morningCount}/7`},
+            {label:'Вечер', val:eveningPct, hint:`${eveningCount}/7`},
+            {label:'Слово=дело', val:keptPct, hint:commitTotal ? `${commitDoneCount}/${commitTotal}` : '—'},
+            {label:'Хвосты ок', val:tailsPct, hint:oldOpenTails ? `${oldOpenTails}⚠` : `${openTailsCount} откр.`},
+          ].map(m => `
+            <div style="background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:7px 9px;">
+              <div style="font-size:9px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em;">${m.label}</div>
+              <div style="font-size:16px; font-weight:700; color:var(--green-dark); line-height:1.1;">${m.val}%</div>
+              <div style="font-size:9px; color:var(--faint);">${m.hint}</div>
+            </div>
+          `).join('')}
+        </div>
+        ${isReviewDay ? `
+          <div style="padding:10px 12px; background:#0B0B0C; border-radius:7px; color:#fff; font-size:11px; line-height:1.55;">
+            <b style="color:#b8f5a0;">Вопрос:</b> если <60% — не «много задач», а другой подход. Что меняю в понедельник?
+          </div>
+        ` : `
+          <div style="font-size:10.5px; color:var(--muted); line-height:1.5;">Не KPI продаж — KPI того, насколько ты <b>автор недели</b>. Высокая дисциплина сегодня = выручка через 4-8 недель.</div>
+        `}
+      </div>
     </div>
   `;
 }
@@ -1955,54 +2022,32 @@ function renderDirectorTracker() {
   const checked = days.map((_, i) => localStorage.getItem(storageKey(i)) === '1');
   const count = checked.filter(Boolean).length;
 
-  const scoreColor = count >= 4 ? '#0FBF00' : count >= 2 ? '#d97706' : '#dc2626';
-  const scoreLabel = count >= 4 ? 'Отличная неделя' : count >= 2 ? 'Есть резерв' : 'Коммерция под угрозой';
+  const badgeClass = count >= 4 ? 'green' : count >= 2 ? 'amber' : 'red';
+  const expanded = localStorage.getItem('directorTrackerExpanded') === '1';
 
   const dayBtns = days.map((d, i) => `
-    <div onclick="toggleCommBlock(${i})" style="flex:1; text-align:center; cursor:pointer; padding:14px 6px; border-radius:10px;
-      background:${checked[i] ? '#0FBF00' : '#fff'}; border:2px solid ${checked[i] ? '#0FBF00' : 'var(--line)'}; transition:all 0.15s; min-width:52px;">
-      <div style="font-size:11px; font-weight:700; color:${checked[i] ? '#fff' : 'var(--muted)'}; margin-bottom:6px;">${d}</div>
-      <div style="font-size:22px;">${checked[i] ? '✅' : '⬜'}</div>
-      <div style="font-size:10px; color:${checked[i] ? 'rgba(255,255,255,0.85)' : 'var(--faint)'}; margin-top:4px;">${checked[i] ? '2+ ч' : '—'}</div>
+    <div onclick="toggleCommBlock(${i})" style="flex:1; text-align:center; cursor:pointer; padding:8px 4px; border-radius:7px;
+      background:${checked[i] ? '#0FBF00' : '#fff'}; border:1.5px solid ${checked[i] ? '#0FBF00' : 'var(--line)'}; transition:all 0.15s;">
+      <div style="font-size:10px; font-weight:700; color:${checked[i] ? '#fff' : 'var(--muted)'}; margin-bottom:3px;">${d}</div>
+      <div style="font-size:14px;">${checked[i] ? '✅' : '⬜'}</div>
     </div>
   `).join('');
 
   el.innerHTML = `
-    <div style="background:#fff; border:2px solid var(--ink); border-radius:14px; padding:24px 28px; margin-bottom:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
-        <div>
-          <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:4px;">Коммерческий блок — Неделя ${selectedWeek}</div>
-          <div style="font-size:20px; font-weight:700; color:var(--ink);">📊 2 часа в день на клиентах</div>
-          <div style="font-size:13px; color:var(--muted); margin-top:4px;">= +17М/мес потенциал роста</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:36px; font-weight:700; color:${scoreColor}; line-height:1;">${count}<span style="font-size:18px; color:var(--muted);">/5</span></div>
-          <div style="font-size:12px; font-weight:600; color:${scoreColor};">${scoreLabel}</div>
-        </div>
+    <div class="sb-card ${expanded ? 'open' : ''}">
+      <div class="sb-card-head" onclick="toggleSb('directorTracker', 'directorTrackerExpanded')">
+        <span class="sb-icon">📊</span>
+        <span class="sb-title">Коммерческий блок 9-11</span>
+        <span class="sb-badge ${badgeClass}">${count}/5</span>
+        <span class="sb-chev">▾</span>
       </div>
-
-      <div style="background:var(--green-soft); border:1px solid rgba(15,191,0,0.2); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:13px; color:var(--body); line-height:1.6;">
-        <b style="color:var(--green-dark);">Правило дня:</b> 9:00–11:00 — только клиенты. Никаких встреч, HH, платежей, 1С.<br>
-        РОП принимает все операционные вопросы до 9:00 и батчит к 11:30.
-      </div>
-
-      <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">Отметь дни когда был блок 2+ часа на клиентах:</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        ${dayBtns}
-      </div>
-
-      <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-        <div style="background:var(--hair); border-radius:8px; padding:10px 12px; text-align:center;">
-          <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">Пропускать</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ink);">Операционку</div>
+      <div class="sb-body">
+        <div style="font-size:11px; color:var(--muted); padding:12px 0 8px; line-height:1.5;">
+          2 часа/день на клиентах = +17М/мес потенциал. Никаких встреч, HH, платежей, 1С в этом окне.
         </div>
-        <div style="background:var(--hair); border-radius:8px; padding:10px 12px; text-align:center;">
-          <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">Делегировать</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ink);">HR-разбор</div>
-        </div>
-        <div style="background:var(--hair); border-radius:8px; padding:10px 12px; text-align:center;">
-          <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">Защищать</div>
-          <div style="font-size:13px; font-weight:700; color:var(--ink);">9:00–11:00</div>
+        <div style="display:flex; gap:5px;">${dayBtns}</div>
+        <div style="margin-top:10px; padding:8px 10px; background:var(--paper); border-left:3px solid var(--green); border-radius:5px; font-size:11px; color:var(--body); line-height:1.5;">
+          <b>Правило:</b> 9:00–11:00 — только клиенты. РОП батчит операционку к 11:30.
         </div>
       </div>
     </div>
@@ -2060,43 +2105,36 @@ function renderWeekView() {
   const personalHeroEl = document.getElementById('personalHero');
   if (personalHeroEl) {
     const metricsHtml = (contrib.metrics || []).map(m => `
-      <div style="background:rgba(15,191,0,0.06); border:1px solid rgba(15,191,0,0.15); border-radius:10px; padding:12px 14px;">
-        <div style="font-size:11px; font-weight:600; color:var(--muted); margin-bottom:4px; line-height:1.3;">${m.label}</div>
-        <div style="font-size:15px; font-weight:700; color:var(--green-dark);">${m.weekTarget}</div>
+      <div style="background:rgba(15,191,0,0.05); border:1px solid rgba(15,191,0,0.13); border-radius:7px; padding:8px 10px;">
+        <div style="font-size:10px; font-weight:600; color:var(--muted); margin-bottom:2px; line-height:1.3;">${m.label}</div>
+        <div style="font-size:13px; font-weight:700; color:var(--green-dark);">${m.weekTarget}</div>
       </div>
     `).join('');
 
+    const assistantId = 'pers-assistant-details';
     personalHeroEl.innerHTML = `
-      <div style="background:#fff; border:2px solid var(--green); border-radius:14px; padding:26px 30px; margin-bottom:20px; box-shadow:0 4px 20px rgba(15,191,0,0.08);">
-        <div style="margin-bottom:20px;">
-          <div style="font-size:11px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:6px;">Привет! Ты —</div>
-          <h2 style="font-size:24px; font-weight:700; color:var(--ink); margin-bottom:8px;">${role ? role.name : '...'}</h2>
-          <div style="font-size:14px; color:var(--body); line-height:1.5;">${contrib.yearGoal || ''}</div>
-          ${contrib.yearImpact ? `<div style="font-size:12px; color:var(--muted); margin-top:6px; font-style:italic;">${contrib.yearImpact}</div>` : ''}
+      <div style="background:#fff; border:1px solid var(--green); border-radius:12px; padding:18px 22px; margin-bottom:14px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:${metricsHtml ? '14px' : '4px'}; flex-wrap:wrap;">
+          <div style="flex:1; min-width:200px;">
+            <div style="font-size:10px; font-weight:700; color:var(--green-dark); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:3px;">Ты —</div>
+            <h2 style="font-size:18px; font-weight:700; color:var(--ink); margin-bottom:4px; line-height:1.3;">${role ? role.name : '...'}</h2>
+            <div style="font-size:12.5px; color:var(--body); line-height:1.5;">${contrib.yearGoal || ''}</div>
+          </div>
+          <button onclick="backToRoleSelect()" title="Это не ты? Нажми, чтобы сменить роль" style="background:#fff; border:1px solid var(--line); color:var(--muted); padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">↺ Не я</button>
         </div>
-        <button onclick="backToRoleSelect()" style="width:100%; padding:20px; border-radius:14px; background:var(--ink); border:none; font-size:20px; font-weight:700; color:#fff; cursor:pointer; letter-spacing:0.01em; box-shadow:0 4px 16px rgba(0,0,0,0.22); margin-bottom:8px; transition:background 0.15s;" onmouseover="this.style.background='#222'" onmouseout="this.style.background='var(--ink)'">← Это не ты? Нажми — сменить роль</button>
-        <div style="font-size:12px; color:var(--muted); text-align:center; margin-bottom:20px;">Каждый сотрудник открывает страницу и выбирает себя из списка</div>
         ${metricsHtml ? `
-          <div style="border-top:1px solid var(--hair); padding-top:16px;">
-            <div style="font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:10px;">Твои недельные нормы</div>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">${metricsHtml}</div>
+          <div style="border-top:1px solid var(--hair); padding-top:12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--muted); letter-spacing:0.14em; text-transform:uppercase; margin-bottom:8px;">Недельные нормы</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px;">${metricsHtml}</div>
           </div>
         ` : ''}
-
         ${contrib.digital_assistant ? `
-          <div style="margin-top:18px; padding:18px 22px; background:linear-gradient(135deg, #0B0B0C 0%, #1a3a1a 100%); border-radius:12px; color:#fff;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-              <div style="font-size:24px;">🤖</div>
-              <div>
-                <div style="font-size:11px; font-weight:700; opacity:0.7; letter-spacing:0.14em; text-transform:uppercase;">Твой цифровой помощник</div>
-                <div style="font-size:16px; font-weight:700; color:#b8f5a0;">${contrib.digital_assistant.name}</div>
-              </div>
-            </div>
-            <div style="font-size:12px; opacity:0.85; margin-bottom:10px;">Делает за тебя:</div>
-            <ul style="font-size:13px; line-height:1.7; padding-left:22px; margin:0; opacity:0.95;">
-              ${contrib.digital_assistant.does.map(item => `<li style="margin-bottom:4px;">${item}</li>`).join('')}
+          <details style="margin-top:12px;">
+            <summary style="cursor:pointer; font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0.06em; padding:6px 0;">🤖 Что делает за тебя <b style="color:#0B0B0C;">${contrib.digital_assistant.name}</b></summary>
+            <ul style="font-size:12px; line-height:1.6; padding-left:18px; margin:8px 0 0; color:var(--body);">
+              ${contrib.digital_assistant.does.map(item => `<li style="margin-bottom:3px;">${item}</li>`).join('')}
             </ul>
-          </div>
+          </details>
         ` : ''}
       </div>
     `;
@@ -2104,6 +2142,7 @@ function renderWeekView() {
 
   // ─── ДИСЦИПЛИНА ДНЯ: утро ───
   renderManifesto();
+  renderWhyThis();
   renderGrowthInCrisis();
   renderMorningRitual();
 
