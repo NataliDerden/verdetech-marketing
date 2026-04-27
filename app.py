@@ -847,6 +847,8 @@ SALES_TEAM_SCORES_FILE = 'sales_team_scores.json'
 SALES_CUSTOM_TASKS_FILE = 'sales_custom_tasks.json'
 SALES_DAILY_FILE = 'sales_daily.json'   # утро/вечер ритуал по {role}_{YYYY-MM-DD}
 SALES_TAILS_FILE = 'sales_tails.json'   # хвосты — обещания клиентам/команде
+CUSTOMERS_FILE = 'customers.json'        # карта клиентов (Customer Map)
+CUSTOMER_EVENTS_FILE = 'customer_events.json'  # лента касаний по клиенту
 
 # Кто кому может назначать задачи
 ASSIGN_PERMISSIONS = {
@@ -1348,6 +1350,466 @@ def sales_discipline():
         }
 
     return jsonify({'summary': summary, 'window_days': days_window})
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Customer Map: водопровод вместо вёдер. ТОП-50 клиентов с историей и
+# триггерами раннего предупреждения. Не зависит от конкретного директора —
+# уход человека не означает потерю знания.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Стадии воронки (стандартная B2B-воронка для длинных циклов)
+DEAL_STAGES = [
+    {'id': 'prospecting',   'label': 'Поиск',          'order': 1, 'color': '#A1A1AA'},
+    {'id': 'engaged',       'label': 'На связи',       'order': 2, 'color': '#71717A'},
+    {'id': 'qualified',     'label': 'Квалифицирован', 'order': 3, 'color': '#3b82f6'},
+    {'id': 'demonstration', 'label': 'Демо/тест',      'order': 4, 'color': '#8b5cf6'},
+    {'id': 'proposal',      'label': 'КП отправлено',  'order': 5, 'color': '#d97706'},
+    {'id': 'negotiation',   'label': 'Переговоры',     'order': 6, 'color': '#E6A817'},
+    {'id': 'closed_won',    'label': 'Закрыта успешно','order': 7, 'color': '#0FBF00'},
+    {'id': 'closed_lost',   'label': 'Закрыта проигр.','order': 8, 'color': '#dc2626'},
+]
+DEAL_STAGES_OPEN = ['prospecting', 'engaged', 'qualified', 'demonstration', 'proposal', 'negotiation']
+
+# Отрасли клиентов — соответствуют сегментам Verde
+CUSTOMER_INDUSTRIES = [
+    'Мясопереработка', 'Птица', 'Рыба', 'Молочка', 'Хлеб',
+    'Полуфабрикаты', 'Снеки/чипсы', 'Pet food', 'HoReCa',
+    'Производство мороженого', 'Кондитерка', 'Прочее',
+]
+
+# Tiers — приоритет клиента
+CUSTOMER_TIERS = [
+    {'id': 'A', 'label': 'A · VIP / ТОП-20',  'criteria': '> 2М/год или стратегический'},
+    {'id': 'B', 'label': 'B · Крепкий',        'criteria': '0.5-2М/год'},
+    {'id': 'C', 'label': 'C · Малый/новый',    'criteria': '< 0.5М или ещё не разогнан'},
+]
+
+# Типы касаний
+EVENT_KINDS = [
+    {'id': 'call',          'label': 'Звонок',     'icon': '📞'},
+    {'id': 'meeting',       'label': 'Встреча',    'icon': '🤝'},
+    {'id': 'kp',            'label': 'КП',         'icon': '📄'},
+    {'id': 'email',         'label': 'Email',      'icon': '✉️'},
+    {'id': 'note',          'label': 'Заметка',    'icon': '📝'},
+    {'id': 'status_change', 'label': 'Стадия',     'icon': '🔀'},
+    {'id': 'risk_change',   'label': 'Риск',       'icon': '⚠️'},
+]
+
+# Правила триггеров — расширяемо. Каждое возвращает список (customer, severity, reason).
+TRIGGER_DAYS_NO_TOUCH_VIP = 30   # tier=A без касания N дней → red
+TRIGGER_DAYS_STAGE_STUCK  = 7    # активная сделка без следующего шага N дней → yellow
+TRIGGER_RISK_THRESHOLD    = 7    # churn_risk >= N → red
+
+
+def _read_customers():
+    if not os.path.exists(CUSTOMERS_FILE):
+        return {'customers': []}
+    try:
+        with open(CUSTOMERS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return {'customers': []}
+
+
+def _write_customers(data):
+    try:
+        with open(CUSTOMERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f'[customers] write error: {e}')
+
+
+def _read_customer_events():
+    if not os.path.exists(CUSTOMER_EVENTS_FILE):
+        return []
+    items = []
+    try:
+        with open(CUSTOMER_EVENTS_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        items.append(json.loads(line))
+                    except Exception:
+                        pass
+    except Exception:
+        return []
+    return items
+
+
+def _append_customer_event(entry):
+    try:
+        with open(CUSTOMER_EVENTS_FILE, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + '\n')
+    except Exception as e:
+        print(f'[customer-events] write error: {e}')
+
+
+def _customer_template(payload):
+    """Нормализует входные данные клиента до полной структуры."""
+    import uuid
+    now = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+    return {
+        'id':                payload.get('id') or uuid.uuid4().hex[:12],
+        'name':              (payload.get('name') or '').strip(),
+        'industry':          payload.get('industry') or '',
+        'tier':              payload.get('tier') or 'C',
+        'segment':           payload.get('segment') or '',
+        'decision_makers':   payload.get('decision_makers') or [],
+        'deal_stage':        payload.get('deal_stage') or 'prospecting',
+        'deal_value':        int(payload.get('deal_value') or 0),
+        'churn_risk':        max(1, min(10, int(payload.get('churn_risk') or 5))),
+        'assigned_manager':  payload.get('assigned_manager') or '',
+        'owner':             payload.get('owner') or '',
+        'next_step':         (payload.get('next_step') or '').strip(),
+        'next_step_date':    payload.get('next_step_date') or '',
+        'notes':             (payload.get('notes') or '').strip(),
+        'last_touch_at':     payload.get('last_touch_at') or '',
+        'last_touch_by':     payload.get('last_touch_by') or '',
+        'created_at':        payload.get('created_at') or now,
+        'updated_at':        now,
+    }
+
+
+def _calc_triggers_for_customer(c):
+    """Возвращает список активных триггеров для клиента: [{type, severity, reason}]."""
+    triggers = []
+    now = datetime.utcnow()
+
+    # 1. VIP без касания
+    if c.get('tier') == 'A':
+        last = c.get('last_touch_at')
+        if last:
+            try:
+                dt = datetime.fromisoformat(last.rstrip('Z'))
+                days = (now - dt).days
+                if days >= TRIGGER_DAYS_NO_TOUCH_VIP:
+                    triggers.append({
+                        'type': 'vip_no_touch',
+                        'severity': 'red',
+                        'reason': f'VIP без касания {days} дн (порог {TRIGGER_DAYS_NO_TOUCH_VIP})',
+                    })
+            except Exception:
+                pass
+        else:
+            # VIP без вообще касаний — сразу красный
+            triggers.append({
+                'type': 'vip_no_touch',
+                'severity': 'red',
+                'reason': 'VIP без зафиксированных касаний',
+            })
+
+    # 2. Активная сделка без следующего шага
+    if c.get('deal_stage') in DEAL_STAGES_OPEN and c.get('deal_stage') not in ('prospecting',):
+        nsd = c.get('next_step_date')
+        ns = c.get('next_step')
+        stuck = False
+        reason = ''
+        if not ns or not nsd:
+            stuck = True
+            reason = 'Нет следующего шага с датой'
+        else:
+            try:
+                nsd_dt = datetime.fromisoformat(nsd)
+                if (now.date() - nsd_dt.date()).days > TRIGGER_DAYS_STAGE_STUCK:
+                    stuck = True
+                    reason = f'Следующий шаг просрочен на {(now.date() - nsd_dt.date()).days} дн'
+            except Exception:
+                pass
+        if stuck:
+            triggers.append({
+                'type': 'stage_stuck',
+                'severity': 'yellow',
+                'reason': reason,
+            })
+
+    # 3. Высокий риск ухода
+    if c.get('churn_risk', 5) >= TRIGGER_RISK_THRESHOLD:
+        triggers.append({
+            'type': 'churn_risk',
+            'severity': 'red',
+            'reason': f'Риск ухода {c.get("churn_risk")}/10',
+        })
+
+    return triggers
+
+
+def _customer_severity(triggers):
+    """Сводный цвет карточки: red > yellow > green."""
+    if not triggers:
+        return 'green'
+    if any(t['severity'] == 'red' for t in triggers):
+        return 'red'
+    return 'yellow'
+
+
+@app.route('/api/customers-meta', methods=['GET'])
+def customers_meta():
+    """Справочники для UI: стадии / отрасли / tiers / kinds."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+    return jsonify({
+        'stages':     DEAL_STAGES,
+        'stages_open': DEAL_STAGES_OPEN,
+        'industries': CUSTOMER_INDUSTRIES,
+        'tiers':      CUSTOMER_TIERS,
+        'kinds':      EVENT_KINDS,
+        'thresholds': {
+            'days_no_touch_vip': TRIGGER_DAYS_NO_TOUCH_VIP,
+            'days_stage_stuck':  TRIGGER_DAYS_STAGE_STUCK,
+            'risk_threshold':    TRIGGER_RISK_THRESHOLD,
+        },
+    })
+
+
+@app.route('/api/customers', methods=['GET', 'POST'])
+def customers():
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    store = _read_customers()
+
+    if request.method == 'GET':
+        items = store.get('customers', [])
+        # Фильтры
+        tier = request.args.get('tier', '').strip()
+        industry = request.args.get('industry', '').strip()
+        manager = request.args.get('manager', '').strip()
+        stage = request.args.get('stage', '').strip()
+        severity = request.args.get('severity', '').strip()  # red|yellow|green
+        only_open = request.args.get('open', '') == '1'
+
+        if tier:     items = [c for c in items if c.get('tier') == tier]
+        if industry: items = [c for c in items if c.get('industry') == industry]
+        if manager:  items = [c for c in items if c.get('assigned_manager') == manager]
+        if stage:    items = [c for c in items if c.get('deal_stage') == stage]
+        if only_open: items = [c for c in items if c.get('deal_stage') in DEAL_STAGES_OPEN]
+
+        # Подмешать триггеры и общий severity
+        out = []
+        for c in items:
+            trg = _calc_triggers_for_customer(c)
+            sev = _customer_severity(trg)
+            if severity and sev != severity:
+                continue
+            cc = dict(c)
+            cc['triggers'] = trg
+            cc['severity'] = sev
+            out.append(cc)
+
+        # Сортировка: red → yellow → green; внутри — A → B → C; внутри — по deal_value убыв.
+        sev_order = {'red': 0, 'yellow': 1, 'green': 2}
+        tier_order = {'A': 0, 'B': 1, 'C': 2}
+        out.sort(key=lambda c: (sev_order.get(c['severity'], 9),
+                                tier_order.get(c.get('tier', 'C'), 9),
+                                -int(c.get('deal_value') or 0)))
+        return jsonify({'customers': out, 'total': len(out)})
+
+    # POST — создать нового клиента
+    body = request.get_json() or {}
+    if not (body.get('name') or '').strip():
+        return jsonify({'error': 'name required'}), 400
+    new_c = _customer_template(body)
+    store.setdefault('customers', []).append(new_c)
+    _write_customers(store)
+    return jsonify({'ok': True, 'customer': new_c})
+
+
+@app.route('/api/customers/<customer_id>', methods=['GET', 'POST', 'DELETE'])
+def customer_one(customer_id):
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    store = _read_customers()
+    items = store.get('customers', [])
+    c = next((x for x in items if x.get('id') == customer_id), None)
+    if not c:
+        return jsonify({'error': 'клиент не найден'}), 404
+
+    if request.method == 'GET':
+        events = [e for e in _read_customer_events() if e.get('customer_id') == customer_id]
+        events.sort(key=lambda e: e.get('ts', ''), reverse=True)
+        cc = dict(c)
+        cc['triggers'] = _calc_triggers_for_customer(c)
+        cc['severity'] = _customer_severity(cc['triggers'])
+        cc['events']   = events
+        return jsonify({'customer': cc})
+
+    if request.method == 'DELETE':
+        store['customers'] = [x for x in items if x.get('id') != customer_id]
+        _write_customers(store)
+        return jsonify({'ok': True, 'deleted': customer_id})
+
+    # POST — частичное обновление
+    body = request.get_json() or {}
+    # Если меняется стадия — фиксируем как event (status_change)
+    old_stage = c.get('deal_stage')
+    old_risk  = c.get('churn_risk')
+
+    allowed = ['name', 'industry', 'tier', 'segment', 'decision_makers',
+               'deal_stage', 'deal_value', 'churn_risk', 'assigned_manager',
+               'owner', 'next_step', 'next_step_date', 'notes']
+    for k in allowed:
+        if k in body:
+            if k == 'deal_value':
+                try: c[k] = int(body[k])
+                except Exception: pass
+            elif k == 'churn_risk':
+                try: c[k] = max(1, min(10, int(body[k])))
+                except Exception: pass
+            else:
+                c[k] = body[k]
+    c['updated_at'] = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+    _write_customers(store)
+
+    # Авто-event при изменении стадии или скачка риска
+    by = (body.get('by') or '').strip()
+    if 'deal_stage' in body and body['deal_stage'] != old_stage:
+        _append_customer_event({
+            'id':          uuid_hex_short(),
+            'customer_id': customer_id,
+            'ts':          datetime.utcnow().isoformat(timespec='seconds') + 'Z',
+            'kind':        'status_change',
+            'by':          by,
+            'summary':     f'{old_stage} → {body["deal_stage"]}',
+            'meta':        {'from': old_stage, 'to': body['deal_stage']},
+        })
+    if 'churn_risk' in body and abs((body.get('churn_risk') or 0) - (old_risk or 0)) >= 2:
+        _append_customer_event({
+            'id':          uuid_hex_short(),
+            'customer_id': customer_id,
+            'ts':          datetime.utcnow().isoformat(timespec='seconds') + 'Z',
+            'kind':        'risk_change',
+            'by':          by,
+            'summary':     f'Риск {old_risk} → {body["churn_risk"]}',
+            'meta':        {'from': old_risk, 'to': body['churn_risk']},
+        })
+
+    cc = dict(c)
+    cc['triggers'] = _calc_triggers_for_customer(c)
+    cc['severity'] = _customer_severity(cc['triggers'])
+    return jsonify({'ok': True, 'customer': cc})
+
+
+def uuid_hex_short():
+    import uuid
+    return uuid.uuid4().hex[:12]
+
+
+@app.route('/api/customer-events', methods=['POST'])
+def customer_event_add():
+    """Добавить касание. Авто-обновляет last_touch_at у клиента + опц. next_step."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    body = request.get_json() or {}
+    customer_id = (body.get('customer_id') or '').strip()
+    kind = (body.get('kind') or 'note').strip()
+    by   = (body.get('by') or '').strip()
+    summary = (body.get('summary') or '').strip()
+    next_step = (body.get('next_step') or '').strip()
+    next_step_date = (body.get('next_step_date') or '').strip()
+
+    if not customer_id:
+        return jsonify({'error': 'customer_id required'}), 400
+
+    store = _read_customers()
+    items = store.get('customers', [])
+    c = next((x for x in items if x.get('id') == customer_id), None)
+    if not c:
+        return jsonify({'error': 'клиент не найден'}), 404
+
+    now = datetime.utcnow().isoformat(timespec='seconds') + 'Z'
+    event = {
+        'id':          uuid_hex_short(),
+        'customer_id': customer_id,
+        'ts':          now,
+        'kind':        kind,
+        'by':          by,
+        'summary':     summary,
+        'next_step':   next_step,
+        'next_step_date': next_step_date,
+    }
+    _append_customer_event(event)
+
+    # Касание = касание. Не считаем заметку без «по делу».
+    touch_kinds = {'call', 'meeting', 'kp', 'email'}
+    if kind in touch_kinds:
+        c['last_touch_at'] = now
+        c['last_touch_by'] = by
+    if next_step:
+        c['next_step'] = next_step
+    if next_step_date:
+        c['next_step_date'] = next_step_date
+    c['updated_at'] = now
+    _write_customers(store)
+
+    return jsonify({'ok': True, 'event': event})
+
+
+@app.route('/api/customers-triggers', methods=['GET'])
+def customers_triggers():
+    """Активные триггеры по всей базе. Опц. фильтр ?for=<role_id> — то, что прилетает этому человеку."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+
+    role = request.args.get('for', '').strip()
+    store = _read_customers()
+    items = store.get('customers', [])
+
+    flagged = []
+    for c in items:
+        trg = _calc_triggers_for_customer(c)
+        if not trg:
+            continue
+        if role and c.get('assigned_manager') != role and c.get('owner') != role:
+            # Не моё — пропускаем (но Кирилл и РОП всегда видят всех — отдельная роль смотрит без фильтра)
+            continue
+        flagged.append({
+            'id':              c.get('id'),
+            'name':            c.get('name'),
+            'tier':            c.get('tier'),
+            'industry':        c.get('industry'),
+            'deal_stage':      c.get('deal_stage'),
+            'deal_value':      c.get('deal_value'),
+            'churn_risk':      c.get('churn_risk'),
+            'last_touch_at':   c.get('last_touch_at'),
+            'next_step':       c.get('next_step'),
+            'next_step_date':  c.get('next_step_date'),
+            'assigned_manager': c.get('assigned_manager'),
+            'triggers':        trg,
+            'severity':        _customer_severity(trg),
+        })
+
+    # Сортировка: red первыми, потом по убыв. deal_value
+    sev_order = {'red': 0, 'yellow': 1, 'green': 2}
+    flagged.sort(key=lambda x: (sev_order.get(x['severity'], 9), -int(x.get('deal_value') or 0)))
+    return jsonify({'triggers': flagged, 'total': len(flagged)})
+
+
+@app.route('/api/customers-bulk', methods=['POST'])
+def customers_bulk():
+    """Массовое создание (для CSV-импорта). Принимает массив объектов."""
+    if not session.get('team_logged_in'):
+        return jsonify({'error': 'Не авторизован'}), 401
+    body = request.get_json() or {}
+    items_in = body.get('customers') or []
+    if not isinstance(items_in, list):
+        return jsonify({'error': 'customers must be array'}), 400
+
+    store = _read_customers()
+    created = []
+    skipped = []
+    for raw in items_in:
+        if not (raw.get('name') or '').strip():
+            skipped.append({'reason': 'empty name', 'raw': raw})
+            continue
+        new_c = _customer_template(raw)
+        store.setdefault('customers', []).append(new_c)
+        created.append(new_c['id'])
+    _write_customers(store)
+    return jsonify({'ok': True, 'created': len(created), 'skipped': len(skipped), 'ids': created})
 
 
 BITRIX_WEBHOOK_URL = os.environ.get('BITRIX_WEBHOOK_URL', '')
