@@ -842,19 +842,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Название клиента: приоритет Sales-навигатор → Company → Title сделки
             const clientField = document.querySelector('input[name="client_name"]');
+            // Если есть привязанная компания — её название приоритетнее всего (даже над тем что
+            // могли уже подставить раньше). Компания подгружается асинхронно ниже.
+            // А пока ставим временный fallback из заголовка сделки/лида.
             if (clientField && !clientField.value) {
-                let title = '';
-                // Sales-навигатор заголовок часто формата "Сделка №X: ..." — берём только содержательную часть
                 if (salesNavTitle) {
-                    title = salesNavTitle.replace(/^Сделка\s*№?\s*\d+:\s*/i, '').trim();
+                    clientField.value = salesNavTitle.replace(/^Сделка\s*№?\s*\d+:\s*/i, '').trim();
+                } else if (d.NAME && d.LAST_NAME) {
+                    clientField.value = (d.NAME + ' ' + d.LAST_NAME).trim();
+                } else {
+                    clientField.value = d.TITLE || d.NAME || '';
                 }
-                if (!title) title = d.COMPANY_TITLE || d.TITLE || d.NAME || '';
-                if (title) clientField.value = title;
             }
 
-            // Задача клиента — анализ Sales-навигатора (если есть) или комменты
+            // Задача клиента — анализ Sales-навигатора (если есть)
             if (salesNavAnalysis) {
                 const sit = document.querySelector('textarea[name="situation"]');
                 if (sit && !sit.value) {
@@ -862,12 +864,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('[verde] подставили Sales-навигатор анализ в Задачу клиента');
                 }
             }
-            // Если у сделки привязана компания — тащим её данные (имя/сайт/индустрия)
+            // Если у сделки привязана компания — её название приоритетнее заголовка сделки
             if (entityType === 'deal' && d.COMPANY_ID) {
                 BX24.callMethod('crm.company.get', {ID: d.COMPANY_ID}, function(cres) {
+                    console.log('[verde] crm.company.get:', cres && cres.data ? cres.data() : cres);
                     if (cres && !cres.error()) {
                         const c = cres.data() || {};
-                        if (clientField && !clientField.value && c.TITLE) clientField.value = c.TITLE;
+                        // Безусловно перезаписываем — название компании > заголовок сделки
+                        if (clientField && c.TITLE) clientField.value = c.TITLE;
                         const urlField = document.querySelector('input[name="client_url"]');
                         if (urlField && !urlField.value && Array.isArray(c.WEB) && c.WEB.length) {
                             urlField.value = c.WEB[0].VALUE || '';
@@ -892,6 +896,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 order: {CREATED: 'DESC'},
                 select: ['COMMENT', 'CREATED'],
             }, function(cres) {
+                console.log('[verde] crm.timeline.comment.list:',
+                    cres && !cres.error() ? (cres.data() || []).length + ' штук' : (cres && cres.error()));
                 if (!cres || cres.error()) return;
                 const comments = cres.data() || [];
                 if (!comments.length) return;
@@ -900,7 +906,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     .filter(Boolean)
                     .join('\n---\n');
                 const sit = document.querySelector('textarea[name="situation"]');
-                if (sit && !sit.value && text) sit.value = text.slice(0, 1500);
+                if (sit && !sit.value && text) {
+                    sit.value = text.slice(0, 1500);
+                    console.log('[verde] подставили ' + comments.length + ' комментариев в Задачу клиента');
+                }
             });
         });
     }
