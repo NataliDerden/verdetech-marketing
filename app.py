@@ -791,7 +791,29 @@ def is_from_bitrix():
         return True
     if request.args.get('bitrix') == '1':
         return True
+    # Кросс-доменная загрузка как iframe (типично для Local App)
+    sec_dest = request.headers.get('Sec-Fetch-Dest', '')
+    sec_site = request.headers.get('Sec-Fetch-Site', '')
+    if sec_dest in ('iframe', 'frame') and sec_site == 'cross-site':
+        return True
     return False
+
+
+@app.before_request
+def auto_login_team_for_bitrix():
+    """Авто-вход для запросов из Битрикс-iframe (на случай заблокированных 3rd-party cookies).
+    Срабатывает на КАЖДЫЙ запрос — даже если cookie не сохраняется между запросами,
+    каждый запрос с правильным Referer/маркером будет авторизован заново."""
+    if session.get('team_logged_in'):
+        return
+    if is_from_bitrix():
+        session['team_logged_in'] = True
+        return
+    # Запросы с нашей /design страницы (например, fetch к /api/* из JS)
+    ref = request.headers.get('Referer', '') or ''
+    host = request.host or ''
+    if '/design' in ref and host in ref:
+        session['team_logged_in'] = True
 
 
 @app.route('/design', methods=['GET', 'POST'])
