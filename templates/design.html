@@ -78,13 +78,17 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 /* KP GENERATOR PANE */
 .kp-layout { display: grid; grid-template-columns: 420px 1fr; gap: 24px; }
 @media (max-width: 900px) { .kp-layout { grid-template-columns: 1fr; } }
-.kp-form { background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 24px; position: sticky; top: 20px; align-self: start; }
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #333; margin-bottom: 6px; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #d5d5d7; border-radius: 6px; font-family: inherit; font-size: 14px; background: #fafafa; transition: all 0.15s; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0FBF00; background: #fff; box-shadow: 0 0 0 3px rgba(15,191,0,0.15); }
-.form-group textarea { resize: vertical; min-height: 60px; }
-.form-group small { display: block; font-size: 11px; color: #999; margin-top: 4px; }
+.kp-form { background: #fff; border: 1px solid #e5e5ea; border-radius: 10px; padding: 20px 24px; position: sticky; top: 20px; align-self: start; }
+.form-group { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #f0f0f2; }
+.form-group:last-of-type { border-bottom: none; padding-bottom: 0; }
+.form-group label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #6e6e73; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 0; border: none; border-bottom: 1px solid #d5d5d7; border-radius: 0; font-family: inherit; font-size: 14px; background: transparent; transition: border-color 0.15s; color: #1d1d1f; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-bottom-color: #0FBF00; background: transparent; box-shadow: none; }
+.form-group input::placeholder, .form-group textarea::placeholder { color: #c7c7cc; font-weight: 400; }
+.form-group textarea { resize: vertical; min-height: 80px; padding: 8px 0; }
+.form-group select { padding: 8px 0; cursor: pointer; }
+.form-group small { display: block; font-size: 11px; color: #a1a1a6; margin-top: 6px; line-height: 1.4; }
+.kp-form .btn-generate { margin-top: 16px; }
 
 /* Круглые таблетки-чипсы масштаба бизнеса (компактно, в строку с переносом) */
 .vol-pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -693,20 +697,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 1. Чистая регистрация вкладок: один раз за всё время этого браузера
                 cleanRebindPlacements();
 
-                // 3. Автоподстановка менеджера (текущий пользователь Битрикса)
+                // 3. Автоподстановка менеджера: сначала из user.current (нужен scope user_basic),
+                //    если не получилось — из localStorage (запомнили с прошлого КП)
+                fillManagerFields();
                 BX24.callMethod('user.current', {}, function(ures) {
-                    if (!ures || ures.error()) return;
+                    if (!ures || ures.error()) {
+                        console.log('[verde] user.current не доступен — нет права user_basic');
+                        return;
+                    }
                     const u = ures.data() || {};
                     const fullName = [u.LAST_NAME, u.NAME, u.SECOND_NAME].filter(Boolean).join(' ').trim() || u.NAME || '';
                     const phone = u.PERSONAL_MOBILE || u.WORK_PHONE || u.PERSONAL_PHONE || '';
                     const email = u.EMAIL || '';
-                    const mNameField = document.querySelector('input[name="manager_name"]');
-                    const mPhoneField = document.querySelector('input[name="manager_phone"]');
-                    const mEmailField = document.querySelector('input[name="manager_email"]');
-                    if (mNameField && !mNameField.value && fullName) mNameField.value = fullName;
-                    if (mPhoneField && !mPhoneField.value && phone) mPhoneField.value = phone;
-                    if (mEmailField && !mEmailField.value && email) mEmailField.value = email;
-                    console.log('[verde] подставили менеджера:', fullName, phone, email);
+                    setManagerFields(fullName, phone, email);
+                    saveManagerToCache(fullName, phone, email);
+                    console.log('[verde] подставили менеджера из Битрикса:', fullName, phone, email);
                 });
 
                 // 2. Авто-префилл данными из сделки/лида
@@ -960,6 +965,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sit.value = lines.join('\n');
         console.log('[verde] заполнили задачу клиента контекстом:', lines.length, 'строк');
+    }
+
+    function setManagerFields(fullName, phone, email) {
+        const n = document.querySelector('input[name="manager_name"]');
+        const p = document.querySelector('input[name="manager_phone"]');
+        const e = document.querySelector('input[name="manager_email"]');
+        if (n && !n.value && fullName) n.value = fullName;
+        if (p && !p.value && phone) p.value = phone;
+        if (e && !e.value && email) e.value = email;
+    }
+
+    function saveManagerToCache(fullName, phone, email) {
+        try {
+            if (fullName || phone || email) {
+                localStorage.setItem('verde_kp_manager', JSON.stringify({fullName, phone, email}));
+            }
+        } catch (err) {}
+    }
+
+    function fillManagerFields() {
+        try {
+            const cached = JSON.parse(localStorage.getItem('verde_kp_manager') || '{}');
+            if (cached.fullName || cached.phone || cached.email) {
+                setManagerFields(cached.fullName, cached.phone, cached.email);
+                console.log('[verde] подставили менеджера из кэша:', cached.fullName);
+            }
+        } catch (err) {}
     }
 
     function applyIndustryFromBitrix(bitrixIndustry) {
@@ -1252,6 +1284,16 @@ async function generateKP(e) {
     data.objections = objections;
     // Чекбоксы — явно выставляем bool (FormData не включает непроставленные)
     data.include_prices = document.getElementById('includePricesToggle')?.checked || false;
+    // Запоминаем менеджера в localStorage чтобы автоподставить в следующий раз
+    if (data.manager_name || data.manager_phone || data.manager_email) {
+        try {
+            localStorage.setItem('verde_kp_manager', JSON.stringify({
+                fullName: data.manager_name || '',
+                phone: data.manager_phone || '',
+                email: data.manager_email || '',
+            }));
+        } catch (err) {}
+    }
     // Если точный объём не введён, но выбран масштаб — используем оценку масштаба
     if (!data.volume && data.volume_scale) { data.volume = data.volume_scale; }
     const btn = document.getElementById('generateBtn');
