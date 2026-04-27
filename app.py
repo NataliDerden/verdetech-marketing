@@ -182,16 +182,48 @@ INDUSTRY_BOOST_KEYWORDS = {
 }
 
 
-SPICE_TRIGGER_WORDS = [
-    'специ', 'пряност', 'перец', 'паприк', 'розмарин', 'чеснок', 'базилик',
-    'орегано', 'тимьян', 'тимиан', 'кориандр', 'тмин', 'кардамон', 'имбир',
-    'куркум', 'гвоздик', 'мускат', 'корица', 'лавр', 'фенхель', 'укроп',
-    'петрушк', 'майоран', 'шалфей', 'сушён', 'сушен', 'сухой лук', 'лук сушён',
-    'морковь сушён', 'смесь приправ', 'смесь специй', 'приправ',
-]
-SPICE_PRIORITY_KEYWORDS = SPICE_TRIGGER_WORDS + [
-    'специ', 'пряност', 'сушён', 'сушен', 'смесь', 'приправ',
-]
+CATEGORY_TRIGGERS = {
+    'spices': [
+        'специ', 'пряност', 'перец', 'паприк', 'розмарин', 'чеснок', 'базилик',
+        'орегано', 'тимьян', 'тимиан', 'кориандр', 'тмин', 'кардамон', 'имбир',
+        'куркум', 'гвоздик', 'мускат', 'корица', 'лавр', 'фенхель', 'укроп',
+        'петрушк', 'майоран', 'шалфей', 'сушён', 'сушен', 'сухой лук', 'лук сушён',
+        'морковь сушён', 'смесь приправ', 'смесь специй', 'приправ',
+    ],
+    'marinades': [
+        'маринад', 'ткемали', 'грузинск', 'чесночн', 'универсал', 'французск',
+        'для шашлык', 'для курицы', 'для мяс', 'фруктово-специев',
+    ],
+    'brines': [
+        'рассол', 'инъект', 'шприцев', 'бесфосфатн', 'фосфат', 'засолк',
+    ],
+    'stabilizers': [
+        'стабилизатор', 'эмультек', 'фреш', 'белков', 'термостаб', 'эмульгатор',
+    ],
+    'functional': [
+        'витамин', 'smart plus', 'инулин', 'пребиотик', 'минерал', 'кальций',
+        'магний', 'функциональн', 'clean label',
+    ],
+    'colors': [
+        'краситель', 'пигмент', 'кармин', 'аннато',
+    ],
+}
+
+# Все триггерные слова для обратной совместимости
+SPICE_TRIGGER_WORDS = CATEGORY_TRIGGERS['spices']
+SPICE_PRIORITY_KEYWORDS = list(set(SPICE_TRIGGER_WORDS + ['специ', 'пряност', 'сушён', 'сушен', 'смесь', 'приправ']))
+
+
+def detect_categories_in_text(text: str) -> set:
+    """Возвращает множество категорий, ключевые слова которых встречаются в тексте."""
+    if not text:
+        return set()
+    blob = text.lower()
+    found = set()
+    for cat, keywords in CATEGORY_TRIGGERS.items():
+        if any(kw in blob for kw in keywords):
+            found.add(cat)
+    return found
 
 
 def situation_mentions_spices(situation_text: str, products_context: str = '') -> bool:
@@ -2229,20 +2261,39 @@ def generate_kp():
     industry = data['industry']
     industry_forms = INDUSTRY_MAP.get(industry, {'genitive': industry.lower(), 'dative': industry.lower()})
 
-    # Если в задаче клиента упомянуты специи/пряности — форсируем их в каталог
+    # Анализ сайта клиента (если указан) — нужен для детектирования категорий
+    client_url = data.get('client_url', '').strip()
+    client_site_context = fetch_client_context(client_url) if client_url else ''
+
+    # Объединяем все источники контекста: задача клиента + подсказки менеджера + сайт
     situation_for_match = data.get('situation', '')
-    spice_context = situation_mentions_spices(situation_for_match)
+    manager_hints = data.get('manager_hints', '').strip()
+    combined_context = ' '.join([
+        situation_for_match,
+        manager_hints,
+        client_site_context or '',
+    ])
+
+    # Детектим все упомянутые категории продуктов (специи, маринады, рассолы, стабилизаторы, функционалы, красители)
+    detected_categories = detect_categories_in_text(combined_context)
+    print(f'[generate_kp] Найденные категории в контексте: {detected_categories}', flush=True)
+
+    spice_context = 'spices' in detected_categories
 
     # Строим компактный каталог для Claude — только ключевые данные
     # Ограничиваем релевантными категориями чтобы не перегружать промпт
     catalog_index = build_catalog_index_for_prompt(industry, force_spices=spice_context)
 
-    # Если упомянуты специи — добавляем релевантные позиции из ПРАЙСА (с ценами!)
-    pricelist_spice_products = []
-    if spice_context:
-        # Тащим все продукты из прайса, где категория или название содержит специи/пряности/сушёные/перец/чеснок/розмарин/...
-        pricelist_spice_products = find_products_by_keywords(SPICE_TRIGGER_WORDS, max_items=80)
-        print(f'[generate_kp] Контекст специй: подгружено {len(pricelist_spice_products)} позиций из прайса', flush=True)
+    # Подгружаем релевантные позиции из ПРАЙСА (с ценами!) для всех найденных категорий
+    pricelist_relevant_products = []
+    if detected_categories:
+        all_keywords = []
+        for cat in detected_categories:
+            all_keywords.extend(CATEGORY_TRIGGERS[cat])
+        pricelist_relevant_products = find_products_by_keywords(all_keywords, max_items=100)
+        print(f'[generate_kp] Подгружено {len(pricelist_relevant_products)} позиций из прайса для категорий {detected_categories}', flush=True)
+    # Сохраняем для обратной совместимости
+    pricelist_spice_products = pricelist_relevant_products
 
     # Дополнительная кастомная выгода (если указана пользователем)
     custom_benefit = data.get('main_benefit', '').strip()
@@ -2268,10 +2319,6 @@ def generate_kp():
     objections = data.get('objections', [])  # список из чекбоксов
     if isinstance(objections, str):
         objections = [o.strip() for o in objections.split(',') if o.strip()]
-
-    # Анализ сайта клиента (если указан)
-    client_url = data.get('client_url', '').strip()
-    client_site_context = fetch_client_context(client_url) if client_url else ''
 
     # Прошлый фидбэк от менеджеров — учимся на истории
     past_feedback = load_recent_feedback(10)
@@ -2363,11 +2410,13 @@ SALES ENABLEMENT:
 === КАТАЛОГ VERDE TECH (все 800+ продукта — для поиска по ID и именам) ===
 {json.dumps(catalog_index, ensure_ascii=False, indent=2)}
 
-{("=== ПРЯМЫЕ ПОЗИЦИИ ИЗ ПРАЙСА VERDE TECH ПОД ЗАПРОС КЛИЕНТА (специи/пряности/сушёные овощи) ===" + chr(10) +
-"Клиент явно ищет специи/пряности — РЕКОМЕНДУЙ продукты ИМЕННО ИЗ ЭТОГО списка. " +
-"Они уже есть на складе с актуальными ценами. НЕ предлагай V Smart Plus вместо них." + chr(10) +
-json.dumps([{'name': p['name'], 'cat': p['cat'], 'price_per_kg_no_vat': p.get('bulk_no_vat') or p.get('small_no_vat')} for p in pricelist_spice_products], ensure_ascii=False, indent=2)
-) if pricelist_spice_products else ''}
+{("=== ПОЗИЦИИ ИЗ ПРАЙСА VERDE TECH ПОД ЗАПРОС КЛИЕНТА ===" + chr(10) +
+"Найдены упоминания категорий: " + ', '.join(detected_categories) + chr(10) +
+"Эти продукты — НЕ выдумка, а реальные позиции с актуальными ценами из прайса 01.05.2026." + chr(10) +
+"⚡ РЕКОМЕНДУЙ продукты ИМЕННО ИЗ ЭТОГО списка. Не подменяй универсальными вроде V Smart Plus." + chr(10) +
+"Если в задаче клиента упомянуты конкретные продукты — выбери СОВПАДАЮЩИЕ по названию или категории." + chr(10) +
+json.dumps([{'name': p['name'], 'cat': p['cat'], 'price_per_kg_no_vat': p.get('bulk_no_vat') or p.get('small_no_vat')} for p in pricelist_relevant_products], ensure_ascii=False, indent=2)
+) if pricelist_relevant_products else ''}
 
 === КЛИЕНТ И СДЕЛКА ===
 Клиент: {data['client_name']}
@@ -2378,6 +2427,7 @@ json.dumps([{'name': p['name'], 'cat': p['cat'], 'price_per_kg_no_vat': p.get('b
 Роль клиента: {role_label}
 {"Возражения, уже прозвучавшие от клиента: " + ', '.join(objections) if objections else ""}
 {"Дополнительный акцент от менеджера: " + custom_benefit if custom_benefit else ""}
+{("⚡ ПОДСКАЗКИ ОТ МЕНЕДЖЕРА (наивысший приоритет — менеджер ЛИЧНО общался с клиентом, его слова важнее аналитики): " + manager_hints) if manager_hints else ""}
 
 === АНАЛИЗ САЙТА КЛИЕНТА ===
 {client_site_context if client_site_context else '(сайт клиента не указан или не удалось загрузить)'}
