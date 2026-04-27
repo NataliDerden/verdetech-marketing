@@ -158,6 +158,21 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 
     <div class="kp-layout">
         <form class="kp-form" id="kpForm" onsubmit="event.preventDefault(); generateKP(event); return false;">
+            <div class="form-group" style="margin-bottom:18px;">
+                <label style="font-weight:600; margin-bottom:8px; display:block;">Тип КП</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <label class="kp-mode-opt" style="display:block; padding:12px 14px; background:#fafafa; border:2px solid #e5e5e7; border-radius:8px; cursor:pointer; transition:all .15s;">
+                        <input type="radio" name="kp_mode" value="lead" checked style="margin-right:6px; accent-color:#0FBF00;">
+                        <b style="font-size:13px;">Лид</b>
+                        <div style="font-size:11px; color:#666; margin-top:4px; line-height:1.4;">Общее КП без цен — зацепить, вызвать интерес</div>
+                    </label>
+                    <label class="kp-mode-opt" style="display:block; padding:12px 14px; background:#fafafa; border:2px solid #e5e5e7; border-radius:8px; cursor:pointer; transition:all .15s;">
+                        <input type="radio" name="kp_mode" value="deal" style="margin-right:6px; accent-color:#0FBF00;">
+                        <b style="font-size:13px;">Сделка</b>
+                        <div style="font-size:11px; color:#666; margin-top:4px; line-height:1.4;">Конкретные продукты + объём + цены</div>
+                    </label>
+                </div>
+            </div>
             <div class="form-group">
                 <label>Клиент (название компании)</label>
                 <input type="text" name="client_name" required placeholder='ООО "Мясокомбинат Колбасов"'>
@@ -685,6 +700,34 @@ document.addEventListener('DOMContentLoaded', () => {
         dealStageSelect.addEventListener('change', syncPriceToggle);
         syncPriceToggle(); // применить сразу при загрузке
     }
+
+    // Переключатель ЛИД/СДЕЛКА — праймит остальные поля
+    const kpModeRadios = document.querySelectorAll('input[name="kp_mode"]');
+    kpModeRadios.forEach(r => {
+        r.addEventListener('change', applyKpMode);
+        r.parentElement.addEventListener('click', () => {
+            document.querySelectorAll('.kp-mode-opt').forEach(el => el.style.borderColor = '#e5e5e7');
+            r.parentElement.style.borderColor = r.checked ? '#0FBF00' : '#e5e5e7';
+        });
+    });
+    function applyKpMode() {
+        const mode = document.querySelector('input[name="kp_mode"]:checked')?.value || 'lead';
+        document.querySelectorAll('.kp-mode-opt').forEach(el => {
+            const inp = el.querySelector('input[name="kp_mode"]');
+            el.style.borderColor = inp.checked ? '#0FBF00' : '#e5e5e7';
+            el.style.background = inp.checked ? '#f0fdf4' : '#fafafa';
+        });
+        if (mode === 'lead') {
+            // ЛИД: холодная стадия + цены выкл
+            if (dealStageSelect) { dealStageSelect.value = 'cold'; }
+            if (priceToggle) { priceToggle.checked = false; }
+        } else {
+            // СДЕЛКА: на согласовании + цены вкл
+            if (dealStageSelect) { dealStageSelect.value = 'negotiation'; }
+            if (priceToggle) { priceToggle.checked = true; }
+        }
+    }
+    applyKpMode(); // выставить визуально на старте
 });
 
 function showBadFeedback() {

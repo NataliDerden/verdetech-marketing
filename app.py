@@ -797,6 +797,10 @@ def design_hub():
     resp = app.make_response(render_template('design.html', prefill=prefill))
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
+    # Разрешаем встраивание во вкладку Bitrix24 (любой *.bitrix24.ru)
+    resp.headers['Content-Security-Policy'] = "frame-ancestors 'self' https://*.bitrix24.ru https://*.bitrix24.com https://*.bitrix24.de"
+    if 'X-Frame-Options' in resp.headers:
+        del resp.headers['X-Frame-Options']
     return resp
 
 
@@ -2064,7 +2068,16 @@ def generate_kp():
     if missing:
         return jsonify({'error': f'Не заполнены поля: {", ".join(missing)}'}), 400
 
+    # ЛИД-режим: общее КП без конкретных чисел и цен (для презентации на старте)
+    # СДЕЛКА: точечное КП с продуктами/объёмами/ценами
+    kp_mode = (data.get('kp_mode') or 'deal').strip().lower()
+    if kp_mode not in ('lead', 'deal'):
+        kp_mode = 'deal'
+
     include_prices = bool(data.get('include_prices'))
+    if kp_mode == 'lead':
+        # В лид-КП цены и объёмы не показываем — даже если менеджер случайно поставил галку
+        include_prices = False
     include_pricelist = bool(data.get('include_pricelist'))
 
     volume_raw = str(data.get('volume', '')).strip()
@@ -2072,6 +2085,8 @@ def generate_kp():
         volume = int(volume_raw) if volume_raw else 0
     except (ValueError, TypeError):
         volume = 0  # нечисловое значение — игнорируем
+    if kp_mode == 'lead':
+        volume = 0  # лид-КП не привязан к объёму
 
     industry = data['industry']
     industry_forms = INDUSTRY_MAP.get(industry, {'genitive': industry.lower(), 'dative': industry.lower()})
@@ -2119,7 +2134,33 @@ def generate_kp():
         if lessons:
             feedback_for_prompt = 'УРОКИ ИЗ ПРОШЛЫХ КП (учти):\n' + '\n'.join(lessons[-10:])
 
+    if kp_mode == 'lead':
+        mode_block = """=== РЕЖИМ: ЛИД-КП (общее, без цифр) ===
+Это ПРЕЗЕНТАЦИОННОЕ КП на этапе первого контакта. Клиент ещё не созрел до конкретики.
+ЦЕЛЬ — зацепить, вызвать интерес, затащить в диалог. НЕ закрыть сделку.
+
+ПРАВИЛА:
+- НИКАКИХ конкретных цен (₽/кг, ₽/т, ₽/мес, годовой экономии в рублях) — НЕ упоминать вообще
+- НИКАКИХ привязок к объёму («при 500 т/год вы…») — у нас ещё нет точного объёма
+- НИКАКИХ конкретных артикулов и SKU из спецификаций — только направление продукта (например «бесфосфатные рассолы», а не «V Инъекта ПФ ТУ 10.89.19»)
+- МОЖНО: проценты улучшений из общеизвестной практики («рассолы дают +10–15% выхода»), кейсы клиентов как соц.доказательство, отрасль/технология/тренды
+- ТОН: «вот что мы делаем, вот наши клиенты, вот тренды — давайте обсудим вашу задачу»
+- В CTA: предложить созвон / встречу / тестовый образец, НЕ предложение конкретной поставки
+"""
+    else:
+        mode_block = """=== РЕЖИМ: КП ПО СДЕЛКЕ (конкретика) ===
+Клиент уже в воронке, ясна задача и контекст. ЦЕЛЬ — закрыть сделку.
+
+ПРАВИЛА:
+- Конкретные продукты (точные названия из спецификаций), артикулы, ТУ если уместно
+- Конкретные цифры экономии в ₽ при объёме клиента (если объём указан)
+- Чёткое сравнение «было / станет», ROI, окупаемость
+- В CTA: следующий шаг по сделке (договор, образец, расчёт под объём)
+"""
+
     prompt = f"""Ты — опытный B2B-маркетолог Verde Tech + копирайтер + продавец. Твоя задача — не просто заполнить шаблон, а написать ПРОДАЮЩИЙ документ, который закрывает сделку.
+
+{mode_block}
 
 === МАРКЕТИНГОВЫЙ PLAYBOOK (применяй на каждом слайде) ===
 
