@@ -752,38 +752,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
         BX24.callMethod('placement.list', {}, function(res) {
             const list = (res && !res.error()) ? (res.data() || []) : [];
-            console.log('[verde] текущие placement-ы:', list);
-            // Сносим все наши
-            const oursToUnbind = list.filter(it => it.handler === ourHandler);
-            let unbindLeft = oursToUnbind.length;
-            const afterUnbind = function() {
-                // Биндим ровно по одной для каждого нужного места
-                want.forEach(function(p) {
-                    BX24.callMethod('placement.bind', {
+            const ours = list.filter(it => it.handler === ourHandler);
+            console.log('[verde] всего placement-ов в системе:', list.length, ', наших:', ours.length);
+
+            const finishBind = function() {
+                const batchBind = {};
+                want.forEach(function(p, i) {
+                    batchBind['b' + i] = ['placement.bind', {
                         PLACEMENT: p,
                         HANDLER: ourHandler,
                         TITLE: 'КП-генератор',
-                    }, function(rr) {
-                        console.log('[verde] bind ' + p + ':', rr && rr.data ? rr.data() : rr,
-                            rr && rr.error ? rr.error() : '');
-                    });
+                    }];
+                });
+                BX24.callBatch(batchBind, function(results) {
+                    console.log('[verde] финальный bind:', results);
                 });
             };
-            if (unbindLeft === 0) {
-                afterUnbind();
-            } else {
-                oursToUnbind.forEach(function(it) {
-                    BX24.callMethod('placement.unbind', {
-                        PLACEMENT: it.placement,
-                        HANDLER: ourHandler,
-                    }, function(rr) {
-                        console.log('[verde] unbind ' + it.placement + ':',
-                            rr && rr.error ? rr.error() : 'ok');
-                        unbindLeft--;
-                        if (unbindLeft === 0) afterUnbind();
-                    });
-                });
+
+            if (ours.length === 0) {
+                finishBind();
+                return;
             }
+
+            // Batch-удаление всех наших регистраций — атомарно одним запросом
+            const batchUnbind = {};
+            ours.forEach(function(p, i) {
+                batchUnbind['u' + i] = ['placement.unbind', {
+                    PLACEMENT: p.placement,
+                    HANDLER: ourHandler,
+                }];
+            });
+            BX24.callBatch(batchUnbind, function(results) {
+                console.log('[verde] batch unbind: удалено', Object.keys(results).length);
+                // После массового удаления — биндим ровно по одной
+                finishBind();
+            });
         });
     }
 
@@ -805,6 +808,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const d = res.data() || {};
             console.log('[verde] данные ' + entityType + ':', d);
+
+            // Логируем все ключи + длинные текстовые поля (где может прятаться анализ Sales-навигатора)
+            console.log('[verde] все поля сделки:', Object.keys(d).join(', '));
+            const longFields = [];
+            Object.entries(d).forEach(function(pair) {
+                const k = pair[0], v = pair[1];
+                if (typeof v === 'string' && v.length > 80) {
+                    longFields.push({key: k, len: v.length, preview: v.slice(0, 200).replace(/\s+/g, ' ')});
+                }
+            });
+            if (longFields.length) {
+                console.log('[verde] длинные текстовые поля (возможно Sales-навигатор):', longFields);
+            } else {
+                console.log('[verde] длинных текстовых полей нет — Sales-навигатор хранит данные не в сделке');
+            }
 
             // Ищем анализ Sales-навигатора в кастомных полях (UF_*)
             // Sales-навигатор сохраняет структурированный текст с маркерами «Заголовок:» «Сделка №:» «Менеджер:»
