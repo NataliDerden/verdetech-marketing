@@ -21,7 +21,19 @@ try:
 except ImportError:
     def lookup_price(_): return None
     def format_price(_): return {}
+    def get_category_pricelist(_=''): return []
+    def find_products_by_keywords(*_a, **_kw): return []
     PRICE_VALID_UNTIL = ''
+
+try:
+    from kp_knowledge_base import find_relevant_for_context as kb_find_relevant
+    from kp_knowledge_base import detect_categories_in_text as kb_detect_categories
+    from kp_knowledge_base import get_knowledge_base_summary as kb_summary
+    print(f'[kb] Загружена БЗ КП-генератора: {kb_summary()}', flush=True)
+except ImportError as e:
+    kb_find_relevant = None
+    kb_detect_categories = None
+    print(f'[kb] Не удалось загрузить БЗ: {e}', flush=True)
 
 # Расширенная база всех 829 спецификаций (3 МБ)
 try:
@@ -2274,26 +2286,39 @@ def generate_kp():
         client_site_context or '',
     ])
 
-    # Детектим все упомянутые категории продуктов (специи, маринады, рассолы, стабилизаторы, функционалы, красители)
-    detected_categories = detect_categories_in_text(combined_context)
-    print(f'[generate_kp] Найденные категории в контексте: {detected_categories}', flush=True)
+    # Используем БЗ КП-генератора если доступна — иначе fallback на старую логику
+    if kb_find_relevant:
+        detected_categories = kb_detect_categories(combined_context)
+        kb_relevant = kb_find_relevant(
+            situation_text=situation_for_match,
+            hints_text=manager_hints,
+            site_text=client_site_context or '',
+            industry=industry,
+            max_items=60,
+        )
+        print(f'[generate_kp] БЗ нашла {len(kb_relevant)} релевантных позиций. Категории: {detected_categories}', flush=True)
+        # Преобразуем в формат для промпта
+        pricelist_relevant_products = []
+        for r in kb_relevant:
+            pricelist_relevant_products.append({
+                'name':         r['name'],
+                'cat':          r['category'],
+                'bulk_no_vat':  r.get('price_bulk_no_vat'),
+                'small_no_vat': r.get('price_small_no_vat'),
+                'spec_purpose': r.get('spec_purpose', ''),
+            })
+    else:
+        detected_categories = detect_categories_in_text(combined_context)
+        pricelist_relevant_products = []
+        if detected_categories:
+            all_keywords = []
+            for cat in detected_categories:
+                all_keywords.extend(CATEGORY_TRIGGERS[cat])
+            pricelist_relevant_products = find_products_by_keywords(all_keywords, max_items=100)
 
     spice_context = 'spices' in detected_categories
-
-    # Строим компактный каталог для Claude — только ключевые данные
-    # Ограничиваем релевантными категориями чтобы не перегружать промпт
     catalog_index = build_catalog_index_for_prompt(industry, force_spices=spice_context)
-
-    # Подгружаем релевантные позиции из ПРАЙСА (с ценами!) для всех найденных категорий
-    pricelist_relevant_products = []
-    if detected_categories:
-        all_keywords = []
-        for cat in detected_categories:
-            all_keywords.extend(CATEGORY_TRIGGERS[cat])
-        pricelist_relevant_products = find_products_by_keywords(all_keywords, max_items=100)
-        print(f'[generate_kp] Подгружено {len(pricelist_relevant_products)} позиций из прайса для категорий {detected_categories}', flush=True)
-    # Сохраняем для обратной совместимости
-    pricelist_spice_products = pricelist_relevant_products
+    pricelist_spice_products = pricelist_relevant_products  # обратная совместимость
 
     # Дополнительная кастомная выгода (если указана пользователем)
     custom_benefit = data.get('main_benefit', '').strip()
@@ -2410,12 +2435,24 @@ SALES ENABLEMENT:
 === КАТАЛОГ VERDE TECH (все 800+ продукта — для поиска по ID и именам) ===
 {json.dumps(catalog_index, ensure_ascii=False, indent=2)}
 
-{("=== ПОЗИЦИИ ИЗ ПРАЙСА VERDE TECH ПОД ЗАПРОС КЛИЕНТА ===" + chr(10) +
-"Найдены упоминания категорий: " + ', '.join(detected_categories) + chr(10) +
-"Эти продукты — НЕ выдумка, а реальные позиции с актуальными ценами из прайса 01.05.2026." + chr(10) +
-"⚡ РЕКОМЕНДУЙ продукты ИМЕННО ИЗ ЭТОГО списка. Не подменяй универсальными вроде V Smart Plus." + chr(10) +
-"Если в задаче клиента упомянуты конкретные продукты — выбери СОВПАДАЮЩИЕ по названию или категории." + chr(10) +
-json.dumps([{'name': p['name'], 'cat': p['cat'], 'price_per_kg_no_vat': p.get('bulk_no_vat') or p.get('small_no_vat')} for p in pricelist_relevant_products], ensure_ascii=False, indent=2)
+{("=== БАЗА ЗНАНИЙ ПОД КЛИЕНТА: ПРОДУКТЫ + СПЕЦИФИКАЦИИ + ЦЕНЫ ===" + chr(10) +
+"Найдены упоминания категорий: " + ', '.join(sorted(detected_categories) or ['(нет точного триггера)']) + chr(10) +
+"Это РЕАЛЬНЫЕ позиции из прайса Verde Tech 01.05.2026 + их спецификации (что делает, дозировка, применение)." + chr(10) +
+"⚡ ОБЯЗАТЕЛЬНО используй эти данные при подборе продуктов:" + chr(10) +
+"1. Ранжированы по релевантности к контексту клиента (задача + подсказки менеджера + сайт)" + chr(10) +
+"2. У каждого есть ЦЕНА — используй её в КП когда менеджер включил «с ценами»" + chr(10) +
+"3. У многих есть СПЕЦИФИКАЦИЯ (поле spec_purpose) — это техническое описание для аргументации" + chr(10) +
+"4. Соотноси спецификацию с тем что КЛИЕНТ ПРОИЗВОДИТ (из контекста сделки и сайта) — это твоя главная работа как продакт-маркетолога" + chr(10) +
+"5. НЕ подменяй конкретные продукты универсальными V Smart Plus если клиент явно ищет другую категорию" + chr(10) +
+json.dumps([
+    {
+        'name': p['name'],
+        'category': p.get('cat', ''),
+        'price_bulk_₽_no_vat': p.get('bulk_no_vat'),
+        'price_small_₽_no_vat': p.get('small_no_vat'),
+        'spec_purpose': (p.get('spec_purpose') or '')[:250],
+    } for p in pricelist_relevant_products
+], ensure_ascii=False, indent=2)
 ) if pricelist_relevant_products else ''}
 
 === КЛИЕНТ И СДЕЛКА ===

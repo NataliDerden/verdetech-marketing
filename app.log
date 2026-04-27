@@ -179,3 +179,54 @@ Press CTRL+C to quit
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 101-877-125
+ * Detected change in 'C:\\Users\\Natalya\\Documents\\projects\\test Замесин\\verdetech-marketing\\app.py', reloading
+[prices] Загружено 476 позиций из прайса
+[filter] Скрыто клиентских/документных спек: 215
+[startup] Unified products: 598 (19 curated + 579 raw specs)
+ * Restarting with stat
+  File "C:\Users\Natalya\Documents\projects\test Замесин\verdetech-marketing\app.py", line 21
+    try:
+    ^^^
+SyntaxError: expected 'except' or 'finally' block
