@@ -2222,6 +2222,9 @@ def generate_kp():
 
     # Дополнительные поля из формы (продающие)
     situation = data.get('situation', '').strip()
+    # Кепаем чтобы промпт не разбухал на богатом Битрикс-контексте
+    if len(situation) > 4000:
+        situation = situation[:4000] + '\n\n[...текст обрезан]'
     deal_stage = data.get('deal_stage', 'warm').strip()  # cold/warm/negotiation/reactivation
     customer_role = data.get('customer_role', 'producer').strip()  # producer/horeca/packer/distributor
     role_label = {
@@ -2482,21 +2485,28 @@ SALES ENABLEMENT:
                     {'role': 'system', 'content': 'Ты выдаёшь строго JSON по шаблону. Никакого markdown, никаких пояснений, только JSON-объект.'},
                     {'role': 'user', 'content': prompt},
                 ],
-                'max_tokens': 5000,
+                'max_tokens': 4000,
                 'temperature': 0.4,
             },
-            timeout=90,
+            timeout=180,
         )
-        response.raise_for_status()
+        if response.status_code != 200:
+            print(f'[generate_kp] OpenRouter ошибка {response.status_code}: {response.text[:500]}', flush=True)
+            return jsonify({'error': f'OpenRouter HTTP {response.status_code}: {response.text[:300]}'}), 500
         ai_reply = response.json()['choices'][0]['message']['content'].strip()
 
         # strip markdown fences if AI added them
         ai_reply = re.sub(r'^```(?:json)?\s*|\s*```$', '', ai_reply, flags=re.MULTILINE).strip()
         ai_data = json.loads(ai_reply)
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Сервер AI ответил слишком долго (timeout 180с). Это редкая ситуация, попробуй ещё раз.'}), 504
     except json.JSONDecodeError as e:
-        return jsonify({'error': f'Не удалось разобрать ответ AI как JSON: {str(e)}. Попробуйте ещё раз.'}), 500
+        print(f'[generate_kp] JSON parse error: {e}, ответ AI был: {ai_reply[:1000] if "ai_reply" in dir() else "(не получен)"}', flush=True)
+        return jsonify({'error': f'AI вернул не JSON. Попробуй ещё раз.'}), 500
     except Exception as e:
-        return jsonify({'error': f'Ошибка AI-сервиса: {str(e)}'}), 500
+        import traceback
+        print(f'[generate_kp] Неожиданная ошибка: {e}\n{traceback.format_exc()}', flush=True)
+        return jsonify({'error': f'Серверная ошибка: {str(e)}'}), 500
 
     # Load template
     tpl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kp-template', 'verde-kp-generator.html')
