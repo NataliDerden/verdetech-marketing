@@ -781,6 +781,19 @@ def team_chat():
         return jsonify({'reply': f'Ошибка: {str(e)}'}), 500
 
 
+def is_from_bitrix():
+    """Проверяет, открыт ли запрос изнутри Битрикс24 (iframe от Local App)"""
+    ref = request.headers.get('Referer', '') or ''
+    if 'bitrix24.' in ref:
+        return True
+    # Битрикс при первой загрузке Local App POST'ит auth-параметры
+    if request.form.get('AUTH_ID') or request.form.get('DOMAIN') or request.form.get('member_id'):
+        return True
+    if request.args.get('bitrix') == '1':
+        return True
+    return False
+
+
 @app.route('/design', methods=['GET', 'POST'])
 def design_hub():
     # Обработка логина прямо с /design
@@ -789,6 +802,10 @@ def design_hub():
             session['team_logged_in'] = True
             return redirect(url_for('design_hub'))
         return render_template('team_login.html', error='Неверный пароль')
+
+    # Авто-вход когда страница открыта изнутри Битрикс24 (Local App / iframe)
+    if is_from_bitrix():
+        session['team_logged_in'] = True
 
     if not session.get('team_logged_in'):
         return render_template('team_login.html', error=None)
