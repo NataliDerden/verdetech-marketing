@@ -781,6 +781,42 @@ def team_chat():
         return jsonify({'reply': f'Ошибка: {str(e)}'}), 500
 
 
+_BITRIX_PLACEMENTS_BOUND = set()
+
+
+def bind_bitrix_placements(domain: str, auth_id: str, handler_url: str):
+    """Регистрирует вкладки 'КП-генератор' в карточках лида и сделки.
+    Идемпотентно: если уже зарегистрировано — Битрикс вернёт ошибку, мы её игнорим.
+    Кэшируем по ключу domain+handler чтобы не дёргать на каждый запрос."""
+    key = f'{domain}|{handler_url}'
+    if key in _BITRIX_PLACEMENTS_BOUND:
+        return
+    placements = [
+        ('CRM_DEAL_DETAIL_TAB', 'КП-генератор'),
+        ('CRM_LEAD_DETAIL_TAB', 'КП-генератор'),
+    ]
+    success = False
+    for placement_code, title in placements:
+        try:
+            r = requests.post(
+                f'https://{domain}/rest/placement.bind',
+                data={
+                    'auth': auth_id,
+                    'PLACEMENT': placement_code,
+                    'HANDLER': handler_url,
+                    'TITLE': title,
+                },
+                timeout=8,
+            )
+            print(f'[bitrix-placement] {placement_code}: {r.status_code} {r.text[:200]}', flush=True)
+            if r.status_code == 200 and 'error' not in (r.text or ''):
+                success = True
+        except Exception as e:
+            print(f'[bitrix-placement] {placement_code} FAILED: {e}', flush=True)
+    if success:
+        _BITRIX_PLACEMENTS_BOUND.add(key)
+
+
 def is_from_bitrix():
     """Проверяет, открыт ли запрос изнутри Битрикс24 (iframe от Local App)"""
     ref = request.headers.get('Referer', '') or ''
@@ -828,6 +864,13 @@ def design_hub():
     # Авто-вход когда страница открыта изнутри Битрикс24 (Local App / iframe)
     if is_from_bitrix():
         session['team_logged_in'] = True
+
+    # При первой загрузке из Битрикса — регистрируем вкладку в карточке сделки/лида
+    auth_id = request.form.get('AUTH_ID')
+    domain = request.form.get('DOMAIN')
+    if auth_id and domain:
+        handler_url = request.host_url.rstrip('/') + '/design'
+        bind_bitrix_placements(domain, auth_id, handler_url)
 
     if not session.get('team_logged_in'):
         return render_template('team_login.html', error=None)
