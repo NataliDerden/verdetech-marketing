@@ -758,10 +758,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cleanRebindPlacements() {
-        if (localStorage.getItem('verde_kp_bound_v7')) {
-            console.log('[verde] вкладки уже зарегистрированы (v7) — пропускаем');
-            return;
-        }
         const ourHandler = window.location.origin + '/design';
         const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
 
@@ -771,41 +767,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 cb(list.filter(it => it.handler === ourHandler));
             });
         }
-        function unbindBatch(toUnbind, cb) {
-            if (toUnbind.length === 0) return cb();
-            const batch = {};
-            toUnbind.forEach((p, i) => {
-                batch['u' + i] = ['placement.unbind', {PLACEMENT: p.placement, HANDLER: ourHandler}];
-            });
-            BX24.callBatch(batch, function() { cb(); });
-        }
-        function doBind() {
-            const batchBind = {};
-            want.forEach((p, i) => {
-                batchBind['b' + i] = ['placement.bind', {
-                    PLACEMENT: p, HANDLER: ourHandler, TITLE: 'КП-генератор'
-                }];
-            });
-            BX24.callBatch(batchBind, function(bRes) {
-                console.log('[verde] финальный bind:', bRes);
-                localStorage.setItem('verde_kp_bound_v7', '1');
+        function unbindAllSequential(remaining, cb) {
+            if (!remaining.length) return cb();
+            const p = remaining[0];
+            BX24.callMethod('placement.unbind', {PLACEMENT: p.placement, HANDLER: ourHandler}, function() {
+                unbindAllSequential(remaining.slice(1), cb);
             });
         }
-        // Шаг 1: снести все наши с явным placement+handler
+        function bindOne(idx) {
+            if (idx >= want.length) return;
+            BX24.callMethod('placement.bind', {
+                PLACEMENT: want[idx], HANDLER: ourHandler, TITLE: 'КП-генератор'
+            }, function(res) {
+                console.log('[verde] bind ' + want[idx] + ':',
+                    res && res.error ? res.error() : 'ok');
+                bindOne(idx + 1);
+            });
+        }
+
         listOurs(function(ours) {
-            console.log('[verde] перед снесением, наших:', ours.length);
-            unbindBatch(ours, function() {
-                // Шаг 2: re-list — проверить что реально снеслось
-                listOurs(function(stillThere) {
-                    console.log('[verde] после первого unbind, наших осталось:', stillThere.length);
-                    if (stillThere.length === 0) return doBind();
-                    // Шаг 3: ещё раз снести лишнее
-                    unbindBatch(stillThere, function() {
-                        listOurs(function(final) {
-                            console.log('[verde] после второго unbind, осталось:', final.length);
-                            doBind();
-                        });
-                    });
+            const dealN = ours.filter(p => p.placement === 'CRM_DEAL_DETAIL_TAB').length;
+            const leadN = ours.filter(p => p.placement === 'CRM_LEAD_DETAIL_TAB').length;
+            console.log('[verde] текущее состояние: deal=' + dealN + ', lead=' + leadN);
+            // Идеальное состояние — пропускаем
+            if (dealN === 1 && leadN === 1 && ours.length === 2) {
+                console.log('[verde] всё OK — ничего не трогаем');
+                return;
+            }
+            // Любое другое состояние — обнуляем и регистрируем заново
+            console.log('[verde] чиним: снимаем все наши и привязываем по одной');
+            unbindAllSequential(ours, function() {
+                // Двойная проверка: вдруг что-то осталось
+                listOurs(function(check) {
+                    if (check.length > 0) {
+                        unbindAllSequential(check, function() { bindOne(0); });
+                    } else {
+                        bindOne(0);
+                    }
                 });
             });
         });
