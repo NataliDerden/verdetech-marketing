@@ -361,6 +361,10 @@ load_dotenv()
 app = Flask(__name__)
 # v4: 27 tasks — added product pages, ROI calculator, NDA, R&D tasks (2026-04-13)
 app.secret_key = os.environ.get('SECRET_KEY', 'verdetech-secret-key-2025')
+# Cookie настроен для работы внутри iframe Битрикс24 (cross-site context)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 MARKETER_PASSWORD = os.environ.get('MARKETER_PASSWORD', 'verde2025')
