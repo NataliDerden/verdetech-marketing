@@ -687,10 +687,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === Интеграция с Битрикс24 ===
-    if (typeof BX24 !== 'undefined') {
+    initBitrixIntegration();
+
+    function initBitrixIntegration(retries) {
+        retries = retries || 0;
+        if (typeof BX24 === 'undefined') {
+            // SDK ещё не загружен — пробуем ещё 5 раз с задержкой
+            if (retries < 10) {
+                console.log('[verde] BX24 SDK не готов, попытка', retries + 1);
+                return setTimeout(() => initBitrixIntegration(retries + 1), 300);
+            }
+            console.warn('[verde] BX24 SDK не загрузился — страница открыта вне Битрикса?');
+            return;
+        }
+        console.log('[verde] BX24 SDK готов, вызываем init...');
         try {
             BX24.init(function() {
-                // 1. Регистрация вкладок «КП-генератор» в карточках (один раз)
+                console.log('[verde] BX24.init() callback сработал');
+
+                // 1. Регистрация вкладок (один раз за сессию)
                 if (!sessionStorage.getItem('verde_kp_placements_bound')) {
                     const handler = window.location.origin + '/design';
                     ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'].forEach(function(placement) {
@@ -706,27 +721,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('verde_kp_placements_bound', '1');
                 }
 
-                // 2. Авто-префилл формы данными из сделки/лида (если открыто внутри карточки)
+                // 2. Авто-префилл данными из сделки/лида
                 let placementInfo = null;
-                try { placementInfo = BX24.placement.info(); } catch (e) { /* открыто не в placement */ }
-                if (placementInfo && placementInfo.placement && placementInfo.options) {
-                    const entityId = placementInfo.options.ID;
-                    let entityType = null;
-                    let kpMode = null;
-                    if (placementInfo.placement === 'CRM_DEAL_DETAIL_TAB') {
-                        entityType = 'deal';
-                        kpMode = 'deal';  // в сделке = режим Сделка
-                    } else if (placementInfo.placement === 'CRM_LEAD_DETAIL_TAB') {
-                        entityType = 'lead';
-                        kpMode = 'lead';  // в лиде = режим Лид
-                    }
-                    if (entityType && entityId) {
-                        prefillFromBitrixEntity(entityType, entityId, kpMode);
-                    }
+                try { placementInfo = BX24.placement.info(); } catch (e) {
+                    console.log('[verde] placement.info() ошибка:', e);
+                }
+                console.log('[verde] placement.info() =', JSON.stringify(placementInfo));
+
+                if (!placementInfo || !placementInfo.placement) {
+                    console.log('[verde] нет placement-контекста — открыто из левого меню, префилл не нужен');
+                    return;
+                }
+
+                let options = placementInfo.options || {};
+                if (typeof options === 'string') {
+                    try { options = JSON.parse(options); } catch(e) { options = {}; }
+                }
+                const entityId = options.ID || options.id || options.ENTITY_ID;
+                let entityType = null, kpMode = null;
+                if (placementInfo.placement === 'CRM_DEAL_DETAIL_TAB') {
+                    entityType = 'deal'; kpMode = 'deal';
+                } else if (placementInfo.placement === 'CRM_LEAD_DETAIL_TAB') {
+                    entityType = 'lead'; kpMode = 'lead';
+                }
+                console.log('[verde] префилл: entityType=' + entityType + ', entityId=' + entityId + ', kpMode=' + kpMode);
+
+                if (entityType && entityId) {
+                    prefillFromBitrixEntity(entityType, entityId, kpMode);
+                } else {
+                    console.warn('[verde] не удалось определить entityType или entityId');
                 }
             });
         } catch (e) {
-            console.warn('[verde] BX24 init failed:', e);
+            console.warn('[verde] BX24 init exception:', e);
         }
     }
 
@@ -737,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (radio) {
                 radio.checked = true;
                 radio.dispatchEvent(new Event('change', {bubbles: true}));
+                console.log('[verde] установлен режим:', kpMode);
             }
         }
         // Получаем данные сущности
@@ -746,6 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             const d = res.data() || {};
+            console.log('[verde] данные ' + entityType + ':', d);
             // Название клиента
             const clientField = document.querySelector('input[name="client_name"]');
             if (clientField && !clientField.value) {
