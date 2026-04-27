@@ -779,20 +779,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Batch-удаление всех наших регистраций — атомарно одним запросом
-            const batchUnbind = {};
-            ours.forEach(function(p, i) {
-                batchUnbind['u' + i] = ['placement.unbind', {
+            // Batch-удаление чанками по 25 (Bitrix лимит 50 команд)
+            unbindAllChunked(ours, ourHandler, 25, function() {
+                console.log('[verde] все unbind-ы завершены, теперь bind');
+                finishBind();
+            });
+        });
+    }
+
+    function unbindAllChunked(toUnbind, ourHandler, chunkSize, doneCb) {
+        let i = 0;
+        const next = function() {
+            if (i >= toUnbind.length) return doneCb();
+            const chunk = toUnbind.slice(i, i + chunkSize);
+            i += chunkSize;
+            const batch = {};
+            chunk.forEach(function(p, j) {
+                batch['u' + j] = ['placement.unbind', {
                     PLACEMENT: p.placement,
                     HANDLER: ourHandler,
                 }];
             });
-            BX24.callBatch(batchUnbind, function(results) {
-                console.log('[verde] batch unbind: удалено', Object.keys(results).length);
-                // После массового удаления — биндим ровно по одной
-                finishBind();
+            BX24.callBatch(batch, function(results) {
+                console.log('[verde] unbind chunk:', chunk.length, '→ обработано', Object.keys(results || {}).length);
+                next();
             });
-        });
+        };
+        next();
     }
 
     function prefillFromBitrixEntity(entityType, entityId, kpMode) {
