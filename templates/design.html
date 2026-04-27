@@ -745,67 +745,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cleanRebindPlacements() {
+        if (sessionStorage.getItem('verde_kp_rebind_done_v5')) return;
+        sessionStorage.setItem('verde_kp_rebind_done_v5', '1');
+
         const ourHandler = window.location.origin + '/design';
         const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
-        BX24.callMethod('placement.list', {}, function(res) {
-            const list = (res && !res.error()) ? (res.data() || []) : [];
-            const ours = list.filter(it => it.handler === ourHandler);
-            console.log('[verde] всего placement-ов:', list.length, ', наших:', ours.length);
 
-            // Если уже ровно по одному для каждого нужного места — ничего не делаем
-            const dealsCount = ours.filter(p => p.placement === 'CRM_DEAL_DETAIL_TAB').length;
-            const leadsCount = ours.filter(p => p.placement === 'CRM_LEAD_DETAIL_TAB').length;
-            if (dealsCount === 1 && leadsCount === 1 && ours.length === 2) {
-                console.log('[verde] вкладки уже зарегистрированы корректно');
-                return;
-            }
-
-            const finishBind = function() {
-                const batchBind = {};
-                want.forEach(function(p, i) {
-                    batchBind['b' + i] = ['placement.bind', {
-                        PLACEMENT: p,
-                        HANDLER: ourHandler,
-                        TITLE: 'КП-генератор',
-                    }];
-                });
-                BX24.callBatch(batchBind, function(results) {
-                    console.log('[verde] финальный bind:', results);
-                });
-            };
-
-            if (ours.length === 0) {
-                finishBind();
-                return;
-            }
-
-            // Batch-удаление чанками по 25 (Bitrix лимит 50 команд)
-            unbindAllChunked(ours, ourHandler, 25, function() {
-                console.log('[verde] все unbind-ы завершены, теперь bind');
-                finishBind();
-            });
+        // Стратегия: сначала снести ВСЕ наши регистрации для этих placement-ов
+        // (placement.unbind без HANDLER убирает все ваши биндинги для этого места),
+        // потом регистрируем ровно одну на placement.
+        const batch = {};
+        want.forEach(function(p, i) {
+            batch['unbind_' + i] = ['placement.unbind', {PLACEMENT: p}];
         });
-    }
-
-    function unbindAllChunked(toUnbind, ourHandler, chunkSize, doneCb) {
-        let i = 0;
-        const next = function() {
-            if (i >= toUnbind.length) return doneCb();
-            const chunk = toUnbind.slice(i, i + chunkSize);
-            i += chunkSize;
-            const batch = {};
-            chunk.forEach(function(p, j) {
-                batch['u' + j] = ['placement.unbind', {
-                    PLACEMENT: p.placement,
+        BX24.callBatch(batch, function(unbindRes) {
+            console.log('[verde] mass unbind результаты:', unbindRes);
+            const batchBind = {};
+            want.forEach(function(p, i) {
+                batchBind['bind_' + i] = ['placement.bind', {
+                    PLACEMENT: p,
                     HANDLER: ourHandler,
+                    TITLE: 'КП-генератор',
                 }];
             });
-            BX24.callBatch(batch, function(results) {
-                console.log('[verde] unbind chunk:', chunk.length, '→ обработано', Object.keys(results || {}).length);
-                next();
+            BX24.callBatch(batchBind, function(bindRes) {
+                console.log('[verde] mass bind результаты:', bindRes);
             });
-        };
-        next();
+        });
     }
 
     function prefillFromBitrixEntity(entityType, entityId, kpMode) {
