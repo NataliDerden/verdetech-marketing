@@ -761,48 +761,87 @@ document.addEventListener('DOMContentLoaded', () => {
         const ourHandler = window.location.origin + '/design';
         const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
 
-        function listOurs(cb) {
-            BX24.callMethod('placement.list', {}, function(res) {
-                const list = (res && !res.error()) ? (res.data() || []) : [];
-                cb(list.filter(it => it.handler === ourHandler));
-            });
+        // Собирает ВСЕ placement-ы нашего приложения с пагинацией
+        function listAllOurPlacements(cb) {
+            const acc = [];
+            function fetchPage(start) {
+                BX24.callMethod('placement.list', {start: start}, function(res) {
+                    if (!res || res.error()) return cb(acc);
+                    const data = res.data() || [];
+                    data.forEach(function(d) { acc.push(d); });
+                    // Проверяем есть ли ещё страница
+                    if (res.more && typeof res.more === 'function' && res.more()) {
+                        // res.next вызывает новую страницу с автоматическим callback
+                        try {
+                            res.next();
+                        } catch (e) {
+                            // если next не поддерживается — просто отдаём что собрали
+                            cb(acc);
+                            return;
+                        }
+                    } else {
+                        cb(acc);
+                    }
+                });
+            }
+            fetchPage(0);
         }
-        function unbindAllSequential(remaining, cb) {
+
+        // Удаляет одну за одной (последовательно — надёжнее чем batch)
+        function unbindOneByOne(remaining, cb) {
             if (!remaining.length) return cb();
             const p = remaining[0];
-            BX24.callMethod('placement.unbind', {PLACEMENT: p.placement, HANDLER: ourHandler}, function() {
-                unbindAllSequential(remaining.slice(1), cb);
-            });
-        }
-        function bindOne(idx) {
-            if (idx >= want.length) return;
-            BX24.callMethod('placement.bind', {
-                PLACEMENT: want[idx], HANDLER: ourHandler, TITLE: 'КП-генератор'
-            }, function(res) {
-                console.log('[verde] bind ' + want[idx] + ':',
-                    res && res.error ? res.error() : 'ok');
-                bindOne(idx + 1);
+            // Пробуем оба варианта: с явным HANDLER и без (для устаревших URL)
+            BX24.callMethod('placement.unbind', {
+                PLACEMENT: p.placement,
+                HANDLER: p.handler || ourHandler
+            }, function() {
+                unbindOneByOne(remaining.slice(1), cb);
             });
         }
 
-        listOurs(function(ours) {
-            const dealN = ours.filter(p => p.placement === 'CRM_DEAL_DETAIL_TAB').length;
-            const leadN = ours.filter(p => p.placement === 'CRM_LEAD_DETAIL_TAB').length;
-            console.log('[verde] текущее состояние: deal=' + dealN + ', lead=' + leadN);
-            // Идеальное состояние — пропускаем
-            if (dealN === 1 && leadN === 1 && ours.length === 2) {
-                console.log('[verde] всё OK — ничего не трогаем');
+        function bindFinal() {
+            let idx = 0;
+            function next() {
+                if (idx >= want.length) {
+                    console.log('[verde] финальный bind готов');
+                    return;
+                }
+                BX24.callMethod('placement.bind', {
+                    PLACEMENT: want[idx],
+                    HANDLER: ourHandler,
+                    TITLE: 'КП-генератор'
+                }, function(res) {
+                    console.log('[verde] bind ' + want[idx] + ':',
+                        res && res.error ? (res.error() || 'ok') : 'ok');
+                    idx++;
+                    next();
+                });
+            }
+            next();
+        }
+
+        listAllOurPlacements(function(all) {
+            console.log('[verde] всего наших placement-ов:', all.length);
+            // Считаем идеальное ли состояние
+            const dealsForUs = all.filter(p => p.placement === 'CRM_DEAL_DETAIL_TAB' && p.handler === ourHandler).length;
+            const leadsForUs = all.filter(p => p.placement === 'CRM_LEAD_DETAIL_TAB' && p.handler === ourHandler).length;
+            const totalCorrect = all.filter(p =>
+                (p.placement === 'CRM_DEAL_DETAIL_TAB' || p.placement === 'CRM_LEAD_DETAIL_TAB') &&
+                p.handler === ourHandler).length;
+            if (dealsForUs === 1 && leadsForUs === 1 && all.length === 2) {
+                console.log('[verde] идеальное состояние, ничего не трогаем');
                 return;
             }
-            // Любое другое состояние — обнуляем и регистрируем заново
-            console.log('[verde] чиним: снимаем все наши и привязываем по одной');
-            unbindAllSequential(ours, function() {
-                // Двойная проверка: вдруг что-то осталось
-                listOurs(function(check) {
+            console.log('[verde] неправильное состояние, сносим всё (' + all.length + ') и регистрируем 2 свежих');
+            unbindOneByOne(all, function() {
+                // Re-list для проверки
+                listAllOurPlacements(function(check) {
                     if (check.length > 0) {
-                        unbindAllSequential(check, function() { bindOne(0); });
+                        console.log('[verde] осталось после первого прохода:', check.length, '— ещё раз сносим');
+                        unbindOneByOne(check, bindFinal);
                     } else {
-                        bindOne(0);
+                        bindFinal();
                     }
                 });
             });
