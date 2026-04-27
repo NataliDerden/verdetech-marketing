@@ -86,6 +86,15 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 .form-group textarea { resize: vertical; min-height: 60px; }
 .form-group small { display: block; font-size: 11px; color: #999; margin-top: 4px; }
 
+/* Компактные таблетки масштаба бизнеса */
+.vol-pill-group { display: flex; flex-direction: column; gap: 4px; }
+.vol-pill { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #fafafa; border: 1px solid #e5e5e7; border-radius: 6px; cursor: pointer; font-size: 12px; color: #555; transition: all 0.12s; }
+.vol-pill:hover { background: #f0fdf4; border-color: #c8e8c0; }
+.vol-pill input[type="radio"] { width: 12px; height: 12px; margin: 0; flex-shrink: 0; accent-color: #0FBF00; cursor: pointer; }
+.vol-pill span { flex: 1; }
+.vol-pill span b { font-weight: 600; color: #000; margin-right: 4px; }
+.vol-pill:has(input:checked) { background: #f0fdf4; border-color: #0FBF00; }
+
 .btn-generate { width: 100%; background: #000; color: #fff; border: none; padding: 14px 20px; border-radius: 8px; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
 .btn-generate:hover { background: #0FBF00; }
 .btn-generate:disabled { background: #ccc; cursor: not-allowed; }
@@ -236,39 +245,14 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
             </div>
             <div class="form-group">
                 <label>Масштаб бизнеса клиента</label>
-                <div style="background:#f0fdf4; border-left:3px solid #0FBF00; padding:8px 12px; font-size:12px; color:#444; margin-bottom:10px; border-radius:4px;">
-                    <b>30 секунд оценки сейчас = КП точнее в 2 раза.</b><br>
-                    Посмотри сайт клиента, их линейку, географию филиалов — и выбери масштаб.
+                <div style="background:#f0fdf4; border-left:3px solid #0FBF00; padding:6px 10px; font-size:11px; color:#444; margin-bottom:8px; border-radius:4px;">
+                    Оцени по сайту клиента — 30 секунд оценки = КП точнее в 2 раза.
                 </div>
-                <div style="display:flex; flex-direction:column; gap:6px;">
-                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="volume_scale" value="50" style="margin-top:2px;">
-                        <div>
-                            <div style="font-size:13px; font-weight:600; color:#000;">Мелкое · до 100 т/год</div>
-                            <div style="font-size:11px; color:#666; margin-top:2px;">Локальный цех / 1-3 точки. Оборот до 50 млн ₽. Начинающий бренд.</div>
-                        </div>
-                    </label>
-                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="volume_scale" value="500" style="margin-top:2px;">
-                        <div>
-                            <div style="font-size:13px; font-weight:600; color:#000;">Среднее · 100–1000 т/год</div>
-                            <div style="font-size:11px; color:#666; margin-top:2px;">Региональный игрок. 1-2 области. Оборот 50-300 млн ₽.</div>
-                        </div>
-                    </label>
-                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="volume_scale" value="5000" style="margin-top:2px;">
-                        <div>
-                            <div style="font-size:13px; font-weight:600; color:#000;">Крупное · 1000–10 000 т/год</div>
-                            <div style="font-size:11px; color:#666; margin-top:2px;">Межрегиональный. Есть СТМ. Оборот 300 млн – 3 млрд ₽.</div>
-                        </div>
-                    </label>
-                    <label class="vol-opt" style="display:flex; gap:10px; padding:10px 14px; background:#fafafa; border:1px solid #e5e5e7; border-radius:6px; cursor:pointer;">
-                        <input type="radio" name="volume_scale" value="20000" style="margin-top:2px;">
-                        <div>
-                            <div style="font-size:13px; font-weight:600; color:#000;">Федеральный · 10 000+ т/год</div>
-                            <div style="font-size:11px; color:#666; margin-top:2px;">ТОП-50 отрасли. X5/Магнит как клиент. Оборот 3+ млрд ₽.</div>
-                        </div>
-                    </label>
+                <div class="vol-pill-group">
+                    <label class="vol-pill"><input type="radio" name="volume_scale" value="50"><span><b>Мелкое</b> до 100 т/год</span></label>
+                    <label class="vol-pill"><input type="radio" name="volume_scale" value="500"><span><b>Среднее</b> 100–1000 т/год</span></label>
+                    <label class="vol-pill"><input type="radio" name="volume_scale" value="5000"><span><b>Крупное</b> 1000–10 000 т/год</span></label>
+                    <label class="vol-pill"><input type="radio" name="volume_scale" value="20000"><span><b>Федеральный</b> 10 000+ т/год</span></label>
                 </div>
                 <div style="margin-top:10px;">
                     <input type="text" name="volume" id="volumeInput" placeholder="Знаешь точное число тонн/год? Впиши здесь" style="width:100%;">
@@ -705,8 +689,24 @@ document.addEventListener('DOMContentLoaded', () => {
             BX24.init(function() {
                 console.log('[verde] BX24.init() callback сработал');
 
-                // 1. Чистая регистрация вкладок: всегда проверяем и чиним если надо
+                // 1. Чистая регистрация вкладок: один раз за всё время этого браузера
                 cleanRebindPlacements();
+
+                // 3. Автоподстановка менеджера (текущий пользователь Битрикса)
+                BX24.callMethod('user.current', {}, function(ures) {
+                    if (!ures || ures.error()) return;
+                    const u = ures.data() || {};
+                    const fullName = [u.LAST_NAME, u.NAME, u.SECOND_NAME].filter(Boolean).join(' ').trim() || u.NAME || '';
+                    const phone = u.PERSONAL_MOBILE || u.WORK_PHONE || u.PERSONAL_PHONE || '';
+                    const email = u.EMAIL || '';
+                    const mNameField = document.querySelector('input[name="manager_name"]');
+                    const mPhoneField = document.querySelector('input[name="manager_phone"]');
+                    const mEmailField = document.querySelector('input[name="manager_email"]');
+                    if (mNameField && !mNameField.value && fullName) mNameField.value = fullName;
+                    if (mPhoneField && !mPhoneField.value && phone) mPhoneField.value = phone;
+                    if (mEmailField && !mEmailField.value && email) mEmailField.value = email;
+                    console.log('[verde] подставили менеджера:', fullName, phone, email);
+                });
 
                 // 2. Авто-префилл данными из сделки/лида
                 let placementInfo = null;
@@ -745,21 +745,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cleanRebindPlacements() {
-        if (sessionStorage.getItem('verde_kp_rebind_done_v5')) return;
-        sessionStorage.setItem('verde_kp_rebind_done_v5', '1');
+        // Используем localStorage чтобы НЕ регистрировать заново на каждое открытие.
+        // Один раз сделали — больше не трогаем (избегаем накопления дублей).
+        if (localStorage.getItem('verde_kp_bound_v6')) {
+            console.log('[verde] вкладки уже зарегистрированы (localStorage v6) — пропускаем');
+            return;
+        }
 
         const ourHandler = window.location.origin + '/design';
         const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
 
-        // Стратегия: сначала снести ВСЕ наши регистрации для этих placement-ов
-        // (placement.unbind без HANDLER убирает все ваши биндинги для этого места),
-        // потом регистрируем ровно одну на placement.
-        const batch = {};
+        // Сначала: снести ВСЕ наши регистрации для этих placement-ов через placement.unbind без HANDLER
+        const batchUnbind = {};
         want.forEach(function(p, i) {
-            batch['unbind_' + i] = ['placement.unbind', {PLACEMENT: p}];
+            batchUnbind['unbind_' + i] = ['placement.unbind', {PLACEMENT: p}];
         });
-        BX24.callBatch(batch, function(unbindRes) {
-            console.log('[verde] mass unbind результаты:', unbindRes);
+        BX24.callBatch(batchUnbind, function(unbindRes) {
+            console.log('[verde] mass unbind:', unbindRes);
+            // Затем: bind ровно одну
             const batchBind = {};
             want.forEach(function(p, i) {
                 batchBind['bind_' + i] = ['placement.bind', {
@@ -769,7 +772,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }];
             });
             BX24.callBatch(batchBind, function(bindRes) {
-                console.log('[verde] mass bind результаты:', bindRes);
+                console.log('[verde] mass bind:', bindRes);
+                localStorage.setItem('verde_kp_bound_v6', '1');
             });
         });
     }
