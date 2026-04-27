@@ -90,6 +90,13 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 .form-group small { display: block; font-size: 11px; color: #a1a1a6; margin-top: 6px; line-height: 1.4; }
 .kp-form .btn-generate { margin-top: 16px; }
 
+/* Возражения — компактные пилюли в одну строку */
+.obj-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.obj-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px 4px 7px; background: #fafafa; border: 1px solid #e5e5e7; border-radius: 999px; cursor: pointer; font-size: 11px; color: #555; transition: all 0.12s; user-select: none; }
+.obj-pill:hover { background: #fff7e6; border-color: #ffd591; }
+.obj-pill input[type="checkbox"] { width: 10px; height: 10px; margin: 0; flex-shrink: 0; accent-color: #f59e0b; cursor: pointer; }
+.obj-pill:has(input:checked) { background: #fff7e6; border-color: #f59e0b; color: #b45309; }
+
 /* Круглые таблетки-чипсы масштаба бизнеса (компактно, в строку с переносом) */
 .vol-pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
 .vol-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 6px; background: #fafafa; border: 1px solid #e5e5e7; border-radius: 999px; cursor: pointer; font-size: 11px; color: #555; transition: all 0.12s; user-select: none; }
@@ -239,13 +246,13 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
             </div>
 
             <div class="form-group">
-                <label>⚠️ Возражения, уже прозвучавшие (опционально)</label>
-                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
-                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_price" value="дорого"> дорого</label>
-                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_competitor" value="работают с конкурентом"> работают с конкурентом</label>
-                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_quality" value="не доверяют качеству"> не доверяют качеству</label>
-                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_later" value="нет потребности сейчас"> нет потребности</label>
-                    <label style="display:inline-flex; align-items:center; gap:4px; padding:6px 10px; background:#f9f9f9; border-radius:6px; font-size:12px; cursor:pointer;"><input type="checkbox" name="obj_import" value="ждут импортозамещения"> ждут импорт</label>
+                <label>Возражения, уже прозвучавшие <span style="color:#a1a1a6; font-weight:400; text-transform:none;">(опционально)</span></label>
+                <div class="obj-row">
+                    <label class="obj-pill"><input type="checkbox" name="obj_price" value="дорого"><span>Дорого</span></label>
+                    <label class="obj-pill"><input type="checkbox" name="obj_competitor" value="работают с конкурентом"><span>С конкурентом</span></label>
+                    <label class="obj-pill"><input type="checkbox" name="obj_quality" value="не доверяют качеству"><span>Качество</span></label>
+                    <label class="obj-pill"><input type="checkbox" name="obj_later" value="нет потребности сейчас"><span>Нет нужды</span></label>
+                    <label class="obj-pill"><input type="checkbox" name="obj_import" value="ждут импортозамещения"><span>Ждут импорт</span></label>
                 </div>
             </div>
             <div class="form-group">
@@ -751,35 +758,55 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function cleanRebindPlacements() {
-        // Используем localStorage чтобы НЕ регистрировать заново на каждое открытие.
-        // Один раз сделали — больше не трогаем (избегаем накопления дублей).
-        if (localStorage.getItem('verde_kp_bound_v6')) {
-            console.log('[verde] вкладки уже зарегистрированы (localStorage v6) — пропускаем');
+        if (localStorage.getItem('verde_kp_bound_v7')) {
+            console.log('[verde] вкладки уже зарегистрированы (v7) — пропускаем');
             return;
         }
-
         const ourHandler = window.location.origin + '/design';
         const want = ['CRM_DEAL_DETAIL_TAB', 'CRM_LEAD_DETAIL_TAB'];
 
-        // Сначала: снести ВСЕ наши регистрации для этих placement-ов через placement.unbind без HANDLER
-        const batchUnbind = {};
-        want.forEach(function(p, i) {
-            batchUnbind['unbind_' + i] = ['placement.unbind', {PLACEMENT: p}];
-        });
-        BX24.callBatch(batchUnbind, function(unbindRes) {
-            console.log('[verde] mass unbind:', unbindRes);
-            // Затем: bind ровно одну
+        function listOurs(cb) {
+            BX24.callMethod('placement.list', {}, function(res) {
+                const list = (res && !res.error()) ? (res.data() || []) : [];
+                cb(list.filter(it => it.handler === ourHandler));
+            });
+        }
+        function unbindBatch(toUnbind, cb) {
+            if (toUnbind.length === 0) return cb();
+            const batch = {};
+            toUnbind.forEach((p, i) => {
+                batch['u' + i] = ['placement.unbind', {PLACEMENT: p.placement, HANDLER: ourHandler}];
+            });
+            BX24.callBatch(batch, function() { cb(); });
+        }
+        function doBind() {
             const batchBind = {};
-            want.forEach(function(p, i) {
-                batchBind['bind_' + i] = ['placement.bind', {
-                    PLACEMENT: p,
-                    HANDLER: ourHandler,
-                    TITLE: 'КП-генератор',
+            want.forEach((p, i) => {
+                batchBind['b' + i] = ['placement.bind', {
+                    PLACEMENT: p, HANDLER: ourHandler, TITLE: 'КП-генератор'
                 }];
             });
-            BX24.callBatch(batchBind, function(bindRes) {
-                console.log('[verde] mass bind:', bindRes);
-                localStorage.setItem('verde_kp_bound_v6', '1');
+            BX24.callBatch(batchBind, function(bRes) {
+                console.log('[verde] финальный bind:', bRes);
+                localStorage.setItem('verde_kp_bound_v7', '1');
+            });
+        }
+        // Шаг 1: снести все наши с явным placement+handler
+        listOurs(function(ours) {
+            console.log('[verde] перед снесением, наших:', ours.length);
+            unbindBatch(ours, function() {
+                // Шаг 2: re-list — проверить что реально снеслось
+                listOurs(function(stillThere) {
+                    console.log('[verde] после первого unbind, наших осталось:', stillThere.length);
+                    if (stillThere.length === 0) return doBind();
+                    // Шаг 3: ещё раз снести лишнее
+                    unbindBatch(stillThere, function() {
+                        listOurs(function(final) {
+                            console.log('[verde] после второго unbind, осталось:', final.length);
+                            doBind();
+                        });
+                    });
+                });
             });
         });
     }

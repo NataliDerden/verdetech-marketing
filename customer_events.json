@@ -1,0 +1,2 @@
+{"id": "947fd3c172ed", "customer_id": "d4bf68fb221f", "ts": "2026-04-27T04:39:09Z", "kind": "call", "by": "kirill", "summary": "Позвонил, договорились о тестовой партии 200кг", "next_step": "Отправить ТЗ на КП", "next_step_date": "2026-04-29"}
+{"id": "ab56f1463485", "customer_id": "d4bf68fb221f", "ts": "2026-04-27T04:39:13Z", "kind": "status_change", "by": "kirill", "summary": "negotiation → proposal", "meta": {"from": "negotiation", "to": "proposal"}}
