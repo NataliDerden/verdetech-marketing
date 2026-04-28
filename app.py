@@ -3,11 +3,21 @@ from functools import wraps
 from dotenv import load_dotenv
 import requests
 import os
+import sys
 import json
 import re
 import hashlib
 from collections import defaultdict
 from datetime import datetime, timedelta
+
+# Windows-консоль по умолчанию cp1251 — print с эмодзи (⚠ ✓ ⚡) падает с UnicodeEncodeError
+# и Flask возвращает HTML-стектрейс вместо JSON ("Unexpected token '<'" во фронте).
+# Принудительно ставим UTF-8 на stdout/stderr с errors=replace.
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass  # старые Python без .reconfigure — не критично
 from products_catalog import (
     COMPANY_CONTEXT, ALL_PRODUCTS, CATEGORIES, get_product, get_cases_for_industry
 )
@@ -2205,13 +2215,26 @@ def brand_asset(filename):
 
 
 INDUSTRY_MAP = {
-    'Мясопереработка': {'genitive': 'мясопереработки', 'dative': 'мясокомбината'},
-    'Птицепереработка': {'genitive': 'птицепереработки', 'dative': 'птицефабрики'},
-    'Рыбопереработка': {'genitive': 'рыбопереработки', 'dative': 'рыбоперерабатывающего завода'},
-    'Молочная промышленность': {'genitive': 'молочной промышленности', 'dative': 'молокозавода'},
-    'Хлебопекарная': {'genitive': 'хлебопекарной отрасли', 'dative': 'хлебозавода'},
-    'Напитки': {'genitive': 'производства напитков', 'dative': 'производителя напитков'},
-    'HoReCa': {'genitive': 'HoReCa', 'dative': 'ресторанной сети'},
+    # Новый список (форма КП-лида от 28.04.2026)
+    'Мясо и птица':            {'genitive': 'мясной отрасли',           'dative': 'мясокомбината',                  'legacy': 'Мясопереработка'},
+    'Полуфабрикаты':           {'genitive': 'производства полуфабрикатов', 'dative': 'производителя полуфабрикатов', 'legacy': 'Готовая еда / полуфабрикаты'},
+    'Готовая еда':             {'genitive': 'производства готовой еды', 'dative': 'производителя готовой еды',      'legacy': 'Готовая еда / полуфабрикаты'},
+    'Кондитерка':              {'genitive': 'кондитерской отрасли',     'dative': 'кондитерского производства',     'legacy': 'Хлебопекарная'},
+    'Молочная продукция':      {'genitive': 'молочной отрасли',         'dative': 'молокозавода',                   'legacy': 'Молочная промышленность'},
+    'Снеки':                   {'genitive': 'снековой отрасли',         'dative': 'производителя снеков',           'legacy': 'Готовая еда / полуфабрикаты'},
+    'HoReCa / dark kitchen':   {'genitive': 'HoReCa',                   'dative': 'ресторанной сети',               'legacy': 'HoReCa'},
+    'Детское питание':         {'genitive': 'детского питания',         'dative': 'производителя детского питания', 'legacy': 'Молочная промышленность'},
+    'ЗОЖ / спортпит':          {'genitive': 'ЗОЖ-сегмента',             'dative': 'производителя ЗОЖ-продукции',    'legacy': 'Напитки'},
+    'Дистрибьютор':            {'genitive': 'дистрибуции пищевых добавок', 'dative': 'дистрибьютора',               'legacy': 'Мясопереработка'},
+    'Другое':                  {'genitive': 'отрасли',                  'dative': 'компании',                       'legacy': 'Мясопереработка'},
+    # Старые ключи (использовались до 28.04 — оставлены для обратной совместимости)
+    'Мясопереработка':         {'genitive': 'мясопереработки',          'dative': 'мясокомбината'},
+    'Птицепереработка':        {'genitive': 'птицепереработки',         'dative': 'птицефабрики'},
+    'Рыбопереработка':         {'genitive': 'рыбопереработки',          'dative': 'рыбоперерабатывающего завода'},
+    'Молочная промышленность': {'genitive': 'молочной промышленности',  'dative': 'молокозавода'},
+    'Хлебопекарная':           {'genitive': 'хлебопекарной отрасли',    'dative': 'хлебозавода'},
+    'Напитки':                 {'genitive': 'производства напитков',    'dative': 'производителя напитков'},
+    'HoReCa':                  {'genitive': 'HoReCa',                   'dative': 'ресторанной сети'},
     'Готовая еда / полуфабрикаты': {'genitive': 'производства готовой еды', 'dative': 'производителя полуфабрикатов'},
 }
 
@@ -2252,12 +2275,746 @@ def _enrich_bundle_with_prices(bundle: list, enabled: bool) -> list:
     return enriched
 
 
+# ====================================================================
+# === КП-ЛИДА (новая структура от 28.04.2026): 7 слайдов, без цен ===
+# ====================================================================
+
+# Гайдлайн усиления КП в зависимости от роли контактного лица.
+# Менеджер выбирает роль во 2-м блоке формы — мы передаём в промпт правила что усиливать.
+LEAD_ROLE_GUIDANCE = {
+    'technologist':     'Контакт — ТЕХНОЛОГ. В преимуществах и оффере усиливай: состав, дозировку, тестирование на их линии, технологические ограничения, документы (спецификация, ДоС, протоколы). Меньше про маркетинг и больше про работу со смесью.',
+    'buyer':            'Контакт — ЗАКУПЩИК. В преимуществах усиливай: сроки поставки, надёжность, документы, стоимость применения в готовом продукте, минимальные партии. Меньше про разработку, больше про экономику и логистику.',
+    'rd':               'Контакт — R&D. В преимуществах усиливай: разработку под задачу, корректировки рецептуры, образцы для тестирования, лабораторные протоколы, кастомизацию.',
+    'owner':            'Контакт — СОБСТВЕННИК. В преимуществах усиливай: выгоду, снижение рисков, развитие линейки, следующий шаг. Стратегические выгоды, а не технические детали.',
+    'director':         'Контакт — ДИРЕКТОР. В преимуществах усиливай: выгоду, снижение рисков, развитие линейки, следующий шаг. Стратегические выгоды.',
+    'marketer':         'Контакт — МАРКЕТОЛОГ. В преимуществах усиливай: позиционирование, потребительский тренд, упаковку, что можно сказать на этикетке, историю продукта.',
+    'category_manager': 'Контакт — КАТЕГОРИЙНЫЙ МЕНЕДЖЕР. В преимуществах усиливай: SKU-расширение, потребительские сценарии, ритейл-форматы, рост категории.',
+    '':                 'Роль контакта неизвестна. Сохраняй баланс между технологическими и коммерческими аргументами.',
+}
+
+# Что усиливать в КП в ответ на конкретное возражение клиента.
+LEAD_OBJECTION_TO_REINFORCE = {
+    'дорого':                              'стоимость применения в готовом продукте, дозировку, экономику',
+    'есть текущий поставщик / конкурент':  'отличие подхода Вердэ без критики конкурента (R&D, образцы, кастомизация)',
+    'сомнения в качестве':                 'R&D, тестирование, корректировку рецептуры, документы',
+    'нет срочной потребности':             'готовность подготовить образцы и держать материалы про запас, отложенный запуск',
+    'ждут импорт':                         'отечественное производство, независимость от внешних факторов, стабильность поставки',
+    'сроки':                               'быстрые образцы (до 7 дней), производство в России, готовые позиции на складе',
+    'документы':                           'спецификации, декларации, удостоверения, готовые ТУ',
+    'состав / этикетка':                   'clean label, аккуратный подбор под маркировку',
+}
+
+# Маппинг кода тип компании из формы → читаемая русская этикетка для промпта.
+LEAD_COMPANY_TYPE_LABEL = {
+    'producer':    'Производитель (прямые поставки сырья на его производство)',
+    'distributor': 'Дистрибьютор (НЕ предлагать прямые поставки конечникам — говорить про условия для дистра: объёмы, маржа, эксклюзив по региону, маркетинговая поддержка)',
+    'horeca':      'HoReCa — ресторан/сеть/dark kitchen (готовые смеси, приправы, соусы, маринады, бульонные основы)',
+    'ctm':         'СТМ / private label (производит продукт под чужим брендом — важна стабильность, документы, гибкость рецептуры)',
+    'contract':    'Контрактное производство (производит для разных заказчиков — гибкость, скорость запуска, документы)',
+    'retail':      'Торговая сеть (важно: листинг, СТМ-программы, потребительский спрос)',
+    'other':       'Тип компании не определён',
+    '':            'Тип компании не указан',
+}
+
+LEAD_PRODUCTION_SCALE_LABEL = {
+    'small':   'Мелкое производство (локальный цех, 1-3 точки, оборот до 50 млн ₽/год)',
+    'medium':  'Среднее производство (региональный игрок, оборот 50-300 млн ₽/год)',
+    'large':   'Крупное производство (межрегиональный, есть СТМ, оборот 300 млн – 3 млрд ₽/год)',
+    'federal': 'Федеральный производитель (ТОП-50 отрасли, X5/Магнит как клиент, оборот 3+ млрд ₽/год)',
+    '':        'Масштаб не указан',
+}
+
+# Русские человекочитаемые названия ролей контакта (для отображения на обложке КП)
+LEAD_CONTACT_ROLE_LABEL_RU = {
+    'technologist':     'технолог',
+    'buyer':            'закупщик',
+    'rd':               'R&D',
+    'owner':            'собственник',
+    'director':         'директор',
+    'marketer':         'маркетолог',
+    'category_manager': 'категорийный менеджер',
+}
+
+# Пул фактов о Verde Tech для слайда 5 (verde_facts).
+# Claude выбирает 3-4 наиболее релевантных под отрасль и роль контакта,
+# а не использует одни и те же дефолты в каждом КП.
+LEAD_VERDE_FACTS_POOL = [
+    'Собственное производство в России (Санкт-Петербург + Тула)',
+    '12 лет на рынке пищевых добавок',
+    '300+ клиентов в пищевой промышленности',
+    'R&D-центр с собственным главным технологом',
+    'Образцы до 2 кг бесплатно для тестирования',
+    'Документальное сопровождение: спецификации, ДоС, протоколы испытаний',
+    'МТК-статус 2024 (малое технологическое предприятие)',
+    'Патент на «умную КПД» — комплексные пищевые добавки',
+    'Экспорт в 5 стран ЕАЭС (Казахстан, Беларусь, Армения, Узбекистан, Кыргызстан)',
+    'Кейсы с федеральными игроками (Иней, Пикантье, Эфко, Bombbar, Dun Kan)',
+    'Гибкая R&D-доработка под рецептуру и целевую себестоимость клиента',
+    'Сроки поставки 5-14 дней по РФ',
+    'Поставки на CTM-программы X5, Магнит, ВкусВилл',
+    'Halal-сертификация для экспорта на мусульманские рынки',
+]
+
+
+def _resolve_industry_legacy(industry):
+    """Если новая отрасль (Мясо и птица) — возвращает legacy-ключ для load_industry_brief()."""
+    meta = INDUSTRY_MAP.get(industry, {}) or {}
+    return meta.get('legacy', industry)
+
+
+def _build_lead_prompt(*, client_name, client_url, client_city, client_product, request_summary,
+                        improvements, composition_reqs, tech_constraints,
+                        urgency, urgency_date, industry, industry_legacy,
+                        company_type, production_scale, contact_name, contact_role,
+                        communication_summary, must_consider, current_supplier,
+                        dissatisfaction, documents_needed,
+                        objections, objections_comment, client_site_context,
+                        production_recommendations, kb_relevant,
+                        industry_brief, real_cases):
+    """Собирает промпт для КП-лида: 7 слайдов, без цен, фокус на "услышали → решение → быстрый тест"."""
+
+    role_guidance = LEAD_ROLE_GUIDANCE.get(contact_role, LEAD_ROLE_GUIDANCE[''])
+    company_label = LEAD_COMPANY_TYPE_LABEL.get(company_type, LEAD_COMPANY_TYPE_LABEL[''])
+    scale_label = LEAD_PRODUCTION_SCALE_LABEL.get(production_scale, LEAD_PRODUCTION_SCALE_LABEL[''])
+
+    # Какие возражения попали в форму → какие аргументы усилить
+    objection_reinforcements = []
+    for obj in objections:
+        rule = LEAD_OBJECTION_TO_REINFORCE.get(obj)
+        if rule:
+            objection_reinforcements.append(f'• «{obj}» → усилить: {rule}')
+    objection_block = '\n'.join(objection_reinforcements) if objection_reinforcements else '(возражений ещё нет — не выдумывай их)'
+
+    # Краткая сводка по продуктам из БЗ (Mode A)
+    kb_block = ''
+    if kb_relevant:
+        kb_items = []
+        for r in kb_relevant[:25]:
+            kb_items.append({
+                'name': r.get('name'),
+                'category': r.get('category'),
+                'spec_purpose': (r.get('spec_purpose') or '')[:200],
+            })
+        kb_block = ('=== БАЗА ЗНАНИЙ: продукты Verde Tech, релевантные запросу ===\n'
+                    'Используй ИХ при подборе primary_solution и направлений в additional_offers.directions.\n'
+                    'Цены НЕ указывай — это КП-лида, без цифр.\n'
+                    + json.dumps(kb_items, ensure_ascii=False, indent=2))
+
+    # Production stack (Mode B)
+    prod_block = ''
+    if production_recommendations:
+        prod_items = []
+        for p in production_recommendations:
+            prod_items.append({
+                'тип_производства':       p.get('ru_name'),
+                'PRIMARY_продукты':       p.get('primary'),
+                'COMPLEMENTARY_продукты': p.get('complementary'),
+                'технологическое_обоснование': p.get('tech_reasoning', ''),
+                'типичная_боль_клиента':  p.get('typical_pain', ''),
+            })
+        prod_block = ('=== ОБНАРУЖЕН ТИП ПРОИЗВОДСТВА КЛИЕНТА (главный сигнал) ===\n'
+                      'Это технологический стек продуктов Verde Tech под его линейку.\n'
+                      'PRIMARY → основа решения (primary_solution на слайде 2).\n'
+                      'COMPLEMENTARY → доп. направления (offers.directions на слайде 5).\n'
+                      + json.dumps(prod_items, ensure_ascii=False, indent=2))
+
+    # Site block с явным статусом — Claude должен видеть разницу между
+    # «сайт указан и есть данные», «сайт указан но fetch упал», «URL не дали».
+    site_block = ''
+    if client_site_context and not client_site_context.startswith('(ошибка') and len(client_site_context) >= 200:
+        site_block = ('=== АНАЛИЗ САЙТА КЛИЕНТА — ДАННЫЕ ЕСТЬ ===\n'
+                      'Статус: ✅ САЙТ УСПЕШНО ПОЛУЧЕН — НА СЛАЙДЕ 3 ОБЯЗАТЕЛЬНО fallback_used=FALSE.\n'
+                      'Используй эти данные для конкретных наблюдений (compliment + what_stood_out):\n'
+                      'упоминай реальные продукты/категории/позиционирование которые видишь в тексте ниже.\n\n'
+                      + client_site_context[:3000])
+    elif client_site_context:
+        # URL дали, но fetch вернул ошибку или мало контента
+        site_block = ('=== АНАЛИЗ САЙТА КЛИЕНТА — ОШИБКА ПОЛУЧЕНИЯ ===\n'
+                      'Статус: ⚠ САЙТ ВРЕМЕННО НЕДОСТУПЕН ИЛИ ОТДАЛ МАЛО ДАННЫХ.\n'
+                      f'URL: {client_url}\n'
+                      f'Что вернулось: {client_site_context[:400]}\n\n'
+                      'На слайде 3 fallback_used=true И в compliment ЧЕСТНО признайся: '
+                      '«Сайт компании временно недоступен — в КП используем базовый отраслевой контекст. '
+                      'Будем рады уточнить детали в разговоре.» (НЕ пиши «в открытых источниках мало информации» — это введение в заблуждение).')
+    elif client_url:
+        # URL дали, но fetch вообще ничего не вернул (редкий случай)
+        site_block = (f'=== АНАЛИЗ САЙТА КЛИЕНТА — ОШИБКА ===\n'
+                      f'Статус: ⚠ Сайт {client_url} не удалось получить.\n'
+                      'На слайде 3: fallback_used=true, в compliment честно скажи что сайт временно недоступен.')
+
+    # JSON-схема возвращаемого ответа
+    json_schema = '''{
+  "slides": {
+    "cover": {
+      "subheadline": "По задаче: <запрос клиента одной фразой, без точки в конце>"
+    },
+    "request_solution": {
+      "request_quote": "1-2 предложения о запросе клиента — пересказ его задачи своими словами",
+      "primary_solution": {
+        "name": "Точное название направления Verde (например 'Функциональная смесь для влагоудержания', 'Бесфосфатные рассолы', 'Натуральные специи и маринады'). Не выдумывай SKU — называй НАПРАВЛЕНИЕ.",
+        "description": "1-2 предложения о том, что это решение и какой эффект даёт под задачу клиента"
+      },
+      "alternative": null,
+      "test_on_product": "ОБОГАТИ client_product до конкретной фразы для теста — добавь технологический контекст (охлаждённые/замороженные/копчёные), фасовку если разумно предположить, и сноску 'на вашей текущей рецептуре'. Пример: client_product='котлеты' → 'охлаждённые котлеты на вашей текущей рецептуре'. client_product='йогурты' → 'питьевые йогурты в стандартной упаковке вашей линейки'. НЕ оставляй однословным.",
+      "advantages": [
+        "Преимущество 1 — связано с запросом клиента (3-4 пункта)",
+        "Преимущество 2",
+        "Преимущество 3"
+      ],
+      "caution_note": "Финальная дозировка и эффект подтверждаются на тестовой выработке."
+    },
+    "client_observation": {
+      "compliment": "Конкретное наблюдение по ассортименту клиента (НЕ общая похвала). Если данных мало — используй fallback_used=true и формулировку про отрасль.",
+      "what_stood_out": "ВАЖНО: если fallback_used=true — оставь ПУСТОЙ строкой (''), чтобы НЕ дублировать compliment. Если fallback_used=false — 1-2 предложения о том, что особенно заметили в их ассортименте: вкусы, линейка, натуральность, форматы.",
+      "additional_ideas": [
+        "ВАЖНО: эти идеи должны быть КОМПЛЕМЕНТАРНЫ к primary_solution из слайда 2 (то, что добавляется к основному решению ДЛЯ ТЕКУЩЕГО ПРОДУКТА КЛИЕНТА). Например если primary = 'функциональная смесь для котлет', идеи = 'натуральные маринады для предварительной обработки фарша', 'аромат дыма для копчёных вариантов котлет'.",
+        "Идея 2 — для того же продукта клиента, но другой технологический шаг",
+        "Идея 3 — опционально"
+      ],
+      "fallback_used": false
+    },
+    "market_trends": {
+      "intro": "1 короткое предложение-связка про категорию клиента",
+      "trends": [
+        {"title": "Тренд 1 (короткий заголовок)", "impact": "Как влияет на клиента — 1 строка. БЕЗ ВЫМЫШЛЕННЫХ ЦИФР (никаких '+50% маржи', '+30% выхода'). Только качественные утверждения вроде 'премиум-сегмент растёт быстрее массового' или 'X5 ужесточает требования к составу'."},
+        {"title": "Тренд 2", "impact": "..."},
+        {"title": "Тренд 3 (опционально)", "impact": "..."}
+      ]
+    },
+    "additional_offers": {
+      "directions": [
+        {"name": "ВАЖНО: направления для ДРУГИХ продуктовых линеек клиента ВНУТРИ ТОЙ ЖЕ ОТРАСЛИ. Если client_product='котлеты' (отрасль Мясо/Полуфабрикаты) — здесь предлагай 'пельмени', 'фарши', 'купаты', 'рулеты', 'колбасы', 'сосиски'. ЗАПРЕЩЕНО предлагать продукты из других отраслей (детское питание, напитки, выпечку, кондитерку и т.п.). НЕ дублируй additional_ideas из slide 3.", "why": "1 строка почему логично для расширения линейки в той же отрасли"},
+        {"name": "Направление 2 — другая линейка той же отрасли", "why": "..."},
+        {"name": "Направление 3 — другая линейка той же отрасли", "why": "..."}
+      ],
+      "verde_facts": [
+        "Выбери 3-4 факта из пула ниже (см. блок 'VERDE-ФАКТЫ ДЛЯ СЛАЙДА 5'), наиболее релевантные под отрасль клиента и роль контакта.",
+        "Пример для технолога мясокомбината: '12 лет на рынке', 'R&D-центр с главным технологом', 'Документальное сопровождение', 'Кейсы с Иней, Пикантье, Эфко'.",
+        "Пример для закупщика молочки: 'Сроки поставки 5-14 дней', 'Документальное сопровождение', 'Образцы до 2 кг бесплатно', 'Собственное производство в России'.",
+        "НЕ повторяй один и тот же набор каждый раз."
+      ],
+      "trust_block": "1 короткое предложение про опыт работы с похожими производителями / отраслями (без цифр которые не сможем подтвердить)"
+    },
+    "next_step": {
+      "what_to_test": "Что именно протестировать — связано с primary_solution и client_product",
+      "first_step_includes": [
+        "Образец до 2 кг бесплатно",
+        "Рекомендации по применению",
+        "Предварительный расчёт стоимости внесения",
+        "Документы по продукту, если требуются"
+      ],
+      "from_client_needed": [
+        "Продукт для теста",
+        "Требования к составу",
+        "Технология производства",
+        "Целевая себестоимость, если есть"
+      ],
+      "cta": "Конкретное действие — согласовать продукт для теста / отправить ТЗ / назначить встречу"
+    },
+    "bonus_competitors": {
+      "intro": "1 короткое предложение про анализ открытых источников по категории клиента",
+      "observations": [
+        {"player": "Игрок 1", "what": "развитие в направлении X (без названия конкретного бренда)"},
+        {"player": "Игрок 2", "what": "усиление через Y"},
+        {"player": "Игрок 3", "what": "акцент на Z"}
+      ],
+      "verde_proposal": "А что если сделать продукт сильнее — под вашу рецептуру, себестоимость, технологию и аудиторию?",
+      "cta": "Предлагаем выбрать одну идею и собрать тестовый образец Verde за 7 дней"
+    }
+  }
+}'''
+
+    prompt = f"""Ты — продакт-маркетолог Verde Tech. Готовишь КП ДЛЯ ЛИДА: ознакомительное, без цен, цель — ЗАЦЕПИТЬ и вывести клиента на тестовый образец / встречу. НЕ закрывать сделку.
+
+⚠️ ГЛАВНАЯ ФОРМУЛА КП-ЛИДА:
+«Услышали ваш запрос → изучили вашу специфику → предлагаем точечное решение → готовы быстро проверить на тесте»
+
+⚠️ ЖЁСТКИЕ ЗАПРЕТЫ ДЛЯ КП-ЛИДА:
+- НИ ОДНОЙ конкретной цены (₽/кг, ₽/т, ₽/мес) — это лид, мы ещё не знаем что и как
+- НИ ОДНОЙ привязки к объёму («при 500 т/год…») — у нас ещё нет точного объёма
+- НИ ОДНОГО SKU/ТУ из спецификаций (например НЕ «V Инъекта ПФ ТУ 10.89.19») — называем НАПРАВЛЕНИЕ («бесфосфатные рассолы»)
+- НИ ОДНОГО голословного утверждения «лидер отрасли», «инновационные решения», «передовые технологии» — это вода
+- НЕ выдумывай конкретных цифр и процентов — лид-КП работает на доверии и экспертности, не на цифрах
+
+✅ ЧТО МОЖНО:
+- Описать НАПРАВЛЕНИЕ продукта Verde и эффект (без артикула)
+- Сказать про общеотраслевые проценты ТОЛЬКО если они подтверждены в industry_brief или kb-данных ниже
+- Упомянуть что Verde Tech работает с производителями этой отрасли
+- Использовать кейсы из real_cases (обезличенно)
+
+⚠️ ОСТОРОЖНАЯ ФРАЗА (обязательна на слайде 2):
+«Финальная дозировка и эффект подтверждаются на тестовой выработке.» — клиент не должен думать, что мы обещаем цифры до теста.
+
+⚠️ ВОССТАНОВЛЕНИЕ ОБРЕЗАННОГО ЗАПРОСА:
+Если поле «Запрос одной фразой» оборвано (заканчивается на союз/предлог: 'для', 'без', 'с', 'и', 'на', 'заменить иностранные' и т.п. без продолжения) — НЕ оставляй такую фразу в cover.subheadline и request_quote. ДОПОЛНИ её осмысленно, опираясь на «Что улучшить», «Что не устраивает», «Что обязательно учесть» и продукт клиента. Пример: «заменить иностранные» + improvements=[сочность, структура] → «заменить иностранные ингредиенты на российские для улучшения сочности и структуры полуфабрикатов».
+
+=== ЗАДАЧА КЛИЕНТА (главный приоритет) ===
+Запрос одной фразой:        {request_summary}
+Продукт клиента:            {client_product}
+Что нужно улучшить:         {', '.join(improvements) or '(не указано)'}
+Требования к составу:       {', '.join(composition_reqs) or '(не обсуждали)'}
+Ограничения по технологии:  {', '.join(tech_constraints) or '(не обсуждали)'}
+Срочность:                  {urgency or '(не обсуждали)'}{(' до ' + urgency_date) if urgency_date else ''}
+
+=== КЛИЕНТ ===
+Компания:                   {client_name}
+Город / регион:             {client_city or '(не указан)'}
+Отрасль:                    {industry}
+Тип компании:               {company_label}
+Масштаб:                    {scale_label}
+
+=== КОНТАКТНОЕ ЛИЦО ===
+Имя:                        {contact_name or '(неизвестно)'}
+Роль:                       {contact_role or 'неизвестно'}
+⚡ {role_guidance}
+
+=== КОНТЕКСТ КОММУНИКАЦИИ ===
+Краткий итог:               {communication_summary or '(не заполнен)'}
+Текущий поставщик / аналог: {current_supplier or '(не известен)'}
+Что не устраивает сейчас:   {', '.join(dissatisfaction) or '(не обсуждали)'}
+Нужные документы:           {', '.join(documents_needed) or '(не обсуждали)'}
+
+⚡ ЧТО ОБЯЗАТЕЛЬНО УЧЕСТЬ (наивысший приоритет — слова менеджера, выше любых автоисточников):
+{must_consider or '(не указано)'}
+
+=== ВОЗРАЖЕНИЯ КЛИЕНТА ===
+Прозвучавшие:               {', '.join(objections) or '(пока нет)'}
+Комментарий менеджера:      {objections_comment or '(нет)'}
+
+⚡ Усиление аргументов в ответ на возражения:
+{objection_block}
+
+=== КОНТЕКСТ КОМПАНИИ VERDE TECH ===
+{COMPANY_CONTEXT}
+
+=== ОТРАСЛЕВОЙ БРИФ ({industry_legacy}) — экспертиза от руководства Verde ===
+{industry_brief or '(брифа для этой отрасли нет — опирайся на каталог + здравый смысл)'}
+
+=== РЕАЛЬНЫЕ КЕЙСЫ VERDE ПО ОТРАСЛИ ===
+{json.dumps(real_cases or [], ensure_ascii=False, indent=2)}
+
+{prod_block}
+
+{kb_block}
+
+{site_block}
+
+=== VERDE-ФАКТЫ ДЛЯ СЛАЙДА 5 (выбери 3-4 наиболее релевантных под отрасль клиента и роль контакта) ===
+{json.dumps(LEAD_VERDE_FACTS_POOL, ensure_ascii=False, indent=2)}
+
+=== СТРУКТУРА ОТВЕТА — СТРОГО ЭТОТ JSON (без markdown, без пояснений) ===
+
+{json_schema}
+
+=== КРИТИЧЕСКИЕ ПРАВИЛА ===
+
+1. **Слайд 2 (request_solution.advantages)**: 3-4 преимущества, КАЖДОЕ адаптировано под роль контакта (см. role_guidance выше). Все преимущества должны быть СВЯЗАНЫ с запросом клиента, а не общие. Если есть возражения — встроить ответ в одно из преимуществ.
+
+2. **Слайд 2 (request_solution.test_on_product)**: НЕ оставляй однословным. Обогати client_product до полной фразы вида «охлаждённые котлеты на вашей текущей рецептуре» — добавь технологический контекст (охлаждённые/замороженные/копчёные/сырые), упаковку если разумно, «на вашей текущей рецептуре».
+
+3. **Слайд 3 (client_observation)** — СМОТРИ СТАТУС САЙТА В site_block ВЫШЕ:
+   - Статус «✅ САЙТ УСПЕШНО ПОЛУЧЕН» → fallback_used=FALSE ОБЯЗАТЕЛЬНО. compliment = КОНКРЕТНОЕ наблюдение по их сайту (упоминай реальные продукты/линейки/позиционирование которые видишь). what_stood_out = 1-2 предложения о том что выделяется в их ассортименте. ЗАПРЕЩЕНО ставить fallback=true когда сайт получен — это введение менеджера в заблуждение.
+   - Статус «⚠ САЙТ ВРЕМЕННО НЕДОСТУПЕН» → fallback_used=true, но в compliment пиши ЧЕСТНО: «Сайт компании временно недоступен — в КП используем базовый отраслевой контекст. Будем рады уточнить детали в разговоре». НЕ пиши «в открытых источниках мало информации» (это враньё, мы просто не смогли скачать).
+   - URL вообще не указан → fallback_used=true, compliment через формулу: «В открытых источниках мы нашли ограниченную информацию о вашем ассортименте — поэтому отталкиваемся от вашей отрасли и запроса. Для производителей [категория] обычно актуальны решения по [3 направления]».
+   - При fallback_used=true → what_stood_out ОБЯЗАТЕЛЬНО ПУСТАЯ строка ('')! Не повторяй мысль из compliment.
+
+4. **СЛАЙД 3 vs СЛАЙД 5 — РАЗНЫЙ ФОКУС, БЕЗ ДУБЛЕЙ**:
+   - Slide 3 `additional_ideas` = идеи КОМПЛЕМЕНТАРНЫЕ к primary_solution для ТЕКУЩЕГО продукта клиента (другой технологический шаг или категория Verde на тот же продукт).
+   - Slide 5 `directions` = направления Verde для ДРУГИХ продуктовых линеек клиента **ТОЛЬКО В ТОЙ ЖЕ ОТРАСЛИ КЛИЕНТА**. Если client_product='котлеты' (мясо) — здесь 'пельмени', 'фарши', 'купаты', 'рулеты', 'колбасы', 'сосиски'. ЗАПРЕЩЕНО предлагать продукты ИЗ ДРУГИХ ОТРАСЛЕЙ: мясокомбинату НЕ предлагай 'детское питание', 'напитки', 'выпечку', 'кондитерку'. Каждое направление = другая мясная линейка.
+   - ЗАПРЕЩЕНО: slide 3 ideas и slide 5 directions с одинаковыми названиями. Менеджер должен прочитать КП и увидеть РАЗНЫЕ предложения, а не повтор одной мысли двумя слайдами.
+
+5. **Слайд 4 (market_trends)** — БЕЗ ВЫМЫШЛЕННЫХ ЦИФР, ЭТО КРИТИЧЕСКИ ВАЖНО:
+   - 2-3 тренда, СВЯЗАННЫХ с категорией клиента и запросом. Не превращай в большой отчёт.
+   - ❌ НЕЛЬЗЯ: «+50% маржи», «+30% выхода», «+50-100% к наценке», «рост сегмента на 20%», «доля рынка 15%», любые конкретные проценты и числа, которые нельзя подтвердить ссылкой на industry_brief.
+   - ✅ МОЖНО: качественные утверждения — «премиум-сегмент растёт быстрее массового», «X5 ужесточает требования к составу», «потребители всё чаще ищут clean label», «импортозамещение становится требованием снижения рисков».
+   - Если очень хочется цифру — ставь её ТОЛЬКО если она дословно есть в industry_brief или real_cases (тогда добавь сноску «по данным [источник]»). Иначе — никогда.
+
+6. **Слайд 5 (verde_facts)**: ВЫБИРАЙ 3-4 факта из VERDE-ФАКТЫ ДЛЯ СЛАЙДА 5 выше (см. блок). Не пиши «Собственное производство в России» каждый раз — выбирай те, которые наиболее релевантны под:
+   - роль контакта (закупщику → сроки/документы; технологу → R&D/тестирование; собственнику → масштаб/кейсы федералов);
+   - отрасль клиента (мясокомбинату → кейсы Иней/Пикантье; молочке → халяль/детское; HoReCa → R&D/доработка под рецептуру).
+
+7. **Слайд 6 (next_step)**: CTA = тест/образец/встреча/уточнение задачи. НЕ закрытие сделки и НЕ закупка.
+
+8. **Слайд 7 (bonus_competitors)**:
+   - Анализ рынка БЕЗ копирования конкурентов
+   - Можно писать "Игрок 1, Игрок 2" или категории игроков ('Крупные федеральные', 'Региональные', 'Новички') вместо имён
+   - Verde proposal: «Разработаем аналогичное направление под вашу рецептуру», НЕ «скопируем»
+   - НЕТ конкретных рекомендаций «сделайте как у X»
+
+9. **Тон**: профессиональный русский, без «лучшие», «единственные», без health-claims без сносок.
+
+10. **Длина**: каждое предложение ≤ 25 слов. Лид не читает простыни — читает одну страницу за 30 секунд.
+"""
+    return prompt
+
+
+def _generate_kp_lead(data):
+    """КП-лида (7 слайдов, без цен): зацепить и вывести клиента на тестовый образец / встречу."""
+    # Валидация
+    required = ['client_name', 'industry', 'request_summary', 'client_product',
+                'manager_name', 'manager_phone', 'manager_email']
+    missing = [f for f in required if not (data.get(f) or '').strip()]
+    if missing:
+        return jsonify({'error': f'Не заполнены поля: {", ".join(missing)}'}), 400
+
+    improvements = data.get('improvements') or []
+    if isinstance(improvements, str):
+        improvements = [improvements] if improvements else []
+    if not improvements:
+        return jsonify({'error': 'Выберите хотя бы один пункт «Что нужно улучшить» в Блоке 4.'}), 400
+
+    # Чтение полей
+    client_name = data['client_name'].strip()
+    industry = data['industry'].strip()
+    request_summary = data['request_summary'].strip()
+    client_product = data['client_product'].strip()
+    client_url = (data.get('client_url') or '').strip()
+    client_city = (data.get('client_city') or '').strip()
+    company_type = (data.get('company_type') or '').strip()
+    production_scale = (data.get('production_scale') or '').strip()
+    contact_name = (data.get('contact_name') or '').strip()
+    contact_role = (data.get('contact_role') or '').strip()
+    composition_reqs = data.get('composition_requirements') or []
+    tech_constraints = data.get('tech_constraints') or []
+    urgency = (data.get('urgency') or '').strip()
+    urgency_date = (data.get('urgency_date') or '').strip()
+    communication_summary = (data.get('communication_summary') or '').strip()
+    must_consider = (data.get('must_consider') or '').strip()
+    current_supplier = (data.get('current_supplier') or '').strip()
+    dissatisfaction = data.get('dissatisfaction') or []
+    documents_needed = data.get('documents_needed') or []
+    objections = data.get('objections') or []
+    if isinstance(objections, str):
+        objections = [objections] if objections else []
+    objections_comment = (data.get('objections_comment') or '').strip()
+    manager_name = data['manager_name'].strip()
+    manager_phone = data['manager_phone'].strip()
+    manager_email = data['manager_email'].strip()
+
+    # Кепаем длинные текстовые поля чтобы промпт не разбух (Битрикс может пихнуть простыни)
+    if len(communication_summary) > 4000:
+        communication_summary = communication_summary[:4000] + '\n\n[...текст обрезан]'
+    if len(must_consider) > 1500:
+        must_consider = must_consider[:1500] + ' [...]'
+
+    # Резолвим отрасль для брифа и БЗ
+    industry_legacy = _resolve_industry_legacy(industry)
+
+    # Сайт клиента
+    client_site_context = fetch_client_context(client_url) if client_url else ''
+    site_fetch_failed = bool(client_url) and (
+        not client_site_context or
+        client_site_context.startswith('(ошибка') or
+        len(client_site_context) < 200
+    )
+    if client_url:
+        if site_fetch_failed:
+            print(f'[generate_kp_lead] ⚠ сайт {client_url} НЕ удалось получить или мало контента: '
+                  f'len={len(client_site_context)}, head={client_site_context[:120]!r}', flush=True)
+        else:
+            print(f'[generate_kp_lead] ✓ сайт {client_url} получен: len={len(client_site_context)}, '
+                  f'head={client_site_context[:120]!r}', flush=True)
+
+    # Контекст для матчинга продуктов
+    combined_context = ' '.join(filter(None, [
+        request_summary, client_product, communication_summary, must_consider,
+        ' '.join(improvements), ' '.join(composition_reqs),
+        client_site_context,
+    ]))
+
+    # Production-mapping (Mode B)
+    production_recommendations = []
+    if detect_production_type and get_recommended_products:
+        try:
+            prod_ids = detect_production_type(combined_context) or []
+            for pid in prod_ids[:3]:
+                rec = get_recommended_products(pid)
+                if rec:
+                    production_recommendations.append(rec)
+            print(f'[generate_kp_lead] production-types: {[r.get("ru_name") for r in production_recommendations]}', flush=True)
+        except Exception as e:
+            print(f'[generate_kp_lead] production_mapping ошибка: {e}', flush=True)
+
+    # БЗ КП-генератора (Mode A)
+    kb_relevant = []
+    if kb_find_relevant:
+        try:
+            kb_relevant = kb_find_relevant(
+                situation_text=request_summary + ' ' + client_product,
+                hints_text=must_consider,
+                site_text=client_site_context or '',
+                industry=industry_legacy,
+                max_items=40,
+            ) or []
+            print(f'[generate_kp_lead] kb-релевантных позиций: {len(kb_relevant)}', flush=True)
+        except Exception as e:
+            print(f'[generate_kp_lead] kb_find_relevant ошибка: {e}', flush=True)
+
+    # Бриф отрасли + кейсы
+    industry_brief = load_industry_brief(industry_legacy) or ''
+    real_cases = get_cases_for_industry(industry_legacy) or []
+
+    # Сбор промпта
+    prompt = _build_lead_prompt(
+        client_name=client_name, client_url=client_url, client_city=client_city, client_product=client_product,
+        request_summary=request_summary, improvements=improvements,
+        composition_reqs=composition_reqs, tech_constraints=tech_constraints,
+        urgency=urgency, urgency_date=urgency_date,
+        industry=industry, industry_legacy=industry_legacy,
+        company_type=company_type, production_scale=production_scale,
+        contact_name=contact_name, contact_role=contact_role,
+        communication_summary=communication_summary, must_consider=must_consider,
+        current_supplier=current_supplier, dissatisfaction=dissatisfaction,
+        documents_needed=documents_needed, objections=objections,
+        objections_comment=objections_comment,
+        client_site_context=client_site_context,
+        production_recommendations=production_recommendations,
+        kb_relevant=kb_relevant, industry_brief=industry_brief, real_cases=real_cases,
+    )
+
+    # Вызов Claude
+    try:
+        response = requests.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            headers={
+                'Authorization': f'Bearer {OPENROUTER_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'model': 'anthropic/claude-sonnet-4',
+                'messages': [
+                    {'role': 'system', 'content': 'Ты выдаёшь строго JSON. Никакого markdown, никаких пояснений, только JSON-объект.'},
+                    {'role': 'user', 'content': prompt},
+                ],
+                'max_tokens': 4500,
+                'temperature': 0.4,
+            },
+            timeout=180,
+        )
+        if response.status_code != 200:
+            print(f'[generate_kp_lead] OpenRouter ошибка {response.status_code}: {response.text[:500]}', flush=True)
+            return jsonify({'error': f'OpenRouter HTTP {response.status_code}: {response.text[:300]}'}), 500
+        ai_reply = response.json()['choices'][0]['message']['content'].strip()
+        ai_reply = re.sub(r'^```(?:json)?\s*|\s*```$', '', ai_reply, flags=re.MULTILINE).strip()
+        ai_data = json.loads(ai_reply)
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Сервер AI ответил слишком долго (timeout 180с). Попробуй ещё раз.'}), 504
+    except json.JSONDecodeError as e:
+        print(f'[generate_kp_lead] JSON parse error: {e}', flush=True)
+        return jsonify({'error': 'AI вернул не JSON. Попробуй ещё раз.'}), 500
+    except Exception as e:
+        import traceback
+        print(f'[generate_kp_lead] Ошибка: {e}\n{traceback.format_exc()}', flush=True)
+        return jsonify({'error': f'Серверная ошибка: {str(e)}'}), 500
+
+    # Загрузка шаблона КП-лида
+    tpl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'kp-template', 'verde-kp-lead.html')
+    try:
+        with open(tpl_path, 'r', encoding='utf-8') as f:
+            tpl = f.read()
+    except FileNotFoundError:
+        return jsonify({'error': 'Шаблон КП-лида не найден на сервере (kp-template/verde-kp-lead.html)'}), 500
+
+    # Сборка контекста для шаблона
+    slides = ai_data.get('slides') or {}
+    cover = slides.get('cover') or {}
+    rec = slides.get('request_solution') or {}
+    obs = slides.get('client_observation') or {}
+    market = slides.get('market_trends') or {}
+    offers = slides.get('additional_offers') or {}
+    next_step_data = slides.get('next_step') or {}
+    bonus = slides.get('bonus_competitors') or {}
+
+    # Гарантируем минимум элементов в массивах
+    advantages = rec.get('advantages') or []
+    while len(advantages) < 3:
+        advantages.append('—')
+
+    market_trends_list = market.get('trends') or []
+    offer_directions = offers.get('directions') or []
+    verde_facts = offers.get('verde_facts') or [
+        'Собственное производство в России',
+        'R&D и разработка под задачу',
+        'Образцы для тестирования бесплатно',
+        'Документальное сопровождение',
+    ]
+    first_step_includes = next_step_data.get('first_step_includes') or [
+        'Образец до 2 кг бесплатно',
+        'Рекомендации по применению',
+        'Предварительный расчёт стоимости внесения',
+    ]
+    from_client_needed = next_step_data.get('from_client_needed') or [
+        'Продукт для теста',
+        'Требования к составу',
+        'Технология производства',
+    ]
+    bonus_observations = bonus.get('observations') or []
+    observation_ideas = obs.get('additional_ideas') or []
+
+    # Подпись «Подготовлено для…» на обложке: ФИО + (роль) если оба известны.
+    # Автокапитализация имени — менеджер мог ввести в нижнем регистре.
+    contact_role_ru = LEAD_CONTACT_ROLE_LABEL_RU.get(contact_role, '')
+    contact_name_pretty = ' '.join(w.capitalize() for w in contact_name.split()) if contact_name else ''
+    if contact_name_pretty and contact_role_ru:
+        cover_prepared_for = f'{contact_name_pretty} ({contact_role_ru})'
+    elif contact_name_pretty:
+        cover_prepared_for = contact_name_pretty
+    elif contact_role_ru:
+        cover_prepared_for = f'Контактное лицо: {contact_role_ru}'
+    else:
+        cover_prepared_for = ''
+
+    context = {
+        'client_name': client_name,
+        'doc_id': f"KP-{datetime.now().strftime('%Y%m%d-%H%M')}-{client_name[:3].upper()}",
+        'request_date': datetime.now().strftime('%d.%m.%Y'),
+        'expiry_date': (datetime.now() + timedelta(days=30)).strftime('%d.%m.%Y'),
+        'manager_name': manager_name,
+        'manager_phone': manager_phone,
+        'manager_email': manager_email,
+        'contact_name': contact_name,
+        'cover_prepared_for': cover_prepared_for,
+        'industry': industry,
+        # Cover
+        'cover_subheadline': cover.get('subheadline') or f'По задаче: {request_summary}',
+        # Slide 2: Request → Solution
+        'request_quote': rec.get('request_quote', ''),
+        'primary_solution_name': (rec.get('primary_solution') or {}).get('name', ''),
+        'primary_solution_desc': (rec.get('primary_solution') or {}).get('description', ''),
+        'alternative': rec.get('alternative'),  # dict or None
+        'test_on_product': rec.get('test_on_product') or client_product,
+        'advantages': advantages,
+        'caution_note': rec.get('caution_note') or 'Финальная дозировка и эффект подтверждаются на тестовой выработке.',
+        # Slide 3: Client observation
+        'observation_compliment': obs.get('compliment', ''),
+        'observation_what_stood_out': obs.get('what_stood_out', ''),
+        'observation_ideas': observation_ideas,
+        'observation_fallback_used': bool(obs.get('fallback_used')),
+        # Slide 4: Market
+        'market_intro': market.get('intro', ''),
+        'market_trends': market_trends_list,
+        # Slide 5: Additional offers
+        'offer_directions': offer_directions,
+        'verde_facts': verde_facts,
+        'trust_block': offers.get('trust_block', ''),
+        # Slide 6: Next step
+        'next_what_to_test': next_step_data.get('what_to_test', ''),
+        'next_first_step_includes': first_step_includes,
+        'next_from_client_needed': from_client_needed,
+        'next_cta': next_step_data.get('cta', ''),
+        # Slide 7: Bonus competitors
+        'bonus_intro': bonus.get('intro', ''),
+        'bonus_observations': bonus_observations,
+        'bonus_verde_proposal': bonus.get('verde_proposal', ''),
+        'bonus_cta': bonus.get('cta', ''),
+    }
+
+    rendered = render_template_string(tpl, **context)
+    return jsonify({'html': rendered})
+
+
+def _bridge_new_form_to_legacy(data):
+    """
+    Маппит поля новой 7-блочной формы в legacy-формат (situation/volume/customer_role/...),
+    чтобы legacy-flow для kp_type='deal' принимал данные новой формы без переписывания.
+    """
+    # situation: агрегируем структурированные поля в одну простыню как раньше
+    if not data.get('situation'):
+        parts = []
+        if data.get('request_summary'):
+            parts.append(f"Запрос клиента: {data['request_summary']}")
+        if data.get('client_product'):
+            parts.append(f"Продукт клиента: {data['client_product']}")
+        if data.get('improvements'):
+            v = data['improvements']
+            v = ', '.join(v) if isinstance(v, list) else v
+            parts.append(f"Что нужно улучшить: {v}")
+        if data.get('composition_requirements'):
+            v = data['composition_requirements']
+            v = ', '.join(v) if isinstance(v, list) else v
+            parts.append(f"Требования к составу: {v}")
+        if data.get('tech_constraints'):
+            v = data['tech_constraints']
+            v = ', '.join(v) if isinstance(v, list) else v
+            parts.append(f"Ограничения по технологии: {v}")
+        if data.get('communication_summary'):
+            parts.append(f"Контекст коммуникации: {data['communication_summary']}")
+        if data.get('current_supplier'):
+            parts.append(f"Текущий поставщик: {data['current_supplier']}")
+        if data.get('dissatisfaction'):
+            v = data['dissatisfaction']
+            v = ', '.join(v) if isinstance(v, list) else v
+            parts.append(f"Что не устраивает сейчас: {v}")
+        if data.get('documents_needed'):
+            v = data['documents_needed']
+            v = ', '.join(v) if isinstance(v, list) else v
+            parts.append(f"Нужные документы: {v}")
+        if data.get('objections_comment'):
+            parts.append(f"Комментарий к возражениям: {data['objections_comment']}")
+        data['situation'] = '\n'.join(parts)
+
+    # customer_role: маппинг company_type → старая роль
+    if not data.get('customer_role') and data.get('company_type'):
+        ct_map = {
+            'producer':    'producer',
+            'distributor': 'distributor',
+            'horeca':      'horeca',
+            'ctm':         'packer',
+            'contract':    'packer',
+            'retail':      'producer',
+            'other':       'producer',
+        }
+        data['customer_role'] = ct_map.get(data['company_type'], 'producer')
+
+    # volume: маппинг production_scale → ориентировочные тонны/год
+    if not data.get('volume') and data.get('production_scale'):
+        scale_map = {
+            'small':   '50',
+            'medium':  '500',
+            'large':   '5000',
+            'federal': '20000',
+        }
+        data['volume'] = scale_map.get(data['production_scale'], '')
+
+    # manager_hints: из must_consider
+    if not data.get('manager_hints') and data.get('must_consider'):
+        data['manager_hints'] = data['must_consider']
+
+    # deal_stage: по умолчанию warm для сделки
+    if not data.get('deal_stage'):
+        data['deal_stage'] = 'warm'
+
+    # kp_mode: legacy ожидает 'deal' для сделочного КП
+    if not data.get('kp_mode'):
+        data['kp_mode'] = 'deal'
+
+    # include_prices: по умолчанию True для сделки (но менеджер может отключить)
+    if 'include_prices' not in data:
+        data['include_prices'] = True
+
+    return data
+
+
 @app.route('/api/generate-kp', methods=['POST'])
 def generate_kp():
     if not session.get('team_logged_in'):
         return jsonify({'error': 'Не авторизован'}), 401
 
     data = request.get_json() or {}
+
+    # КП-ЛИДА (новая структура от 28.04.2026): 7 блоков формы → 7 слайдов
+    kp_type = (data.get('kp_type') or '').strip().lower()
+    if kp_type == 'lead':
+        return _generate_kp_lead(data)
+
+    # КП-сделки: новая форма → bridge в legacy-формат → legacy-flow (~12 слайдов с ценами)
+    if kp_type == 'deal':
+        data = _bridge_new_form_to_legacy(data)
+        print(f'[generate_kp] kp_type=deal — bridged: situation len={len(data.get("situation",""))}, '
+              f'volume={data.get("volume")}, customer_role={data.get("customer_role")}', flush=True)
+
+    # === LEGACY: старый flow (использовался до 28.04.2026, оставлен для совместимости) ===
     required = ['client_name', 'industry', 'situation', 'manager_name', 'manager_phone', 'manager_email']
     missing = [f for f in required if not data.get(f)]
     if missing:

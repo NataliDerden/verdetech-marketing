@@ -8,3 +8,6 @@ sessions/
 *.jpg
 *.png
 лиды битрикс/
+
+# debug logs
+*_debug.log

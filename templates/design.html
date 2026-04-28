@@ -107,6 +107,31 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 .vol-pill:has(input:checked) { background: #f0fdf4; border-color: #0FBF00; color: #0FBF00; }
 .vol-pill:has(input:checked) b { color: #0FBF00; }
 
+/* Сворачиваемые блоки формы */
+.kp-block { background:#fff; border:1px solid #e5e5e7; border-radius:8px; margin-bottom:8px; overflow:hidden; }
+.kp-block summary { padding:11px 14px; font-size:13px; font-weight:700; cursor:pointer; list-style:none; user-select:none; display:flex; justify-content:space-between; align-items:center; color:#1d1d1f; transition:background 0.12s; }
+.kp-block summary::-webkit-details-marker { display:none; }
+.kp-block summary:hover { background:#fafafa; }
+.kp-block summary::after { content:'＋'; font-size:14px; color:#86868b; font-weight:600; transition:transform 0.15s; }
+.kp-block[open] summary::after { content:'−'; }
+.kp-block[open] summary { border-bottom:1px solid #f0f0f2; }
+.kp-block-body { padding:12px 14px 8px; }
+.kp-block-body .form-group { margin-bottom:11px; padding-bottom:11px; }
+.kp-block-body .form-group:last-child { border-bottom:none; padding-bottom:0; margin-bottom:0; }
+.kp-block .req { color:#0FBF00; font-weight:700; }
+.kp-block .block-num { display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; background:#0FBF00; color:#fff; border-radius:999px; font-size:10px; font-weight:700; margin-right:8px; }
+
+/* Чипсы-чекбоксы (множественный выбор: что улучшить, документы и т.д.) */
+.chip-row { display:flex; flex-wrap:wrap; gap:5px; }
+.chip-pill { display:inline-flex; align-items:center; gap:4px; padding:4px 10px 4px 7px; background:#fafafa; border:1px solid #e5e5e7; border-radius:999px; cursor:pointer; font-size:11px; color:#555; transition:all 0.12s; user-select:none; }
+.chip-pill:hover { background:#f0fdf4; border-color:#c8e8c0; }
+.chip-pill input[type="checkbox"] { width:10px; height:10px; margin:0; flex-shrink:0; accent-color:#0FBF00; cursor:pointer; }
+.chip-pill:has(input:checked) { background:#f0fdf4; border-color:#0FBF00; color:#0a7a00; font-weight:600; }
+
+/* Кнопка обновления КП */
+.btn-update-kp { width:100%; background:#fff; color:#000; border:2px solid #000; padding:12px 20px; border-radius:8px; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; transition:all 0.15s; margin-top:8px; }
+.btn-update-kp:hover { background:#0FBF00; color:#fff; border-color:#0FBF00; }
+
 .btn-generate { width: 100%; background: #000; color: #fff; border: none; padding: 14px 20px; border-radius: 8px; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
 .btn-generate:hover { background: #0FBF00; }
 .btn-generate:disabled { background: #ccc; cursor: not-allowed; }
@@ -177,128 +202,279 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
 <!-- KP GENERATOR -->
 <div class="pane active" id="pane-kp">
     <h2>Генератор коммерческого предложения</h2>
-    <p class="lead">Заполните 5 полей → получите готовый 12-слайдовый КП в фирменном стиле за 30 секунд. Можно сразу скачать и отправить клиенту.</p>
+    <p class="lead">Заполните 7 блоков → получите готовое КП-лида (7 слайдов) в фирменном стиле. Менеджер может править и обновлять КП до тех пор, пока оно не зазвучит идеально.</p>
 
     <div class="kp-layout">
         <form class="kp-form" id="kpForm" onsubmit="event.preventDefault(); generateKP(event); return false;">
-            <div class="form-group" style="margin-bottom:18px;">
-                <label style="font-weight:600; margin-bottom:8px; display:block;">Тип КП</label>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <label class="kp-mode-opt" style="display:block; padding:12px 14px; background:#fafafa; border:2px solid #e5e5e7; border-radius:8px; cursor:pointer; transition:all .15s;">
-                        <input type="radio" name="kp_mode" value="lead" checked style="margin-right:6px; accent-color:#0FBF00;">
-                        <b style="font-size:13px;">Лид</b>
-                        <div style="font-size:11px; color:#666; margin-top:4px; line-height:1.4;">Общее КП без цен — зацепить, вызвать интерес</div>
-                    </label>
-                    <label class="kp-mode-opt" style="display:block; padding:12px 14px; background:#fafafa; border:2px solid #e5e5e7; border-radius:8px; cursor:pointer; transition:all .15s;">
-                        <input type="radio" name="kp_mode" value="deal" style="margin-right:6px; accent-color:#0FBF00;">
-                        <b style="font-size:13px;">Сделка</b>
-                        <div style="font-size:11px; color:#666; margin-top:4px; line-height:1.4;">Конкретные продукты + объём + цены</div>
-                    </label>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Клиент (название компании)</label>
-                <input type="text" name="client_name" required placeholder='ООО "Мясокомбинат Колбасов"'>
-            </div>
-            <div class="form-group">
-                <label>🌐 Сайт клиента <span style="color:#0FBF00; font-weight:400;">(опционально — изучу автоматически)</span></label>
-                <input type="url" name="client_url" placeholder="https://client-company.ru">
-                <small>Если укажешь — я изучу сайт и подберу решение под их реальную линейку. Занимает +10-15 сек.</small>
-            </div>
-            <div class="form-group">
-                <label>Отрасль клиента</label>
-                <select name="industry" required>
-                    <option value="">— выбрать —</option>
-                    <option>Мясопереработка</option>
-                    <option>Птицепереработка</option>
-                    <option>Рыбопереработка</option>
-                    <option>Молочная промышленность</option>
-                    <option>Хлебопекарная</option>
-                    <option>Напитки</option>
-                    <option>HoReCa</option>
-                    <option>Готовая еда / полуфабрикаты</option>
+
+            <!-- БЛОК 1: ТИП КП -->
+            <div class="form-group" style="margin-bottom:14px; padding-bottom:0; border-bottom:none;">
+                <label>Тип КП <span class="req">★</span></label>
+                <select name="kp_type" required>
+                    <option value="lead" selected>КП для лида (без цен) — зацепить и вывести на тест</option>
+                    <option value="deal">КП для сделки (с ценами) — продукты, объёмы, ROI</option>
                 </select>
-            </div>
-            <div class="form-group">
-                <label>👥 Роль клиента</label>
-                <select name="customer_role">
-                    <option value="producer" selected>Производитель</option>
-                    <option value="horeca">HoReCa (сеть / ресторан)</option>
-                    <option value="packer">Фасовщик</option>
-                    <option value="distributor">Трейдер / Дистрибьютор</option>
-                </select>
-                <small>Влияет на логику КП: дистру не предлагаем прямые поставки, фасовщику — другие условия.</small>
-            </div>
-            <div class="form-group">
-                <label>💬 Задача клиента <span style="color:#0FBF00;">★</span></label>
-                <textarea name="situation" rows="6" required placeholder='Опиши что услышал от клиента — чем подробнее, тем точнее подбор.&#10;&#10;Пример:&#10;"Мясокомбинат среднего размера. Хотят премиум-линейку вареных колбас для входа в Магнит. Технолог жалуется на выход при термообработке. Ищут замену импортному Буденхайм. Важен Clean Label."'></textarea>
-                <small>★ Главное поле. По нему ИИ сам подберёт 2-4 продукта из 598 в базе.</small>
-            </div>
-            <div class="form-group">
-                <label>🎯 Подсказка для генератора <span style="color:#a1a1a6; font-weight:400; text-transform:none;">(опционально)</span></label>
-                <textarea name="manager_hints" rows="2" placeholder='Что добавить или подчеркнуть. Пример: "Обязательно специи: перец, розмарин, чеснок", "Маринады для шашлыка", "Бесфосфатные рассолы для Магнита"'></textarea>
-                <small>Это идёт с ВЫСШИМ приоритетом — твоё знание о клиенте важнее автоанализа.</small>
+                <small>Лид → ознакомительное, 7 слайдов, без цен. Сделка → детальное предложение с ценами, объёмами, ROI на ~12 слайдов.</small>
             </div>
 
-            <div class="form-group">
-                <label>🎯 Стадия сделки</label>
-                <select name="deal_stage">
-                    <option value="cold">Холодный лид — ещё не знаком с Verde</option>
-                    <option value="warm" selected>Тёплый — уже общались</option>
-                    <option value="negotiation">На согласовании — обсуждаем условия</option>
-                    <option value="reactivation">Реактивация — старый клиент</option>
-                </select>
-            </div>
+            <!-- БЛОК 2: КЛИЕНТ -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">2</span>Клиент</span></summary>
+                <div class="kp-block-body">
+                    <div class="form-group">
+                        <label>Название компании <span class="req">★</span></label>
+                        <input type="text" name="client_name" required placeholder='ООО "Мясокомбинат Колбасов"'>
+                    </div>
+                    <div class="form-group">
+                        <label>🌐 Сайт клиента <span style="color:#a1a1a6; font-weight:400; text-transform:none;">(опционально)</span></label>
+                        <input type="url" name="client_url" placeholder="https://client-company.ru">
+                        <small>Если укажешь — изучу сайт и подберу решение под линейку клиента. +10-15 сек.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Город / регион</label>
+                        <input type="text" name="client_city" placeholder="Москва, Краснодарский край…">
+                    </div>
+                    <div class="form-group">
+                        <label>Отрасль клиента <span class="req">★</span></label>
+                        <select name="industry" required>
+                            <option value="">— выбрать —</option>
+                            <option>Мясо и птица</option>
+                            <option>Полуфабрикаты</option>
+                            <option>Готовая еда</option>
+                            <option>Напитки</option>
+                            <option>Кондитерка</option>
+                            <option>Молочная продукция</option>
+                            <option>Снеки</option>
+                            <option>HoReCa / dark kitchen</option>
+                            <option>Детское питание</option>
+                            <option>ЗОЖ / спортпит</option>
+                            <option>Дистрибьютор</option>
+                            <option>Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип компании <span class="req">★</span></label>
+                        <select name="company_type" required>
+                            <option value="">— выбрать —</option>
+                            <option value="producer">Производитель</option>
+                            <option value="distributor">Дистрибьютор</option>
+                            <option value="horeca">HoReCa</option>
+                            <option value="ctm">СТМ / private label</option>
+                            <option value="contract">Контрактное производство</option>
+                            <option value="retail">Торговая сеть</option>
+                            <option value="other">Другое</option>
+                        </select>
+                        <small>Для дистра — НЕ предлагаем прямые поставки. Логика КП адаптируется под тип.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Масштаб производства</label>
+                        <select name="production_scale">
+                            <option value="">— неизвестно —</option>
+                            <option value="small">Мелкое производство</option>
+                            <option value="medium">Среднее производство</option>
+                            <option value="large">Крупное производство</option>
+                            <option value="federal">Федеральный производитель</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
 
-            <div class="form-group">
-                <label>Возражения, уже прозвучавшие <span style="color:#a1a1a6; font-weight:400; text-transform:none;">(опционально)</span></label>
-                <div class="obj-row">
-                    <label class="obj-pill"><input type="checkbox" name="obj_price" value="дорого"><span>Дорого</span></label>
-                    <label class="obj-pill"><input type="checkbox" name="obj_competitor" value="работают с конкурентом"><span>С конкурентом</span></label>
-                    <label class="obj-pill"><input type="checkbox" name="obj_quality" value="не доверяют качеству"><span>Качество</span></label>
-                    <label class="obj-pill"><input type="checkbox" name="obj_later" value="нет потребности сейчас"><span>Нет нужды</span></label>
-                    <label class="obj-pill"><input type="checkbox" name="obj_import" value="ждут импортозамещения"><span>Ждут импорт</span></label>
+            <!-- БЛОК 3: КОНТАКТНОЕ ЛИЦО -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">3</span>Контактное лицо</span></summary>
+                <div class="kp-block-body">
+                    <div class="form-group">
+                        <label>Имя контакта</label>
+                        <input type="text" name="contact_name" placeholder="Иван Петров">
+                        <small>Подтянется из карточки Битрикс24.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Роль контактного лица</label>
+                        <select name="contact_role">
+                            <option value="">— неизвестно —</option>
+                            <option value="technologist">Технолог</option>
+                            <option value="buyer">Закупщик</option>
+                            <option value="rd">R&amp;D</option>
+                            <option value="owner">Собственник</option>
+                            <option value="director">Директор</option>
+                            <option value="marketer">Маркетолог</option>
+                            <option value="category_manager">Категорийный менеджер</option>
+                        </select>
+                        <small>Технолог → состав+дозировка+тестирование; закупщик → сроки+документы+экономика; собственник → выгода+риски.</small>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Масштаб бизнеса клиента</label>
-                <div style="background:#f0fdf4; border-left:3px solid #0FBF00; padding:6px 10px; font-size:11px; color:#444; margin-bottom:8px; border-radius:4px;">
-                    Оцени по сайту клиента — 30 секунд оценки = КП точнее в 2 раза.
+            </details>
+
+            <!-- БЛОК 4: ЗАПРОС КЛИЕНТА (главный) -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">4</span>Запрос клиента <span class="req" style="margin-left:4px;">★</span></span></summary>
+                <div class="kp-block-body">
+                    <div class="form-group">
+                        <label>Запрос одной фразой <span class="req">★</span></label>
+                        <input type="text" name="request_summary" required placeholder="Сочность и стабильность мясных полуфабрикатов">
+                        <small>Главная основа КП. С чем клиент пришёл — суть в одной фразе.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Продукт клиента <span class="req">★</span></label>
+                        <input type="text" name="client_product" required placeholder="Охлаждённые котлеты 400г / варёные колбасы / сидры…">
+                        <small>Что именно у клиента улучшаем — это делает КП конкретным.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Что нужно улучшить <span class="req">★</span></label>
+                        <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="вкус"><span>Вкус</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="аромат"><span>Аромат</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="цвет"><span>Цвет</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="структура"><span>Структура</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="сочность"><span>Сочность</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="срок годности"><span>Срок годности</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="себестоимость"><span>Себестоимость</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="clean label"><span>Clean Label</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="польза/функциональность"><span>Польза/функциональность</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="замена аналога"><span>Замена аналога</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="новая разработка"><span>Новая разработка</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="документы"><span>Документы</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Требования к составу</label>
+                        <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="без ГМО"><span>Без ГМО</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="без E-добавок"><span>Без E-добавок</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="clean label"><span>Clean Label</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="без фосфатов"><span>Без фосфатов</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="халяль"><span>Халяль</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="детское питание"><span>Детское</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="без аллергенов"><span>Без аллергенов</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="composition_requirements" value="натуральность"><span>Натуральность</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Ограничения по технологии</label>
+                        <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="термообработка"><span>Термообработка</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="заморозка"><span>Заморозка</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="вакуумная упаковка"><span>Вакуум</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="MAP / газовая среда"><span>MAP</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="шприцевание"><span>Шприцевание</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="массирование"><span>Массирование</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="сухое внесение"><span>Сухое внесение</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="жидкое внесение"><span>Жидкое внесение</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="ограничение по температуре"><span>T° ограничение</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="tech_constraints" value="ограничение по pH"><span>pH ограничение</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Срочность</label>
+                        <select name="urgency" id="urgencySelect" onchange="onUrgencyChange()">
+                            <option value="">— не обсуждали —</option>
+                            <option value="urgent">Срочно — нужен образец до даты</option>
+                            <option value="new_launch">Новый запуск в работе</option>
+                            <option value="researching">Изучают рынок</option>
+                            <option value="no_rush">Без срочности</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="urgencyDateGroup" style="display:none;">
+                        <label>Дата (срок образца)</label>
+                        <input type="date" name="urgency_date">
+                    </div>
                 </div>
-                <div class="vol-pill-group">
-                    <label class="vol-pill" title="Локальный цех / 1-3 точки. Оборот до 50 млн ₽."><input type="radio" name="volume_scale" value="50"><b>Мелкое</b> <em>до 100 т/г</em></label>
-                    <label class="vol-pill" title="Региональный игрок. 1-2 области. Оборот 50-300 млн ₽."><input type="radio" name="volume_scale" value="500"><b>Среднее</b> <em>100–1000 т/г</em></label>
-                    <label class="vol-pill" title="Межрегиональный. Есть СТМ. Оборот 300 млн – 3 млрд ₽."><input type="radio" name="volume_scale" value="5000"><b>Крупное</b> <em>1000–10 000 т/г</em></label>
-                    <label class="vol-pill" title="ТОП-50 отрасли. X5/Магнит как клиент. Оборот 3+ млрд ₽."><input type="radio" name="volume_scale" value="20000"><b>Федеральный</b> <em>10 000+ т/г</em></label>
+            </details>
+
+            <!-- БЛОК 5: КОНТЕКСТ КОММУНИКАЦИИ -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">5</span>Контекст коммуникации</span></summary>
+                <div class="kp-block-body">
+                    <div class="form-group">
+                        <label>Краткий итог коммуникации</label>
+                        <textarea name="communication_summary" rows="5" placeholder="Что услышал на звонке/в письме/в комментариях. Битрикс24 подтянет сюда контекст карточки автоматически."></textarea>
+                        <small>Подтянется из карточки сделки/лида (комментарии, активности, продукты).</small>
+                    </div>
+                    <div class="form-group">
+                        <label>🎯 Что обязательно учесть <span style="color:#a1a1a6; font-weight:400; text-transform:none;">(приоритет выше автоисточников)</span></label>
+                        <textarea name="must_consider" rows="2" placeholder='"Обязательно специи: перец, розмарин, чеснок", "Бесфосфатные рассолы для Магнита", "Не предлагать V Smart Plus — клиент уже отказался"'></textarea>
+                        <small>Это идёт с ВЫСШИМ приоритетом — твоё знание клиента важнее автоанализа.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Текущий поставщик / аналог</label>
+                        <input type="text" name="current_supplier" placeholder="Буденхайм, Frutarom, неизвестно…">
+                    </div>
+                    <div class="form-group">
+                        <label>Что не устраивает сейчас</label>
+                        <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="цена"><span>Цена</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="качество"><span>Качество</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="вкус"><span>Вкус</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="аромат"><span>Аромат</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="структура"><span>Структура</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="сроки поставки"><span>Сроки</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="стабильность от партии к партии"><span>Стабильность</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="документы"><span>Документы</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="состав / этикетка"><span>Состав/этикетка</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="dissatisfaction" value="текущий поставщик"><span>Текущий поставщик</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Нужные документы</label>
+                        <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="спецификация"><span>Спецификация</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="декларация о соответствии"><span>ДоС</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="качественное удостоверение"><span>Удостоверение качества</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="протокол испытаний"><span>Протокол испытаний</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="аллергенная декларация"><span>Аллергены</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="письмо по ГМО"><span>ГМО</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="халяль"><span>Халяль</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="кошер"><span>Кошер</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="documents_needed" value="MSDS / паспорт безопасности"><span>MSDS</span></label>
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-top:10px;">
-                    <input type="text" name="volume" id="volumeInput" placeholder="Знаешь точное число тонн/год? Впиши здесь" style="width:100%;">
+            </details>
+
+            <!-- БЛОК 6: ВОЗРАЖЕНИЯ -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">6</span>Коммерческие барьеры / возражения</span></summary>
+                <div class="kp-block-body">
+                    <div class="form-group">
+                        <label>Возражения клиента <span style="color:#a1a1a6; font-weight:400; text-transform:none;">(если уже прозвучали)</span></label>
+                        <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="дорого"><span>Дорого</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="есть текущий поставщик / конкурент"><span>Есть конкурент</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="сомнения в качестве"><span>Сомнения в качестве</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="нет срочной потребности"><span>Нет срочной нужды</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="ждут импорт"><span>Ждут импорт</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="сроки"><span>Сроки</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="документы"><span>Документы</span></label>
+                            <label class="chip-pill"><input type="checkbox" name="objections" value="состав / этикетка"><span>Состав/этикетка</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Комментарий к возражениям</label>
+                        <textarea name="objections_comment" rows="2" placeholder="Что именно говорил клиент: дорого относительно чего, какой конкурент, какие сроки…"></textarea>
+                    </div>
                 </div>
-                <small style="margin-top:6px;">Точное число бьёт оценку — если знаешь, введи.</small>
-            </div>
-            <div class="form-group">
-                <label>Менеджер Verde Tech</label>
-                <input type="text" name="manager_name" required placeholder="Анастасия Васильева">
-            </div>
-            <div class="form-group">
-                <label>Телефон менеджера</label>
-                <input type="text" name="manager_phone" required placeholder="+7 913 677 22 57">
-            </div>
-            <div class="form-group">
-                <label>Email менеджера</label>
-                <input type="email" name="manager_email" required placeholder="vasileva.a@verdespb.ru">
-            </div>
-            <div class="form-group" style="margin-bottom:8px;">
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; user-select:none;">
-                    <input type="checkbox" id="includePricesToggle" name="include_prices" value="1"
-                           style="margin-top:3px; accent-color:#0FBF00; width:16px; height:16px; flex-shrink:0;">
-                    <span>
-                        <span style="font-weight:600; font-size:13px;">Добавить ориентировочные цены в КП</span><br>
-                        <span style="font-size:11px; color:#888; line-height:1.4;">Включай для тёплых и горячих сделок.
-                        Для холодных — сначала зацепи продуктом, цены отдай на встрече.</span>
-                    </span>
-                </label>
-            </div>
+            </details>
+
+            <!-- БЛОК 7: МЕНЕДЖЕР -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">7</span>Данные менеджера Вердэ</span></summary>
+                <div class="kp-block-body">
+                    <div class="form-group">
+                        <label>Менеджер <span class="req">★</span></label>
+                        <input type="text" name="manager_name" required placeholder="Анастасия Васильева">
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон <span class="req">★</span></label>
+                        <input type="text" name="manager_phone" required placeholder="+7 913 677 22 57">
+                    </div>
+                    <div class="form-group">
+                        <label>Email <span class="req">★</span></label>
+                        <input type="email" name="manager_email" required placeholder="vasileva.a@verdespb.ru">
+                    </div>
+                    <small style="display:block; margin-top:4px; color:#a1a1a6;">Подтянутся из профиля Б24 при наличии scope user_brief.</small>
+                </div>
+            </details>
+
             <button type="button" class="btn-generate" id="generateBtn" onclick="generateKP(event)">⚡ Сгенерировать КП</button>
         </form>
 
@@ -658,7 +834,7 @@ function applyPrefill(prefill) {
     if (!prefill || !prefill.client_name) return;
     const form = document.getElementById('kpForm');
     if (!form) return;
-    const fields = ['client_name', 'industry', 'volume', 'manager_name', 'manager_phone', 'manager_email'];
+    const fields = ['client_name', 'industry', 'client_url', 'client_city', 'manager_name', 'manager_phone', 'manager_email'];
     fields.forEach(f => {
         const el = form.querySelector(`[name="${f}"]`);
         if (el && prefill[f]) el.value = prefill[f];
@@ -854,16 +1030,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function prefillFromBitrixEntity(entityType, entityId, kpMode) {
-        // Сначала ставим режим Лид/Сделка
-        if (kpMode) {
-            const radio = document.querySelector('input[name="kp_mode"][value="' + kpMode + '"]');
-            if (radio) {
-                radio.checked = true;
-                radio.dispatchEvent(new Event('change', {bubbles: true}));
-                console.log('[verde] установлен режим:', kpMode);
-            }
-        }
-        // Загружаем весь контекст сделки/лида одним batch — ускоряем и анализируем
+        // kpMode — legacy-параметр (lead/deal). Сейчас работаем только с КП-лида,
+        // тип КП фиксирован в селекте Блок 1. Параметр оставлен для обратной совместимости.
         loadFullBitrixContext(entityType, entityId);
     }
 
@@ -919,9 +1087,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function buildAndFillSituation(deal, company, contacts, comments, activities, products, entityType) {
-        // Заполнение полей формы
+        // === Блок 2: Клиент ===
         const clientField = document.querySelector('input[name="client_name"]');
-        if (clientField) {
+        if (clientField && !clientField.value) {
             // Приоритет: компания → ФИО контакта → заголовок сделки
             let name = '';
             if (company && company.TITLE) name = company.TITLE;
@@ -937,13 +1105,34 @@ document.addEventListener('DOMContentLoaded', () => {
         if (urlField && !urlField.value && company && Array.isArray(company.WEB) && company.WEB.length) {
             urlField.value = company.WEB[0].VALUE || '';
         }
+        // Город (из адреса компании если есть, либо из контакта)
+        const cityField = document.querySelector('input[name="client_city"]');
+        if (cityField && !cityField.value) {
+            const cityVal = (company && (company.ADDRESS_CITY || company.CITY))
+                          || (contacts[0] && (contacts[0].ADDRESS_CITY || contacts[0].CITY)) || '';
+            if (cityVal) cityField.value = cityVal;
+        }
         // Отрасль
         if (company && company.INDUSTRY) applyIndustryFromBitrix(company.INDUSTRY);
 
-        // Собираем структурированную «Задачу клиента»
-        const sit = document.querySelector('textarea[name="situation"]');
-        if (!sit || sit.value && !sit.value.includes('[Комментариев в таймлайне нет')) {
-            // Если уже что-то напечатано (НЕ наш fallback) — не трогаем
+        // === Блок 3: Контактное лицо ===
+        if (contacts.length) {
+            const c = contacts[0];
+            const contactNameField = document.querySelector('input[name="contact_name"]');
+            if (contactNameField && !contactNameField.value) {
+                const fullName = [c.LAST_NAME, c.NAME, c.SECOND_NAME].filter(Boolean).join(' ');
+                if (fullName) contactNameField.value = fullName;
+            }
+            // Маппим должность контакта в роль
+            if (c.POST) {
+                applyContactRoleFromPost(c.POST);
+            }
+        }
+
+        // === Блок 5: Контекст коммуникации ===
+        const sit = document.querySelector('textarea[name="communication_summary"]');
+        if (!sit || sit.value.trim()) {
+            // Если уже что-то напечатано — не трогаем
             return;
         }
         const lines = [];
@@ -1065,16 +1254,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyIndustryFromBitrix(bitrixIndustry) {
         if (!bitrixIndustry) return;
+        // Маппинг из стандартных кодов Битрикса в новый список отраслей формы
         const map = {
-            'FOOD':         'Мясопереработка',
-            'MANUFACTURING':'Мясопереработка',
-            'CATERING':     'HoReCa',
-            'RESTAURANT':   'HoReCa',
+            'FOOD':            'Мясо и птица',
+            'MANUFACTURING':   'Мясо и птица',
+            'CATERING':        'HoReCa / dark kitchen',
+            'RESTAURANT':      'HoReCa / dark kitchen',
+            'BEVERAGES':       'Напитки',
+            'DAIRY':           'Молочная продукция',
+            'BAKERY':          'Кондитерка',
+            'WHOLESALE':       'Дистрибьютор',
+            'RETAIL':          'Дистрибьютор',
         };
         const ourIndustry = map[bitrixIndustry] || null;
         if (!ourIndustry) return;
         const sel = document.querySelector('select[name="industry"]');
-        if (sel) {
+        if (sel && !sel.value) {
             for (const opt of sel.options) {
                 if (opt.value === ourIndustry || opt.text === ourIndustry) {
                     sel.value = opt.value;
@@ -1085,50 +1280,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Авто-включение цен при стадии "на согласовании" или "реактивация"
-    const dealStageSelect = document.querySelector('select[name="deal_stage"]');
-    const priceToggle = document.getElementById('includePricesToggle');
-    if (dealStageSelect && priceToggle) {
-        function syncPriceToggle() {
-            const s = dealStageSelect.value;
-            if (s === 'negotiation' || s === 'reactivation') {
-                priceToggle.checked = true;
-            } else if (s === 'cold') {
-                priceToggle.checked = false;
-            }
-            // warm — не трогаем, пусть менеджер решает сам
-        }
-        dealStageSelect.addEventListener('change', syncPriceToggle);
-        syncPriceToggle(); // применить сразу при загрузке
+    // Маппинг должности контакта (поле POST в Битриксе) в роль контактного лица
+    function applyContactRoleFromPost(post) {
+        if (!post) return;
+        const sel = document.querySelector('select[name="contact_role"]');
+        if (!sel || sel.value) return;  // не перезаписываем если менеджер уже выбрал
+        const lc = post.toLowerCase();
+        let role = '';
+        if (/технолог|technolog/.test(lc))                      role = 'technologist';
+        else if (/закупщик|закупк|снабжен|procurement|buyer/.test(lc)) role = 'buyer';
+        else if (/r&?d|разработ/.test(lc))                       role = 'rd';
+        else if (/собственник|владелец|основатель|owner/.test(lc)) role = 'owner';
+        else if (/директор|генерал|director|ceo|coo/.test(lc))    role = 'director';
+        else if (/маркет/.test(lc))                              role = 'marketer';
+        else if (/категор/.test(lc))                             role = 'category_manager';
+        if (role) sel.value = role;
     }
-
-    // Переключатель ЛИД/СДЕЛКА — праймит остальные поля
-    const kpModeRadios = document.querySelectorAll('input[name="kp_mode"]');
-    kpModeRadios.forEach(r => {
-        r.addEventListener('change', applyKpMode);
-        r.parentElement.addEventListener('click', () => {
-            document.querySelectorAll('.kp-mode-opt').forEach(el => el.style.borderColor = '#e5e5e7');
-            r.parentElement.style.borderColor = r.checked ? '#0FBF00' : '#e5e5e7';
-        });
-    });
-    function applyKpMode() {
-        const mode = document.querySelector('input[name="kp_mode"]:checked')?.value || 'lead';
-        document.querySelectorAll('.kp-mode-opt').forEach(el => {
-            const inp = el.querySelector('input[name="kp_mode"]');
-            el.style.borderColor = inp.checked ? '#0FBF00' : '#e5e5e7';
-            el.style.background = inp.checked ? '#f0fdf4' : '#fafafa';
-        });
-        if (mode === 'lead') {
-            // ЛИД: холодная стадия + цены выкл
-            if (dealStageSelect) { dealStageSelect.value = 'cold'; }
-            if (priceToggle) { priceToggle.checked = false; }
-        } else {
-            // СДЕЛКА: на согласовании + цены вкл
-            if (dealStageSelect) { dealStageSelect.value = 'negotiation'; }
-            if (priceToggle) { priceToggle.checked = true; }
-        }
-    }
-    applyKpMode(); // выставить визуально на старте
 });
 
 function showBadFeedback() {
@@ -1145,7 +1312,7 @@ async function submitFeedback(rating) {
                 rating, comment,
                 client_name: data.client_name,
                 industry: data.industry,
-                situation: data.situation,
+                situation: data.request_summary || data.communication_summary || '',
             }),
         });
         document.getElementById('kpFeedback').style.display = 'none';
@@ -1340,19 +1507,34 @@ function copyEmailHtml() {
     } else { fallbackCopy(html); }
 }
 
+// Toggle поля «Дата (срок образца)» — показывается только при срочности «срочно»
+function onUrgencyChange() {
+    const sel = document.getElementById('urgencySelect');
+    const grp = document.getElementById('urgencyDateGroup');
+    if (!sel || !grp) return;
+    grp.style.display = sel.value === 'urgent' ? 'block' : 'none';
+}
+
 async function generateKP(e) {
     if (e && e.preventDefault) e.preventDefault();
     const form = document.getElementById('kpForm');
     const fd = new FormData(form);
+
+    // Поля с множественным выбором (несколько чекбоксов с одинаковым name)
+    const MULTI_FIELDS = ['improvements', 'composition_requirements', 'tech_constraints',
+                          'dissatisfaction', 'documents_needed', 'objections'];
     const data = {};
-    const objections = [];
+    // Сначала single-value поля, исключая multi
     for (const [k, v] of fd.entries()) {
-        if (k.startsWith('obj_')) { objections.push(v); }
-        else { data[k] = v; }
+        if (MULTI_FIELDS.includes(k)) continue;
+        data[k] = v;
     }
-    data.objections = objections;
-    // Чекбоксы — явно выставляем bool (FormData не включает непроставленные)
-    data.include_prices = document.getElementById('includePricesToggle')?.checked || false;
+    // Потом multi-value
+    for (const k of MULTI_FIELDS) {
+        const all = fd.getAll(k);
+        if (all.length) data[k] = all;
+    }
+
     // Запоминаем менеджера в localStorage чтобы автоподставить в следующий раз
     if (data.manager_name || data.manager_phone || data.manager_email) {
         try {
@@ -1363,14 +1545,16 @@ async function generateKP(e) {
             }));
         } catch (err) {}
     }
-    // Если точный объём не введён, но выбран масштаб — используем оценку масштаба
-    if (!data.volume && data.volume_scale) { data.volume = data.volume_scale; }
+
     const btn = document.getElementById('generateBtn');
     const result = document.getElementById('kpResult');
+    const isUpdate = btn.dataset.mode === 'update';
 
     btn.disabled = true;
     btn.classList.add('loading');
-    btn.innerHTML = '<span class="spinner"></span>Готовлю предложение...';
+    btn.innerHTML = isUpdate
+        ? '<span class="spinner"></span>Обновляю КП...'
+        : '<span class="spinner"></span>Готовлю предложение...';
     result.className = 'kp-result empty';
     const clientLabel = (data.client_name || 'клиента').replace(/[<>]/g,'');
     result.innerHTML = `
@@ -1410,9 +1594,13 @@ async function generateKP(e) {
         result.className = 'kp-result';
         // сохраняем данные КП для фидбэка
         window._lastKpData = data;
+        // Переводим кнопку в режим «Обновить» — менеджер может править поля и пересобирать КП
+        btn.dataset.mode = 'update';
+        btn.classList.add('btn-update-kp');
+        btn.classList.remove('btn-generate');
         result.innerHTML = `
             <h3 style="margin-bottom:12px;">✅ КП готово</h3>
-            <p style="color:#666; margin-bottom:16px;">Собрано с учётом вашей задачи. Откройте в новой вкладке и нажмите Ctrl+P → «Сохранить в PDF».</p>
+            <p style="color:#666; margin-bottom:16px;">Поправь любое поле в форме слева и жми <b>«🔄 Обновить КП»</b> — соберу новую версию. Открой в новой вкладке и Ctrl+P → «Сохранить в PDF».</p>
             <div class="result-actions">
                 <a class="btn btn-primary" href="${url}" download="${fileName}">⬇ Скачать HTML</a>
                 <a class="btn btn-secondary" href="${url}" target="_blank">👁 Открыть в новой вкладке</a>
@@ -1443,7 +1631,9 @@ async function generateKP(e) {
     } finally {
         btn.disabled = false;
         btn.classList.remove('loading');
-        btn.innerHTML = '⚡ Сгенерировать КП';
+        btn.innerHTML = btn.dataset.mode === 'update'
+            ? '🔄 Обновить КП'
+            : '⚡ Сгенерировать КП';
     }
 }
 </script>

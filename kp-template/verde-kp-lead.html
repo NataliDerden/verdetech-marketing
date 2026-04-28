@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Предложение для {{ client_name }} · Verde Tech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0B0B0C;
+    --body: #27272A;
+    --muted: #71717A;
+    --faint: #A1A1AA;
+    --line: #E4E4E7;
+    --hair: #F1F1F3;
+    --paper: #FAFAF9;
+    --cream: #F6F3EC;
+    --green: #0FBF00;
+    --green-dark: #088800;
+    --green-soft: #E8F8E5;
+    --white: #FFFFFF;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { font-family:'Onest', -apple-system, system-ui, sans-serif; background:#D8D8DB; color:var(--body); font-size:14px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .serif { font-family:'Instrument Serif', Georgia, serif; font-weight:400; }
+
+  /* Sticky bar */
+  .bar { position:sticky; top:0; z-index:100; background:rgba(11,11,12,0.95); backdrop-filter:blur(14px); color:var(--white); padding:11px 28px; display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:500; letter-spacing:0.01em; }
+  .bar .brand { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:0.04em; }
+  .bar .brand sup { font-size:0.55em; font-weight:500; }
+  .bar .meta { display:flex; gap:14px; align-items:center; color:#bdbdc0; font-weight:500; }
+  .bar button { background:var(--green); color:var(--white); border:0; padding:7px 16px; font-family:inherit; font-weight:600; font-size:11px; border-radius:999px; cursor:pointer; letter-spacing:0.03em; transition:all 0.15s; }
+  .bar button:hover { background:var(--green-dark); }
+
+  /* Deck */
+  .deck { max-width:940px; margin:0 auto; padding:28px 20px 60px; }
+  .slide { background:var(--white); border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 24px 50px -25px rgba(0,0,0,0.12); margin-bottom:16px; overflow:hidden; position:relative; display:flex; flex-direction:column; }
+  .slide-inner { padding:44px 60px 40px; flex:1; display:flex; flex-direction:column; }
+  .slide-footer { padding:12px 60px; border-top:1px solid var(--hair); display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--faint); letter-spacing:0.12em; text-transform:uppercase; font-weight:500; }
+  .slide-footer .stamp { color:var(--green); font-weight:600; letter-spacing:0.18em; }
+
+  /* Typography */
+  h1 { font-size:30px; font-weight:700; line-height:1.18; letter-spacing:-0.022em; color:var(--ink); }
+  h2 { font-size:24px; font-weight:700; line-height:1.22; letter-spacing:-0.012em; color:var(--ink); }
+  h3 { font-size:16px; font-weight:700; line-height:1.35; letter-spacing:-0.005em; color:var(--ink); }
+  h4 { font-size:13px; font-weight:700; line-height:1.4; color:var(--ink); }
+  p { font-size:14px; line-height:1.6; color:var(--body); }
+  .lead { font-size:15px; line-height:1.58; color:var(--body); max-width:680px; font-weight:400; }
+  .eyebrow { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.22em; color:var(--green); margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+  .eyebrow::before { content:''; display:inline-block; width:18px; height:1px; background:var(--green); }
+  .muted { color:var(--muted); }
+  .faint { color:var(--faint); }
+  .tiny { font-size:11px; color:var(--muted); line-height:1.55; }
+
+  /* Cover slide */
+  .cover { background:var(--paper); min-height:520px; }
+  .cover .slide-inner { padding:40px 60px; display:grid; grid-template-rows:auto 1fr auto; gap:0; }
+  .cover-top { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:30px; border-bottom:1px solid var(--line); }
+  .cover-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px; letter-spacing:0.04em; }
+  .cover-brand .leaves { display:inline-flex; gap:1px; }
+  .cover-brand .leaves span { display:inline-block; width:7px; height:13px; background:var(--green); border-radius:50% 50% 0 50%; transform-origin:center bottom; }
+  .cover-brand .leaves span:nth-child(1) { transform:rotate(-30deg); }
+  .cover-brand .leaves span:nth-child(2) { transform:rotate(0deg); }
+  .cover-brand .leaves span:nth-child(3) { transform:rotate(30deg); }
+  .cover-brand sup { font-size:0.55em; font-weight:500; vertical-align:super; }
+  .cover-meta { font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); font-weight:500; line-height:1.8; text-align:right; }
+  .cover-meta b { color:var(--ink); font-weight:700; }
+  .cover-main { display:flex; flex-direction:column; justify-content:center; padding:36px 0; }
+  .cover-main .eyebrow { margin-bottom:22px; }
+  .cover-main h1 { font-family:'Instrument Serif', Georgia, serif; font-weight:400; font-size:46px; line-height:1.06; letter-spacing:-0.02em; max-width:680px; color:var(--ink); }
+  .cover-main h1 em { font-style:italic; color:var(--green); }
+  .cover-subheadline { margin-top:22px; font-size:15px; color:var(--muted); font-weight:500; max-width:560px; line-height:1.5; }
+  .cover-prepared-for { margin-top:14px; font-size:12px; color:var(--muted); font-weight:500; }
+  .cover-prepared-for .lbl { font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green); margin-right:6px; }
+  .cover-prepared-for b { color:var(--ink); font-weight:600; }
+  .cover-bottom { padding-top:22px; border-top:1px solid var(--line); display:grid; grid-template-columns:1fr auto; gap:24px; align-items:end; }
+  .cover-bottom .manager-info { color:var(--ink); font-size:12px; line-height:1.45; }
+  .cover-bottom .manager-info .lbl { display:block; font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--green); margin-bottom:5px; }
+  .cover-bottom .manager-info b { display:block; font-weight:700; font-size:14px; color:var(--ink); margin-bottom:2px; }
+  .cover-bottom .manager-info .contacts { color:var(--muted); font-weight:500; font-size:11.5px; }
+  .cover-bottom .prepared-by { text-align:right; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); font-weight:500; line-height:1.6; }
+  .cover-bottom .prepared-by b { color:var(--ink); font-weight:700; display:block; }
+  .cover-bottom .prepared-by .tag { color:var(--ink); font-weight:700; letter-spacing:0.2em; font-size:11px; }
+
+  /* Slide 2 — Запрос → Решение */
+  .request-quote { margin-top:24px; padding:22px 28px; background:var(--paper); border-left:3px solid var(--green); border-radius:4px; }
+  .request-quote .quote-eyebrow { font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .request-quote p { font-size:15px; color:var(--ink); line-height:1.55; font-weight:500; }
+
+  .solution-card { margin-top:18px; padding:24px 28px; background:var(--white); border:1px solid var(--green); border-radius:4px; box-shadow:0 1px 0 rgba(15,191,0,0.05); }
+  .solution-card .r-eyebrow { font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--green); margin-bottom:10px; }
+  .solution-card h3 { font-size:20px; font-weight:600; color:var(--ink); line-height:1.25; margin-bottom:8px; letter-spacing:-0.01em; }
+  .solution-card p { font-size:14px; color:var(--body); line-height:1.55; }
+  .solution-card .test-on { margin-top:16px; padding-top:14px; border-top:1px solid var(--hair); font-size:12.5px; color:var(--muted); }
+  .solution-card .test-on b { color:var(--ink); font-weight:600; }
+
+  .alt-card { margin-top:10px; padding:16px 22px; background:var(--paper); border:1px solid var(--line); border-radius:4px; }
+  .alt-card .r-eyebrow { font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .alt-card h4 { font-size:14px; margin-bottom:4px; }
+  .alt-card p { font-size:12.5px; color:var(--muted); line-height:1.55; }
+
+  .advantages-section { margin-top:30px; }
+  .advantages-section h3 { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:14px; font-weight:600; }
+  .advantage-item { padding:14px 0; border-bottom:1px solid var(--hair); display:grid; grid-template-columns:32px 1fr; gap:14px; align-items:baseline; list-style:none; }
+  .advantage-item:first-child { border-top:1px solid var(--ink); padding-top:14px; }
+  .advantage-item .i { font-family:'Instrument Serif', Georgia, serif; font-size:22px; color:var(--green); line-height:1; letter-spacing:-0.02em; }
+  .advantage-item .txt { font-size:14px; line-height:1.5; color:var(--body); }
+  .advantage-item .txt b { color:var(--ink); font-weight:600; }
+
+  .caution-note { margin-top:22px; padding:12px 16px; background:#FFFBE5; border-left:3px solid #E8B948; font-size:12px; color:#8C6D14; line-height:1.55; border-radius:4px; }
+
+  /* Slide 3 — Что мы увидели в продукции */
+  .observation-block { margin-top:24px; }
+  .observation-block .lead { margin-bottom:14px; }
+  .observation-block .stood-out { font-size:14px; color:var(--body); line-height:1.6; padding:16px 20px; background:var(--paper); border-radius:4px; margin-top:10px; }
+  .ideas-section { margin-top:32px; }
+  .ideas-section h3 { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:16px; font-weight:600; }
+  .ideas-list { display:flex; flex-direction:column; gap:10px; }
+  .idea-item { padding:14px 18px; background:var(--green-soft); border-radius:4px; border-left:2px solid var(--green); font-size:13.5px; color:var(--ink); line-height:1.5; list-style:none; }
+
+  .fallback-banner { margin-top:14px; padding:10px 14px; background:#FEF9C3; border-left:3px solid #F2B42A; font-size:11.5px; color:#8C6D14; line-height:1.5; border-radius:4px; }
+
+  /* Slide 4 — Что происходит на рынке */
+  .market-intro { margin-top:18px; padding:14px 20px; background:var(--paper); border-radius:4px; font-size:14px; color:var(--ink); line-height:1.55; }
+  .trends-list { margin-top:24px; display:flex; flex-direction:column; gap:0; }
+  .trend-item { display:grid; grid-template-columns:160px 1fr; gap:24px; padding:18px 0; border-bottom:1px solid var(--hair); }
+  .trend-item:first-child { border-top:1px solid var(--ink); padding-top:18px; }
+  .trend-item .t-title { font-size:13.5px; font-weight:700; color:var(--ink); line-height:1.35; letter-spacing:-0.005em; }
+  .trend-item .t-impact { font-size:13.5px; color:var(--body); line-height:1.55; }
+
+  /* Slide 5 — Что ещё можем предложить + почему Вердэ */
+  .offers-grid { margin-top:24px; display:grid; grid-template-columns:1fr 1fr; gap:36px; }
+  .offers-col h3 { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:16px; font-weight:600; }
+  .direction-item { padding:14px 18px; background:var(--paper); border-radius:4px; border-left:2px solid var(--green); margin-bottom:8px; list-style:none; }
+  .direction-item .d-name { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:3px; line-height:1.3; }
+  .direction-item .d-why { font-size:12px; color:var(--muted); line-height:1.5; }
+
+  .verde-fact { padding:11px 0; border-bottom:1px solid var(--hair); font-size:13px; color:var(--body); display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:baseline; list-style:none; }
+  .verde-fact:first-child { border-top:1px solid var(--ink); padding-top:11px; }
+  .verde-fact::before { content:'✓'; color:var(--green); font-weight:700; font-size:14px; line-height:1; }
+
+  .trust-block { margin-top:30px; padding:16px 22px; background:var(--ink); color:#E5E5E7; border-radius:4px; font-size:13px; line-height:1.55; }
+  .trust-block b { color:var(--white); }
+  .trust-block .trust-eyebrow { font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--green); margin-bottom:6px; }
+
+  /* Slide 6 — Оффер и следующий шаг */
+  .next-step-headline { margin-top:24px; padding:24px 28px; background:var(--green); color:var(--white); border-radius:4px; }
+  .next-step-headline .ns-eyebrow { font-size:10px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.85; margin-bottom:8px; }
+  .next-step-headline h3 { color:var(--white); font-size:20px; font-weight:600; line-height:1.3; letter-spacing:-0.01em; }
+
+  .step-grid { margin-top:24px; display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+  .step-col h3 { font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:14px; font-weight:600; }
+  .step-list { display:flex; flex-direction:column; gap:0; }
+  .step-item { padding:11px 0; border-bottom:1px solid var(--hair); font-size:13px; color:var(--body); display:grid; grid-template-columns:18px 1fr; gap:10px; align-items:baseline; list-style:none; }
+  .step-item:first-child { border-top:1px solid var(--line); padding-top:11px; }
+  .step-item::before { content:'→'; color:var(--green); font-weight:700; font-size:13px; line-height:1; }
+
+  .cta-block { margin-top:30px; padding:18px 24px; background:var(--ink); color:var(--white); border-radius:4px; display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap; }
+  .cta-block .cta-text { font-size:14px; font-weight:500; line-height:1.5; }
+  .cta-block .cta-text b { color:var(--green); font-weight:700; }
+  .cta-block .cta-pill { background:var(--green); color:var(--white); padding:9px 20px; border-radius:999px; font-weight:700; font-size:12px; letter-spacing:0.04em; white-space:nowrap; }
+
+  /* Slide 7 — Бонус: лидеры категории */
+  .bonus-intro { margin-top:18px; font-size:14px; color:var(--body); line-height:1.6; max-width:680px; }
+  .bonus-grid { margin-top:24px; display:grid; grid-template-columns:repeat(3, 1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
+  .bonus-card { padding:18px 20px; background:var(--white); }
+  .bonus-card .bc-eyebrow { font-size:9px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--green); margin-bottom:6px; }
+  .bonus-card h4 { font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink); line-height:1.3; }
+  .bonus-card p { font-size:12px; color:var(--muted); line-height:1.5; }
+
+  .bonus-proposal { margin-top:24px; padding:20px 24px; background:var(--paper); border-left:3px solid var(--green); border-radius:4px; font-size:14px; color:var(--ink); line-height:1.55; }
+  .bonus-proposal b { color:var(--green-dark); font-weight:700; }
+
+  /* Print */
+  @media print {
+    body { background:#fff; }
+    .bar { display:none; }
+    .deck { padding:0; max-width:none; }
+    .slide { box-shadow:none; border:1px solid #e5e5e5; margin-bottom:0; page-break-after:always; }
+    .slide:last-child { page-break-after:auto; }
+  }
+
+  @media (max-width: 720px) {
+    .slide-inner { padding:28px 22px; }
+    .slide-footer { padding:10px 22px; }
+    .cover-main h1 { font-size:34px; }
+    .step-grid, .offers-grid { grid-template-columns:1fr; gap:20px; }
+    .bonus-grid { grid-template-columns:1fr; }
+    .trend-item { grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="brand">
+    <span class="leaves"><span></span><span></span><span></span></span>
+    VERDE<sup>®</sup>TECH
+  </div>
+  <div class="meta">
+    <span>{{ doc_id }}</span>
+    <button onclick="window.print()">Сохранить в PDF</button>
+  </div>
+</div>
+
+<div class="deck">
+
+  <!-- ============== СЛАЙД 1: ОБЛОЖКА ============== -->
+  <div class="slide cover">
+    <div class="slide-inner">
+      <div class="cover-top">
+        <div class="cover-brand">
+          <span class="leaves"><span></span><span></span><span></span></span>
+          VERDE<sup>®</sup>TECH
+        </div>
+        <div class="cover-meta">
+          {{ doc_id }}<br>
+          <b>{{ request_date }}</b>
+        </div>
+      </div>
+      <div class="cover-main">
+        <div class="eyebrow">Коммерческое предложение</div>
+        <h1>Для <em>{{ client_name }}</em></h1>
+        <div class="cover-subheadline">{{ cover_subheadline }}</div>
+        {% if cover_prepared_for %}
+        <div class="cover-prepared-for">
+          <span class="lbl">Подготовлено для</span><b>{{ cover_prepared_for }}</b>
+        </div>
+        {% endif %}
+      </div>
+      <div class="cover-bottom">
+        <div class="manager-info">
+          <span class="lbl">Менеджер Verde Tech</span>
+          <b>{{ manager_name }}</b>
+          <span class="contacts">{{ manager_phone }} · {{ manager_email }}</span>
+        </div>
+        <div class="prepared-by">
+          <span>Подготовлено</span>
+          <b>VERDE TECH</b>
+          <span style="margin-top:6px; display:block;">Забота о будущем</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== СЛАЙД 2: ЗАПРОС → РЕШЕНИЕ → ПРЕИМУЩЕСТВА ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Слайд 2 · Услышали — предлагаем</div>
+      <h2>Ваш запрос → решение Verde Tech</h2>
+
+      <div class="request-quote">
+        <div class="quote-eyebrow">Ваш запрос</div>
+        <p>{{ request_quote }}</p>
+      </div>
+
+      <div class="solution-card">
+        <div class="r-eyebrow">Предлагаемое решение</div>
+        <h3>{{ primary_solution_name }}</h3>
+        <p>{{ primary_solution_desc }}</p>
+        <div class="test-on">Тест можно провести на: <b>{{ test_on_product }}</b></div>
+      </div>
+
+      {% if alternative %}
+      <div class="alt-card">
+        <div class="r-eyebrow">Альтернатива</div>
+        <h4>{{ alternative.name }}</h4>
+        <p>{{ alternative.description }}</p>
+      </div>
+      {% endif %}
+
+      <div class="advantages-section">
+        <h3>Почему это решение подходит</h3>
+        <ul style="list-style:none; padding:0;">
+          {% for adv in advantages %}
+          <li class="advantage-item">
+            <span class="i">{{ '%02d' | format(loop.index) }}</span>
+            <span class="txt">{{ adv }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="caution-note">{{ caution_note }}</div>
+    </div>
+    <div class="slide-footer">
+      <span>verdetech.ru · {{ industry }}</span>
+      <span class="stamp">VERDE TECH</span>
+    </div>
+  </div>
+
+  <!-- ============== СЛАЙД 3: ЧТО МЫ УВИДЕЛИ В ПРОДУКЦИИ ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Слайд 3 · Изучили вашу продукцию</div>
+      <h2>Что мы увидели в вашей продукции</h2>
+
+      <div class="observation-block">
+        <p class="lead">{{ observation_compliment }}</p>
+        {% if observation_what_stood_out %}
+        <div class="stood-out">{{ observation_what_stood_out }}</div>
+        {% endif %}
+        {% if observation_fallback_used %}
+        <div class="fallback-banner">⚠ Информации о вашем ассортименте в открытых источниках было ограничено — предложения сформированы на базе вашей отрасли и запроса. Рады уточнить детали в живой коммуникации.</div>
+        {% endif %}
+      </div>
+
+      <div class="ideas-section">
+        <h3>Что можем предложить дополнительно</h3>
+        <ul class="ideas-list">
+          {% for idea in observation_ideas %}
+          <li class="idea-item">{{ idea }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Анализ открытых источников и отраслевого опыта Verde</span>
+      <span class="stamp">VERDE TECH</span>
+    </div>
+  </div>
+
+  <!-- ============== СЛАЙД 4: ЧТО ПРОИСХОДИТ НА РЫНКЕ ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Слайд 4 · Ваш рынок сейчас</div>
+      <h2>Что происходит на рынке</h2>
+
+      {% if market_intro %}
+      <div class="market-intro">{{ market_intro }}</div>
+      {% endif %}
+
+      <div class="trends-list">
+        {% for t in market_trends %}
+        <div class="trend-item">
+          <div class="t-title">{{ t.title }}</div>
+          <div class="t-impact">{{ t.impact }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Тренды и рыночные сигналы — открытые источники</span>
+      <span class="stamp">VERDE TECH</span>
+    </div>
+  </div>
+
+  <!-- ============== СЛАЙД 5: ЧТО ЕЩЁ + ПОЧЕМУ ВЕРДЭ ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Слайд 5 · Шире вашего запроса</div>
+      <h2>Что ещё можем предложить — и почему Verde Tech</h2>
+
+      <div class="offers-grid">
+        <div class="offers-col">
+          <h3>Дополнительные направления</h3>
+          <ul style="list-style:none; padding:0;">
+            {% for d in offer_directions %}
+            <li class="direction-item">
+              <div class="d-name">{{ d.name }}</div>
+              <div class="d-why">{{ d.why }}</div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="offers-col">
+          <h3>Почему Verde Tech</h3>
+          <ul style="list-style:none; padding:0;">
+            {% for f in verde_facts %}
+            <li class="verde-fact">{{ f }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      {% if trust_block %}
+      <div class="trust-block">
+        <div class="trust-eyebrow">С кем работаем</div>
+        {{ trust_block }}
+      </div>
+      {% endif %}
+    </div>
+    <div class="slide-footer">
+      <span>verdetech.ru · 12 лет на рынке · собственное R&amp;D</span>
+      <span class="stamp">VERDE TECH</span>
+    </div>
+  </div>
+
+  <!-- ============== СЛАЙД 6: ОФФЕР И СЛЕДУЮЩИЙ ШАГ ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Слайд 6 · Следующий шаг</div>
+      <h2>Оффер и следующий шаг</h2>
+
+      <div class="next-step-headline">
+        <div class="ns-eyebrow">Что предлагаем протестировать</div>
+        <h3>{{ next_what_to_test }}</h3>
+      </div>
+
+      <div class="step-grid">
+        <div class="step-col">
+          <h3>Что входит в первый шаг</h3>
+          <ul class="step-list">
+            {% for s in next_first_step_includes %}
+            <li class="step-item">{{ s }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="step-col">
+          <h3>Что нужно от вас</h3>
+          <ul class="step-list">
+            {% for s in next_from_client_needed %}
+            <li class="step-item">{{ s }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="cta-block">
+        <div class="cta-text"><b>Следующий шаг:</b> {{ next_cta }}</div>
+        <div class="cta-pill">Согласовать тест</div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>{{ manager_name }} · {{ manager_phone }} · {{ manager_email }}</span>
+      <span class="stamp">VERDE TECH</span>
+    </div>
+  </div>
+
+  <!-- ============== СЛАЙД 7: БОНУС — ЧТО ДЕЛАЮТ ЛИДЕРЫ ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Слайд 7 · Бонус — взгляд на категорию</div>
+      <h2>Что делают лидеры вашей категории</h2>
+
+      {% if bonus_intro %}
+      <p class="bonus-intro">{{ bonus_intro }}</p>
+      {% endif %}
+
+      <div class="bonus-grid">
+        {% for o in bonus_observations %}
+        <div class="bonus-card">
+          <div class="bc-eyebrow">{{ o.player }}</div>
+          <h4>{{ o.what }}</h4>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="bonus-proposal">
+        <b>Что если сделать сильнее?</b><br>
+        {{ bonus_verde_proposal }}
+      </div>
+
+      <div class="cta-block" style="margin-top:18px;">
+        <div class="cta-text">{{ bonus_cta }}</div>
+        <div class="cta-pill">Выбрать идею</div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Анализ открытых источников · конкуренты не копируем — адаптируем тренды</span>
+      <span class="stamp">VERDE TECH</span>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
