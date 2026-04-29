@@ -1047,7 +1047,9 @@ document.addEventListener('DOMContentLoaded', () => {
             activities: ['crm.activity.list', {
                 filter: {OWNER_ID: entityId, OWNER_TYPE_ID: ownerTypeId},
                 order: {CREATED: 'DESC'},
-                select: ['SUBJECT', 'TYPE_ID', 'CREATED', 'DESCRIPTION', 'COMMUNICATIONS'],
+                select: ['SUBJECT', 'TYPE_ID', 'PROVIDER_ID', 'PROVIDER_TYPE_ID',
+                         'CREATED', 'DESCRIPTION', 'DESCRIPTION_TYPE',
+                         'COMMUNICATIONS', 'FILES', 'ASSOCIATED_ENTITY_ID'],
             }],
         };
         if (entityType === 'deal') {
@@ -1187,19 +1189,43 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // 5. Активности (звонки, встречи, письма)
-        if (activities.length) {
+        // 5. Звонки с расшифровкой — отдельная секция, без обрезки до 200 символов.
+        // Если в звонке есть расшифровка (DESCRIPTION с большим текстом или транскрипт от
+        // Voximplant/UIS/Mango — он попадает сюда), отдаём её в задачу клиента целиком (до 3000),
+        // чтобы Claude мог использовать запросы клиента из звонка.
+        const calls = activities.filter(function(a) {
+            return parseInt(a.TYPE_ID, 10) === 2;  // 2 = звонок
+        });
+        const otherActs = activities.filter(function(a) {
+            return parseInt(a.TYPE_ID, 10) !== 2;
+        });
+        if (calls.length) {
             lines.push('');
-            lines.push('— АКТИВНОСТИ —');
-            const typeMap = {1: 'Встреча', 2: 'Звонок', 3: 'Задача', 4: 'Email'};
-            activities.slice(0, 5).forEach(function(a) {
+            lines.push('— ЗВОНКИ С КЛИЕНТОМ (с расшифровкой если есть) —');
+            calls.slice(0, 5).forEach(function(a) {
+                const date = (a.CREATED || '').slice(0, 10);
+                const subj = a.SUBJECT || 'Звонок';
+                lines.push('[' + date + '] ' + subj);
+                if (a.DESCRIPTION) {
+                    const desc = a.DESCRIPTION.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
+                                              .replace(/\s+/g, ' ').trim();
+                    if (desc) lines.push('  ' + desc.slice(0, 3000));
+                }
+            });
+        }
+        // 5б. Остальные активности (встречи, задачи, email) — короткой строкой
+        if (otherActs.length) {
+            lines.push('');
+            lines.push('— ВСТРЕЧИ / ЗАДАЧИ / EMAIL —');
+            const typeMap = {1: 'Встреча', 3: 'Задача', 4: 'Email'};
+            otherActs.slice(0, 5).forEach(function(a) {
                 const type = typeMap[a.TYPE_ID] || ('Тип ' + a.TYPE_ID);
                 const date = (a.CREATED || '').slice(0, 10);
                 const subj = a.SUBJECT || '';
                 let line = '[' + date + '] ' + type + ': ' + subj;
                 if (a.DESCRIPTION) {
                     const desc = a.DESCRIPTION.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-                    if (desc) line += ' — ' + desc.slice(0, 200);
+                    if (desc) line += ' — ' + desc.slice(0, 300);
                 }
                 lines.push(line);
             });
