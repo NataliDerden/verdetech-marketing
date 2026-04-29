@@ -27,7 +27,9 @@
 
   /* Sticky bar */
   .bar { position:sticky; top:0; z-index:100; background:rgba(11,11,12,0.95); backdrop-filter:blur(14px); color:var(--white); padding:11px 28px; display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:500; letter-spacing:0.01em; }
-  .bar .brand { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:0.04em; }
+  .bar .brand { display:flex; align-items:center; gap:9px; font-weight:700; letter-spacing:0.04em; color:var(--white); }
+  .bar .brand .logo { height:22px; width:auto; display:block; }
+  .bar .brand .logo svg { height:100%; width:auto; display:block; }
   .bar .brand sup { font-size:0.55em; font-weight:500; }
   .bar .meta { display:flex; gap:14px; align-items:center; color:#bdbdc0; font-weight:500; }
   .bar button { background:var(--green); color:var(--white); border:0; padding:7px 16px; font-family:inherit; font-weight:600; font-size:11px; border-radius:999px; cursor:pointer; letter-spacing:0.03em; transition:all 0.15s; }
@@ -57,12 +59,9 @@
   .cover { background:var(--paper); min-height:380px; }
   .cover .slide-inner { padding:24px 40px; display:grid; grid-template-rows:auto 1fr auto; gap:0; }
   .cover-top { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:18px; border-bottom:1px solid var(--line); }
-  .cover-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px; letter-spacing:0.04em; }
-  .cover-brand .leaves { display:inline-flex; gap:1px; }
-  .cover-brand .leaves span { display:inline-block; width:7px; height:13px; background:var(--green); border-radius:50% 50% 0 50%; transform-origin:center bottom; }
-  .cover-brand .leaves span:nth-child(1) { transform:rotate(-30deg); }
-  .cover-brand .leaves span:nth-child(2) { transform:rotate(0deg); }
-  .cover-brand .leaves span:nth-child(3) { transform:rotate(30deg); }
+  .cover-brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px; letter-spacing:0.04em; color:var(--green); }
+  .cover-brand .logo { height:32px; width:auto; display:block; }
+  .cover-brand .logo svg { height:100%; width:auto; display:block; }
   .cover-brand sup { font-size:0.55em; font-weight:500; vertical-align:super; }
   .cover-meta { font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); font-weight:500; line-height:1.8; text-align:right; }
   .cover-meta b { color:var(--ink); font-weight:700; }
@@ -242,12 +241,15 @@
 
 <div class="bar">
   <div class="brand">
-    <span class="leaves"><span></span><span></span><span></span></span>
-    ВЕРДЭ
+    {% if verde_logo_svg %}
+      <span class="logo" aria-label="Вердэ">{{ verde_logo_svg | safe }}</span>
+    {% else %}
+      <span>ВЕРДЭ</span>
+    {% endif %}
   </div>
   <div class="meta">
     <span>{{ doc_id }}</span>
-    <button onclick="window.print()">Сохранить в PDF</button>
+    <button id="downloadKpBtn" type="button">⇩ Скачать</button>
   </div>
 </div>
 
@@ -258,8 +260,11 @@
     <div class="slide-inner">
       <div class="cover-top">
         <div class="cover-brand">
-          <span class="leaves"><span></span><span></span><span></span></span>
-          ВЕРДЭ
+          {% if verde_logo_svg %}
+            <span class="logo" aria-label="Вердэ">{{ verde_logo_svg | safe }}</span>
+          {% else %}
+            <span>ВЕРДЭ</span>
+          {% endif %}
         </div>
         <div class="cover-meta">
           {{ doc_id }}<br>
@@ -507,6 +512,38 @@
   </div>
 
 </div>
+
+<script>
+(function() {
+  // Скачивание самого КП как HTML-файла. Имя файла приходит с бэка (с учётом клиента и даты).
+  // ВАЖНО: при скачивании удаляем сам блок .bar (с кнопкой), чтобы скачанный файл был чистый.
+  var btn = document.getElementById('downloadKpBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    try {
+      var clone = document.documentElement.cloneNode(true);
+      var bar = clone.querySelector('.bar');
+      if (bar) bar.parentNode.removeChild(bar);
+      var script = clone.querySelector('script');
+      if (script) script.parentNode.removeChild(script);
+      var html = '<!doctype html>\n' + clone.outerHTML;
+      var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = {{ download_filename | tojson }};
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function() {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 200);
+    } catch (e) {
+      alert('Не удалось скачать: ' + e.message);
+    }
+  });
+})();
+</script>
 
 </body>
 </html>

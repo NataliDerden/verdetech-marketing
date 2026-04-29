@@ -65,6 +65,33 @@ except ImportError:
     _ALL_SPECS_RAW = {}
 
 
+def _load_verde_logo_svg():
+    """Один раз при старте подгружаем SVG-лого «Вердэ» (русское написание).
+    Подменяем фиксированный fill на currentColor, чтобы цвет управлялся через CSS:
+    в тёмной шапке лого белое (color:#fff), на cover — зелёное (color:var(--green))."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        'VERDE', 'Вердэ лого на русском', 'verde_logo_green.svg')
+    if not os.path.exists(path):
+        print(f"[logo] WARN: SVG не найден {path} — лого в КП-лида будет текстовым", flush=True)
+        return ''
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            svg = f.read()
+    except OSError as e:
+        print(f"[logo] WARN: ошибка чтения SVG: {e}", flush=True)
+        return ''
+    # Меняем зафиксированный зелёный на currentColor (управляем через CSS color)
+    svg = svg.replace('#0fbf00', 'currentColor').replace('#0FBF00', 'currentColor')
+    # Удаляем id, чтобы при двух копиях на странице не было дубликатов
+    svg = re.sub(r'\sid="[^"]*"', '', svg, count=1)
+    return svg
+
+
+VERDE_LOGO_SVG = _load_verde_logo_svg()
+if VERDE_LOGO_SVG:
+    print(f"[logo] Загружен SVG-лого Вердэ ({len(VERDE_LOGO_SVG)} байт)", flush=True)
+
+
 def get_first_line(text, limit=120):
     """Извлечь первую содержательную строку (описание продукта) из спецификации."""
     for line in text.split('\n'):
@@ -2900,7 +2927,13 @@ def _generate_kp_lead(data):
     contact_name_pretty = ' '.join(w.capitalize() for w in contact_name.split()) if contact_name else ''
     cover_prepared_for = contact_name_pretty
 
+    # Имя файла для скачивания: «КП_<клиент>_<дата>.html» — кириллица допускается
+    safe_client = re.sub(r'[<>:"/\\|?*]', '', client_name)[:60].strip().replace(' ', '_')
+    download_filename = f"КП_{safe_client}_{datetime.now().strftime('%Y-%m-%d')}.html"
+
     context = {
+        'verde_logo_svg': VERDE_LOGO_SVG,
+        'download_filename': download_filename,
         'client_name': client_name,
         'client_dative': cover.get('client_dative', '').strip() or client_name,
         'doc_id': f"KP-{datetime.now().strftime('%Y%m%d-%H%M')}-{client_name[:3].upper()}",
