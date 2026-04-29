@@ -2393,14 +2393,20 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
     if kb_relevant:
         kb_items = []
         for r in kb_relevant[:25]:
-            kb_items.append({
+            entry = {
                 'name': r.get('name'),
                 'category': r.get('category'),
                 'spec_purpose': (r.get('spec_purpose') or '')[:200],
-            })
+            }
+            if r.get('is_archive'):
+                entry['note'] = r.get('note', '')
+                entry['archive_2024'] = True
+            kb_items.append(entry)
         kb_block = ('=== БАЗА ЗНАНИЙ: продукты Verde Tech, релевантные запросу ===\n'
                     'Используй ИХ при подборе primary_solution и направлений в additional_offers.directions.\n'
                     'Цены НЕ указывай — это КП-лида, без цифр.\n'
+                    'Если позиция помечена archive_2024:true — это активно разрабатываемая категория,\n'
+                    'упоминай как «есть рабочее решение, образец и точную цену уточнит технолог Вердэ».\n'
                     + json.dumps(kb_items, ensure_ascii=False, indent=2))
 
     # Production stack (Mode B)
@@ -3094,13 +3100,23 @@ def generate_kp():
         # Преобразуем в формат для промпта
         pricelist_relevant_products = []
         for r in kb_relevant:
-            pricelist_relevant_products.append({
+            item = {
                 'name':         r['name'],
                 'cat':          r['category'],
                 'bulk_no_vat':  r.get('price_bulk_no_vat'),
                 'small_no_vat': r.get('price_small_no_vat'),
                 'spec_purpose': r.get('spec_purpose', ''),
-            })
+            }
+            # Архивные красители (прайс 14.10.2024) — пробрасываем флаг и
+            # ориентировочную цену с НДС, чтобы Claude использовал их корректно
+            if r.get('is_archive'):
+                item['archive_2024'] = True
+                item['archive_note'] = r.get('archive_note', '')
+                item['price_archive_2024_vat'] = r.get('price_archive_2024_vat')
+                item['dosage'] = r.get('dosage', '')
+                item['packing'] = r.get('packing', '')
+                item['variant_note'] = r.get('note', '')
+            pricelist_relevant_products.append(item)
     else:
         detected_categories = detect_categories_in_text(combined_context)
         pricelist_relevant_products = []
@@ -3271,14 +3287,25 @@ json.dumps([{
 "3. У многих есть СПЕЦИФИКАЦИЯ (поле spec_purpose) — это техническое описание для аргументации" + chr(10) +
 "4. Соотноси спецификацию с тем что КЛИЕНТ ПРОИЗВОДИТ (из контекста сделки и сайта) — это твоя главная работа как продакт-маркетолога" + chr(10) +
 "5. НЕ подменяй конкретные продукты универсальными V Smart Plus если клиент явно ищет другую категорию" + chr(10) +
+"6. ⚠️ ВАЖНО про КРАСИТЕЛИ (поле archive_2024:true): эти позиции — из архивного прайса 14.10.2024," + chr(10) +
+"   красителей нет в актуальном прайсе 2026, мы активно разрабатываем эту категорию." + chr(10) +
+"   Когда клиент спрашивает про красители — упоминай позицию по имени и составу," + chr(10) +
+"   НО цену НЕ ставь как точную: пиши «ориентировочно X руб (прайс 14.10.2024, актуализируем менеджером»)" + chr(10) +
+"   или «точную стоимость уточнит технолог Вердэ при подготовке образца»." + chr(10) +
 json.dumps([
-    {
+    {k: v for k, v in {
         'name': p['name'],
         'category': p.get('cat', ''),
         'price_bulk_₽_no_vat': p.get('bulk_no_vat'),
         'price_small_₽_no_vat': p.get('small_no_vat'),
         'spec_purpose': (p.get('spec_purpose') or '')[:250],
-    } for p in pricelist_relevant_products
+        'archive_2024': p.get('archive_2024'),
+        'price_archive_2024_₽_vat': p.get('price_archive_2024_vat'),
+        'archive_dosage': p.get('dosage'),
+        'archive_packing': p.get('packing'),
+        'archive_variant_note': p.get('variant_note'),
+    }.items() if v not in (None, '', False)}
+    for p in pricelist_relevant_products
 ], ensure_ascii=False, indent=2)
 ) if pricelist_relevant_products else ''}
 

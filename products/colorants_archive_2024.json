@@ -1,0 +1,1033 @@
+[
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "1.1.",
+    "name": "V Альбутекс",
+    "dosage": "0,3 - 0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 607.0,
+    "price_raw": "607",
+    "note": "с гов гем без консерванта",
+    "composition": "гемоглобин говяжий"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "1.2.",
+    "name": "V Альбутекс",
+    "dosage": "0,5 - 1,0",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 462.0,
+    "price_raw": "462",
+    "note": "от технолога",
+    "composition": "гемоглобин говяжий,  регуляторы кислотности (Е331, Е262), соль, антиокислитель Е330."
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "1.3.",
+    "name": "V Альбутекс",
+    "dosage": "0,5 - 1,0",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 423.0,
+    "price_raw": "423",
+    "note": "с консервантом",
+    "composition": "гемоглобин свиной,  регуляторы кислотности (Е331, Е262), соль, антиокислитель Е330."
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "2.",
+    "name": "V Колор Р",
+    "dosage": "0,03 - 0,07",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 363.0,
+    "price_raw": "363",
+    "note": "от технолога",
+    "composition": "соль, мальтодекстрин, краситель Е124"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "3.",
+    "name": "V Колор R",
+    "dosage": "0,1 - 0,4",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 638.0,
+    "price_raw": "638",
+    "note": "от технолога",
+    "composition": "красный рисовый"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "4.1.",
+    "name": "V Колор RP",
+    "dosage": "0,2 - 0,5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1017.0,
+    "price_raw": "1017",
+    "note": "с кармином",
+    "composition": "гемоглобин говяжий,  соль, краситель Е120"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "4.2.",
+    "name": "V Колор RP",
+    "dosage": "0,1 - 0,35",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 649.0,
+    "price_raw": "649",
+    "note": "арт. 2200",
+    "composition": "красный рисовый, мальтодекстрин, соль, краситель Е124."
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "5.",
+    "name": "V Колор GP",
+    "dosage": "0,1 - 0,4",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 665.0,
+    "price_raw": "665",
+    "note": "от технолога",
+    "composition": "говяжий гемоглобин, мальтодекстрин, соль, краситель Е124"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "6.",
+    "name": "V Колор GK",
+    "dosage": "0,05-0,1",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 544.0,
+    "price_raw": "544",
+    "note": "красный очаровательный",
+    "composition": "соль, мальтодекстрин, краситель Е129"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "7.",
+    "name": "V Колор Свекольный",
+    "dosage": "до 0,5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1925.0,
+    "price_raw": "1925",
+    "note": "от технолога",
+    "composition": "концентрированный сок красной свёклы, регулятор кислотности (лимонная кислота), мальтодекстрин"
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "8.1.",
+    "name": "V Колор К",
+    "dosage": "0,07-0,12",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 3230.0,
+    "price_raw": "3230",
+    "note": "от технолога",
+    "composition": "соль,  мальтодекстрин, краситель Е 120 (5%)."
+  },
+  {
+    "tag": "meat_fish",
+    "category_label": "Для мясников и рыбников (КП №14/1, 14.10.2024)",
+    "dosage_unit": "% к массе продукта",
+    "industry_targets": [
+      "meat_processing",
+      "fish_processing"
+    ],
+    "no": "8.2.",
+    "name": "V Колор К",
+    "dosage": "0,2 - 0,5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1065.0,
+    "price_raw": "1065",
+    "note": "эконом",
+    "composition": "мальтодекстрин, соль, краситель Е 120 (1,5%)"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "1.",
+    "name": "V Колор Р",
+    "dosage": "0,3-0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 506.0,
+    "price_raw": "506",
+    "note": "от технолога",
+    "composition": "мальтодекстрин, декстроза, краситель Е124"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "2.",
+    "name": "V Колор \"Красный\"",
+    "dosage": "0,6-1,0",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 528.0,
+    "price_raw": "528",
+    "note": "в/р",
+    "composition": "мальтодекстрин, декстроза, краситель Е 122"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "3.",
+    "name": "V Колор \"Свекольный\"",
+    "dosage": "до 0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1925.0,
+    "price_raw": "1925",
+    "note": "от технолога",
+    "composition": "концентрированный сок красной свёклы, регулятор кислотности (лимонная кислота), мальтодекстрин"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "4.",
+    "name": "V Колор \"Желтый\"",
+    "dosage": "до 3,0",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 703.0,
+    "price_raw": "703",
+    "note": "",
+    "composition": "носитель (мальтодекстрин), краситель Е104."
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "5.",
+    "name": "V Колор \"Солнечный закат\"",
+    "dosage": "до 0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 671.0,
+    "price_raw": "671",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, краситель Е 110"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "6.",
+    "name": "V Колор \"Голубой\"",
+    "dosage": "не более 5,0",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 399.0,
+    "price_raw": "399",
+    "note": "от т",
+    "composition": "носители (мальтодекстрин, декстроза), краситель Е131"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "7.",
+    "name": "V Колор \"Синий\"",
+    "dosage": "не более 0,5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 585.0,
+    "price_raw": "585",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), краситель Е133"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "8.",
+    "name": "V Колор \"Зеленый\"",
+    "dosage": "не более 0,5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 538.0,
+    "price_raw": "538",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), красители (Е102, Е133)"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "9.",
+    "name": "V Колор \"Шоколад\"",
+    "dosage": "не более 0,3",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 838.0,
+    "price_raw": "838",
+    "note": "",
+    "composition": "носители (мальтодекстрин), краситель Е155"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "10.",
+    "name": "V Колор \"Оранжевый\"",
+    "dosage": "не более 4",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 671.0,
+    "price_raw": "671",
+    "note": "",
+    "composition": "мальтодекстрин, красители (Е104, Е124)"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "11.",
+    "name": "V Колор \"Белый\"",
+    "dosage": "4-10",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 614.0,
+    "price_raw": "614",
+    "note": "",
+    "composition": "мальтодекстрин, краситель Е 171"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "12.",
+    "name": "V Колор Н",
+    "dosage": "до 1,0",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 545.0,
+    "price_raw": "545",
+    "note": "томат",
+    "composition": "соль, декстроза, красители (Е122, Е110)"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "13.",
+    "name": "V Колор Черная смородина",
+    "dosage": "до 0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 390.0,
+    "price_raw": "390",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, красители (Е122, Е 132)"
+  },
+  {
+    "tag": "confectionery_water",
+    "category_label": "Кондитерские водорастворимые (КП №14/2, 14.10.2024)",
+    "dosage_unit": "г/кг (водорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream"
+    ],
+    "no": "14.",
+    "name": "V Колор \"Малиновый\"\"",
+    "dosage": "0.7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 395.0,
+    "price_raw": "395",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), краситель Е122, Е132"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "1",
+    "name": "V Колор Р (ЛАК)",
+    "dosage": "0,5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 660.0,
+    "price_raw": "660",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, краситель Е124"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "2",
+    "name": "V Колор лак \"Красный\"",
+    "dosage": "0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 525.0,
+    "price_raw": "525",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, краситель Е 122"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "3",
+    "name": "V Колор лак \"Желтый\"",
+    "dosage": "0.5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1020.0,
+    "price_raw": "1020",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), хинолиновый желтый Е104"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "4",
+    "name": "V Колор лак \"Синий\"",
+    "dosage": "0.5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 654.0,
+    "price_raw": "654",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), краситель Е133"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "5",
+    "name": "V Колор лак \"Зеленый\"",
+    "dosage": "0.5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 641.0,
+    "price_raw": "641",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), красители (Е102, Е133)"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "6",
+    "name": "V Колор лак \"Черника\"",
+    "dosage": "0.7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 562.0,
+    "price_raw": "562",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), красители (Е122, Е132)"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "7",
+    "name": "V Колор лак \"Черная смородина\"",
+    "dosage": "0.7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 475.0,
+    "price_raw": "475",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), красители (Е122, Е132)"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "8",
+    "name": "V Колор лак \"Малиновый\"",
+    "dosage": "0.7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 450.0,
+    "price_raw": "450",
+    "note": "",
+    "composition": "носители (мальтодекстрин, декстроза), краситель Е122, Е132"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "9",
+    "name": "V Колор лак \"Оранжевый\"",
+    "dosage": "4",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 880.0,
+    "price_raw": "880",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, красители (Е104, Е124)"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "10",
+    "name": "V Колор лак \"Индиго кармин\"",
+    "dosage": "3.5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 667.0,
+    "price_raw": "667",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, красители (Е132)"
+  },
+  {
+    "tag": "confectionery_lake",
+    "category_label": "Кондитерские жирорастворимые/лак (КП №14/3, 27.06.2024)",
+    "dosage_unit": "г/кг (лак, жирорастворимые)",
+    "industry_targets": [
+      "confectionery",
+      "bakery",
+      "ice_cream",
+      "fat_systems"
+    ],
+    "no": "11.",
+    "name": "V Колор лак \"Шоколад\"",
+    "dosage": "до 0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 580.0,
+    "price_raw": "580",
+    "note": "",
+    "composition": "мальтодекстрин, декстроза, красители (Е133, Е110, Е102, Е124)"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "1.1.",
+    "name": "V Колор \"К\"",
+    "dosage": "0,3-0,7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 5500.0,
+    "price_raw": "5500",
+    "note": "Кондитер",
+    "composition": "мальтодекстрин, декстроза, краситель кармин Е120"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "1.2.",
+    "name": "V Колор \"К\"",
+    "dosage": "4 - 6",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1740.0,
+    "price_raw": "1740",
+    "note": "халяль",
+    "composition": "мальтодекстрин, соль, экстракт черной и красной моркови, антиокислитель Е316"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "2.",
+    "name": "V Колор \"Свекольный\"",
+    "dosage": "до 5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 2040.0,
+    "price_raw": "2040",
+    "note": "от технолога",
+    "composition": "концентрированный сок красной свёклы, регулятор кислотности (лимонная кислота), мальтодекстрин"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "3.",
+    "name": "V Колор R",
+    "dosage": "3-5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1550.0,
+    "price_raw": "1550",
+    "note": "N желто-оранжевый",
+    "composition": "мальтодекстрин, краситель бета-каротин Е160а"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "4.",
+    "name": "V Колор Аннато",
+    "dosage": "0,6 - 1,8",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1417.0,
+    "price_raw": "1417",
+    "note": "N оранжевый",
+    "composition": "мальтодекстрин, краситель  Е160b"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "5.",
+    "name": "V Колор G",
+    "dosage": "0,3 - 5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 2336.0,
+    "price_raw": "2336",
+    "note": "N желтый",
+    "composition": "мальтодекстрин, краситель куркумин (Е100)"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "6.",
+    "name": "V Колор Х",
+    "dosage": "0,5-5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1907.0,
+    "price_raw": "1907",
+    "note": "N зеленое яблоко",
+    "composition": "мальтодекстрин, краситель хлорофиллин (Е141(ii)"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "7.",
+    "name": "V Колор S",
+    "dosage": "2-10",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 601.0,
+    "price_raw": "601",
+    "note": "N шоколадный",
+    "composition": "носитель (мальтодекстрин),  краситель сахарный колер Е150с"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "8.1.",
+    "name": "V Колор С",
+    "dosage": "4-7",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 910.0,
+    "price_raw": "910",
+    "note": "N для мороженого",
+    "composition": "мальтодекстрин, красители (сок свеклы, сахарный колер Е150а), антиокислитель Е300"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "8.2.",
+    "name": "V Колор С",
+    "dosage": "1-3",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1830.0,
+    "price_raw": "1830",
+    "note": "N для фарша",
+    "composition": "концентрированный сок красной  свеклы, сахарный колер Е150а, соль, антиокислитель Е316, мальтодекстрин"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "8.3.",
+    "name": "V Колор С",
+    "dosage": "3-5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 2325.0,
+    "price_raw": "2325",
+    "note": "для СК",
+    "composition": "концентрированный сок красной  свеклы, экстракт черной моркови, соль, антиокислитель Е316"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "9.",
+    "name": "V Колор GP",
+    "dosage": "3-5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1500.0,
+    "price_raw": "1500",
+    "note": "N оксид железа",
+    "composition": "мальтодекстрин, краситель оксид железа (Е172)"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "10.",
+    "name": "V Альбутекс",
+    "dosage": "3-6",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 1432.0,
+    "price_raw": "1432",
+    "note": "N краситель",
+    "composition": "гемоглобин говяжий, концентрированный сок красной свеклы, соль поваренная, мальтодекстрин, антиокислитель Е330."
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "11.",
+    "name": "V Альбутекс",
+    "dosage": "4-8",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 556.0,
+    "price_raw": "556",
+    "note": "быстрорастворимый",
+    "composition": "гемоглобин говяжий, носители (декстроза, мальтодекстрин)"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "12.",
+    "name": "V Колор S",
+    "dosage": "25-70",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 2490.0,
+    "price_raw": "2490",
+    "note": "N Спирулина",
+    "composition": "носитель (мальтодекстрин), спирулина"
+  },
+  {
+    "tag": "natural",
+    "category_label": "Натуральные красители (КП №14/4, 11.08.2025)",
+    "dosage_unit": "г/кг",
+    "industry_targets": [
+      "meat_processing",
+      "confectionery",
+      "bakery",
+      "dairy_desserts",
+      "ice_cream",
+      "halal",
+      "clean_label"
+    ],
+    "no": "13.",
+    "name": "V Колор Н",
+    "dosage": "0,5 - 5",
+    "packing": "метал.пакет, 1-10 кг",
+    "price_2024_vat": 3605.0,
+    "price_raw": "3605",
+    "note": "N черный",
+    "composition": "носитель (мальтодекстрин), краситель уголь растительный (Е153)"
+  }
+]

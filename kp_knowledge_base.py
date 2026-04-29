@@ -1,12 +1,15 @@
 """
 База знаний КП-генератора Verde Tech.
 
-Объединяет три источника информации о продуктах:
-1. PRICE_MAP (1882 позиции из прайса 01.05.2026 с ценами по тарным/мелким фасовкам)
-2. _ALL_SPECS_RAW (~800 спецификаций — что делает продукт, дозировка, применение)
-3. ALL_PRODUCTS (курированный каталог самых продаваемых продуктов)
+Объединяет четыре источника информации о продуктах:
+1. PRICE_MAP — позиции из актуального прайса (01.05.2026) с ценами по фасовкам
+2. _ALL_SPECS_RAW — спецификации (что делает продукт, дозировка, применение)
+3. ALL_PRODUCTS — курированный каталог самых продаваемых продуктов
+4. COLORANTS_ARCHIVE — архивный реестр красителей (прайс 14.10.2024, 53 позиции),
+   нет в актуальном прайсе 2026, но используется когда клиент спрашивает про
+   красители, цвета, окрашивание. Помечается флагом is_archive=True.
 
-Кросс-референсирует их по имени и предоставляет одну функцию find_relevant_for_context()
+Кросс-референсирует их по имени и предоставляет find_relevant_for_context()
 которая ранжирует продукты по релевантности к ситуации клиента.
 """
 import re
@@ -21,6 +24,17 @@ try:
     from products_catalog import UNIFIED_PRODUCTS as ALL_PRODUCTS
 except ImportError:
     ALL_PRODUCTS = []
+
+try:
+    from products_colorants_archive import (
+        find_colorants_for_context as _find_colorants_archive,
+        COLORANTS_ARCHIVE as _COLORANTS_ARCHIVE,
+        ARCHIVE_DATE as _COLORANTS_ARCHIVE_DATE,
+    )
+except ImportError:
+    _find_colorants_archive = None
+    _COLORANTS_ARCHIVE = []
+    _COLORANTS_ARCHIVE_DATE = ""
 
 
 # Триггеры категорий — слова, которые указывают на интерес клиента к данной категории
@@ -164,6 +178,21 @@ def _score_product_against_context(enriched, context_text):
     return score
 
 
+def _colorant_context_signal(combined_text):
+    """True если в тексте есть сигнал к красителям/цветам — чтобы подмешать архив 2024."""
+    if not combined_text:
+        return False
+    triggers = CATEGORY_TRIGGERS['colors'] + [
+        'цвет', 'окрас', 'оттенок', 'колер', 'розов', 'красн', 'жёлт', 'желт',
+        'оранж', 'зелен', 'син', 'голуб', 'фиолет', 'коричн', 'белый', 'чёрн', 'черн',
+        'свекол', 'аннато', 'паприк', 'е120', 'е124', 'е129', 'е131', 'е133',
+        'е104', 'е110', 'е122', 'е132', 'е171', 'е150', 'е160', 'е100', 'е141',
+        'халяль', 'натуральн краситель', 'clean label',
+    ]
+    blob = combined_text.lower()
+    return any(t in blob for t in triggers)
+
+
 def find_relevant_for_context(situation_text, hints_text, deal_products_text='',
                                site_text='', industry='', max_items=60):
     """
@@ -172,17 +201,20 @@ def find_relevant_for_context(situation_text, hints_text, deal_products_text='',
     отсортированный по релевантности к контексту клиента.
 
     context = ситуация клиента + подсказки менеджера + продукты в сделке + анализ сайта.
+
+    Если в контексте есть сигналы к красителям/цветам, дополнительно подмешивает
+    архивные красители 2024 года (с пометкой is_archive=True).
     """
     combined = ' '.join(filter(None, [situation_text, hints_text, deal_products_text, site_text, industry])).lower()
 
     detected = detect_categories_in_text(combined)
+    needs_colorants = 'colors' in detected or _colorant_context_signal(combined)
 
-    # Если категории не обнаружены и нет других сигналов — отдадим топ ходовых из курированного
-    if not detected and not deal_products_text and not site_text:
-        # Возвращаем небольшой набор по индустрии — пусть Claude сам выберет из каталога
+    # Если категории не обнаружены, нет деталей и нет сигнала к красителям — пусто
+    if not detected and not deal_products_text and not site_text and not needs_colorants:
         return []
 
-    # Скорим ВСЕ позиции прайса
+    # Скорим ВСЕ позиции актуального прайса
     all_scored = []
     for entry in PRICE_MAP.values():
         enriched = _enrich_price_entry(entry)
@@ -190,10 +222,22 @@ def find_relevant_for_context(situation_text, hints_text, deal_products_text='',
         if score > 0:
             all_scored.append((score, enriched))
 
-    # Сортируем по релевантности
     all_scored.sort(key=lambda x: x[0], reverse=True)
+    main_items = [item for _, item in all_scored[:max_items]]
 
-    return [item for _, item in all_scored[:max_items]]
+    # Дополнительно: подмешиваем архивные красители если есть сигнал
+    if needs_colorants and _find_colorants_archive is not None:
+        archive_items = _find_colorants_archive(
+            combined, industry=industry, max_items=12
+        )
+        # Кладём архивные после основных, но не превышая общий лимит
+        # Избегаем дубликатов по имени
+        existing_names = {it.get('name', '').lower() for it in main_items}
+        for arch in archive_items:
+            if arch.get('name', '').lower() not in existing_names:
+                main_items.append(arch)
+
+    return main_items
 
 
 def get_knowledge_base_summary():
@@ -202,5 +246,7 @@ def get_knowledge_base_summary():
         'price_entries': len(PRICE_MAP),
         'specs_entries': len(_ALL_SPECS_RAW) if _ALL_SPECS_RAW else 0,
         'curated_products': len(ALL_PRODUCTS) if ALL_PRODUCTS else 0,
+        'colorants_archive': len(_COLORANTS_ARCHIVE),
+        'colorants_archive_date': _COLORANTS_ARCHIVE_DATE,
         'categories_supported': list(CATEGORY_TRIGGERS.keys()),
     }
