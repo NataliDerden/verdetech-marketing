@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Предложение для {{ client_name }} · Verde Tech</title>
+<title>Предложение для {{ client_name }} · Вердэ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -79,9 +79,7 @@
   .cover-bottom .manager-info .lbl { display:block; font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--green); margin-bottom:3px; }
   .cover-bottom .manager-info b { display:block; font-weight:700; font-size:13px; color:var(--ink); margin-bottom:1px; }
   .cover-bottom .manager-info .contacts { color:var(--muted); font-weight:500; font-size:11.5px; }
-  .cover-bottom .prepared-by { text-align:right; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); font-weight:500; line-height:1.5; }
-  .cover-bottom .prepared-by b { color:var(--ink); font-weight:700; display:block; }
-  .cover-bottom .prepared-by .tag { color:var(--ink); font-weight:700; letter-spacing:0.2em; font-size:11px; }
+  .cover-bottom .cover-tagline { text-align:right; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink); font-weight:700; line-height:1.5; align-self:end; }
 
   /* Slide 2 — Запрос → Решение */
   .request-quote { margin-top:14px; padding:14px 20px; background:var(--paper); border-left:3px solid var(--green); border-radius:4px; }
@@ -245,7 +243,7 @@
 <div class="bar">
   <div class="brand">
     <span class="leaves"><span></span><span></span><span></span></span>
-    VERDE<sup>®</sup>TECH
+    ВЕРДЭ
   </div>
   <div class="meta">
     <span>{{ doc_id }}</span>
@@ -261,7 +259,7 @@
       <div class="cover-top">
         <div class="cover-brand">
           <span class="leaves"><span></span><span></span><span></span></span>
-          VERDE<sup>®</sup>TECH
+          ВЕРДЭ
         </div>
         <div class="cover-meta">
           {{ doc_id }}<br>
@@ -270,7 +268,7 @@
       </div>
       <div class="cover-main">
         <div class="eyebrow">Коммерческое предложение</div>
-        <h1>Для <em>{{ client_name }}</em></h1>
+        <h1>Для <em>{{ client_dative or client_name }}</em></h1>
         <div class="cover-subheadline">{{ cover_subheadline }}</div>
         {% if cover_prepared_for %}
         <div class="cover-prepared-for">
@@ -280,15 +278,11 @@
       </div>
       <div class="cover-bottom">
         <div class="manager-info">
-          <span class="lbl">Менеджер Verde Tech</span>
+          <span class="lbl">Менеджер Вердэ</span>
           <b>{{ manager_name }}</b>
           <span class="contacts">{{ manager_phone }} · {{ manager_email }}</span>
         </div>
-        <div class="prepared-by">
-          <span>Подготовлено</span>
-          <b>VERDE TECH</b>
-          <span style="margin-top:6px; display:block;">Забота о будущем</span>
-        </div>
+        <div class="cover-tagline">Забота о будущем</div>
       </div>
     </div>
   </div>
@@ -297,7 +291,7 @@
   <div class="slide">
     <div class="slide-inner">
       <div class="eyebrow">Слайд 2 · Услышали — предлагаем</div>
-      <h2>Ваш запрос → решение Verde Tech</h2>
+      <h2>Ваш запрос → решение Вердэ</h2>
 
       <div class="request-quote">
         <div class="quote-eyebrow">Ваш запрос</div>
@@ -335,7 +329,7 @@
     </div>
     <div class="slide-footer">
       <span>verdetech.ru · {{ industry }}</span>
-      <span class="stamp">VERDE TECH</span>
+      <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
 
@@ -365,8 +359,8 @@
       </div>
     </div>
     <div class="slide-footer">
-      <span>Анализ открытых источников и отраслевого опыта Verde</span>
-      <span class="stamp">VERDE TECH</span>
+      <span>Анализ открытых источников и отраслевого опыта Вердэ</span>
+      <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
 
@@ -391,7 +385,7 @@
     </div>
     <div class="slide-footer">
       <span>Тренды и рыночные сигналы — открытые источники</span>
-      <span class="stamp">VERDE TECH</span>
+      <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
 
@@ -399,7 +393,7 @@
   <div class="slide">
     <div class="slide-inner">
       <div class="eyebrow">Слайд 5 · Шире вашего запроса</div>
-      <h2>Что ещё можем предложить — и почему Verde Tech</h2>
+      <h2>Что ещё можем предложить — и почему Вердэ</h2>
 
       <div class="offers-grid">
         <div class="offers-col">
@@ -414,7 +408,7 @@
           </ul>
         </div>
         <div class="offers-col">
-          <h3>Почему Verde Tech</h3>
+          <h3>Почему Вердэ</h3>
           <ul style="list-style:none; padding:0;">
             {% for f in verde_facts %}
             <li class="verde-fact">{{ f }}</li>
@@ -432,7 +426,7 @@
     </div>
     <div class="slide-footer">
       <span>verdetech.ru · 12 лет на рынке · собственное R&amp;D</span>
-      <span class="stamp">VERDE TECH</span>
+      <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
 
@@ -473,7 +467,7 @@
     </div>
     <div class="slide-footer">
       <span>{{ manager_name }} · {{ manager_phone }} · {{ manager_email }}</span>
-      <span class="stamp">VERDE TECH</span>
+      <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
 
@@ -507,8 +501,8 @@
       </div>
     </div>
     <div class="slide-footer">
-      <span>Анализ открытых источников · конкуренты не копируем — адаптируем тренды</span>
-      <span class="stamp">VERDE TECH</span>
+      <span>Анализ открытых источников</span>
+      <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
 
