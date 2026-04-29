@@ -54,9 +54,25 @@ COLOR_HINTS = {
 
 def _load_records() -> List[Dict]:
     if not os.path.exists(_JSON_PATH):
+        # Логируем громко: на Railway/в логах будет видно, что архив не загрузился
+        print(f"[colorants-archive] WARN: JSON не найден по пути {_JSON_PATH} — "
+              f"архив красителей будет пуст, КП по запросам про цвет получит только актуальный прайс",
+              flush=True)
         return []
-    with open(_JSON_PATH, encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(_JSON_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"[colorants-archive] WARN: ошибка чтения {_JSON_PATH}: {e} — архив будет пуст",
+              flush=True)
+        return []
+    if not data:
+        print(f"[colorants-archive] WARN: JSON пустой, архив красителей не загружен",
+              flush=True)
+        return []
+    print(f"[colorants-archive] Загружено {len(data)} позиций красителей из архива {ARCHIVE_DATE}",
+          flush=True)
+    return data
 
 
 COLORANTS_ARCHIVE: List[Dict] = _load_records()

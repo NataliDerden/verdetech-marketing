@@ -2388,26 +2388,45 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
             objection_reinforcements.append(f'• «{obj}» → усилить: {rule}')
     objection_block = '\n'.join(objection_reinforcements) if objection_reinforcements else '(возражений ещё нет — не выдумывай их)'
 
-    # Краткая сводка по продуктам из БЗ (Mode A)
+    # Краткая сводка по продуктам из БЗ (Mode A) — РАЗДЕЛЯЕМ актуал и архив
     kb_block = ''
     if kb_relevant:
-        kb_items = []
-        for r in kb_relevant[:25]:
-            entry = {
-                'name': r.get('name'),
-                'category': r.get('category'),
-                'spec_purpose': (r.get('spec_purpose') or '')[:200],
-            }
+        actual_items = []
+        archive_items = []
+        for r in kb_relevant[:30]:
             if r.get('is_archive'):
-                entry['note'] = r.get('note', '')
-                entry['archive_2024'] = True
-            kb_items.append(entry)
-        kb_block = ('=== БАЗА ЗНАНИЙ: продукты Verde Tech, релевантные запросу ===\n'
-                    'Используй ИХ при подборе primary_solution и направлений в additional_offers.directions.\n'
-                    'Цены НЕ указывай — это КП-лида, без цифр.\n'
-                    'Если позиция помечена archive_2024:true — это активно разрабатываемая категория,\n'
-                    'упоминай как «есть рабочее решение, образец и точную цену уточнит технолог Вердэ».\n'
-                    + json.dumps(kb_items, ensure_ascii=False, indent=2))
+                archive_items.append({
+                    'name':         r.get('name'),
+                    'category':     r.get('category'),
+                    'composition':  (r.get('spec_purpose') or '')[:200],
+                    'dosage':       r.get('dosage', ''),
+                    'variant_note': r.get('note', ''),
+                })
+            else:
+                actual_items.append({
+                    'name':         r.get('name'),
+                    'category':     r.get('category'),
+                    'spec_purpose': (r.get('spec_purpose') or '')[:200],
+                })
+        # Кепаем актуал на 25, архив на 12 — чтобы промпт не разбух
+        actual_items = actual_items[:25]
+        archive_items = archive_items[:12]
+        parts = []
+        if actual_items:
+            parts.append('=== АКТУАЛЬНЫЙ ПРАЙС VERDE TECH 2026 — релевантные позиции ===\n'
+                         'Используй ИХ при подборе primary_solution и направлений в additional_offers.directions.\n'
+                         'Цены НЕ указывай — это КП-лида, без цифр.\n'
+                         + json.dumps(actual_items, ensure_ascii=False, indent=2))
+        if archive_items:
+            parts.append('=== АРХИВ КРАСИТЕЛЕЙ 14.10.2024 — отдельный блок ===\n'
+                         '⚠️ ЖЁСТКИЕ ПРАВИЛА:\n'
+                         '1. Эти позиции — резерв на случай прямого запроса клиента про цвет/окрашивание.\n'
+                         '   Если клиент про красители не спрашивал, НЕ упоминай этот блок вообще.\n'
+                         '2. В тексте КП НЕ ссылайся на дату «14.10.2024» — это внутренняя метка.\n'
+                         '3. Используй формулировку: «есть рабочее решение под ваш запрос: <имя>,\n'
+                         '   состав <composition>, дозировка <dosage>. Образец и стоимость подготовит технолог Вердэ».\n'
+                         + json.dumps(archive_items, ensure_ascii=False, indent=2))
+        kb_block = '\n\n'.join(parts)
 
     # Production stack (Mode B)
     prod_block = ''
@@ -2764,6 +2783,7 @@ def _generate_kp_lead(data):
             kb_relevant = kb_find_relevant(
                 situation_text=request_summary + ' ' + client_product,
                 hints_text=must_consider,
+                deal_products_text=client_product,
                 site_text=client_site_context or '',
                 industry=industry_legacy,
                 max_items=40,
@@ -3087,36 +3107,42 @@ def generate_kp():
 
     # === РЕЖИМ А: Детект ЯВНОГО ЗАПРОСА (категории через ключевые слова) ===
     # Используем БЗ КП-генератора если доступна — иначе fallback на старую логику
+    archive_colorants = []  # отдельно от актуального прайса, БЕЗ цен в промпте
     if kb_find_relevant:
         detected_categories = kb_detect_categories(combined_context)
         kb_relevant = kb_find_relevant(
             situation_text=situation_for_match,
             hints_text=manager_hints,
+            deal_products_text=(data.get('client_product') or '').strip(),
             site_text=client_site_context or '',
             industry=industry,
             max_items=60,
         )
         print(f'[generate_kp] БЗ нашла {len(kb_relevant)} релевантных позиций. Категории: {detected_categories}', flush=True)
-        # Преобразуем в формат для промпта
+        # СТРОГО разделяем: актуальный прайс 2026 vs архив красителей 2024.
+        # Это два РАЗНЫХ блока в промпте — Claude не должен их путать.
         pricelist_relevant_products = []
         for r in kb_relevant:
-            item = {
+            if r.get('is_archive'):
+                # Архив: НЕ передаём цену в промпт (только имя/состав/дозировка/фасовка/вариант).
+                # Цена даётся менеджером — никаких числовых сумм в КП.
+                archive_colorants.append({
+                    'name':          r['name'],
+                    'category':      r.get('category', ''),
+                    'composition':   r.get('spec_purpose', ''),
+                    'dosage':        r.get('dosage', ''),
+                    'packing':       r.get('packing', ''),
+                    'variant_note':  r.get('note', ''),
+                })
+                continue
+            pricelist_relevant_products.append({
                 'name':         r['name'],
                 'cat':          r['category'],
                 'bulk_no_vat':  r.get('price_bulk_no_vat'),
                 'small_no_vat': r.get('price_small_no_vat'),
                 'spec_purpose': r.get('spec_purpose', ''),
-            }
-            # Архивные красители (прайс 14.10.2024) — пробрасываем флаг и
-            # ориентировочную цену с НДС, чтобы Claude использовал их корректно
-            if r.get('is_archive'):
-                item['archive_2024'] = True
-                item['archive_note'] = r.get('archive_note', '')
-                item['price_archive_2024_vat'] = r.get('price_archive_2024_vat')
-                item['dosage'] = r.get('dosage', '')
-                item['packing'] = r.get('packing', '')
-                item['variant_note'] = r.get('note', '')
-            pricelist_relevant_products.append(item)
+            })
+        print(f'[generate_kp] Актуальный прайс: {len(pricelist_relevant_products)}, архив-красителей: {len(archive_colorants)}', flush=True)
     else:
         detected_categories = detect_categories_in_text(combined_context)
         pricelist_relevant_products = []
@@ -3278,36 +3304,37 @@ json.dumps([{
 } for p in production_recommendations], ensure_ascii=False, indent=2)
 ) if production_recommendations else ''}
 
-{("=== БАЗА ЗНАНИЙ ПОД КЛИЕНТА: ПРОДУКТЫ + СПЕЦИФИКАЦИИ + ЦЕНЫ ===" + chr(10) +
+{("=== АКТУАЛЬНЫЙ ПРАЙС VERDE TECH 01.05.2026 — ПРОДУКТЫ + СПЕЦИФИКАЦИИ + ЦЕНЫ ===" + chr(10) +
 "Найдены упоминания категорий: " + ', '.join(sorted(detected_categories) or ['(нет точного триггера)']) + chr(10) +
-"Это РЕАЛЬНЫЕ позиции из прайса Verde Tech 01.05.2026 + их спецификации (что делает, дозировка, применение)." + chr(10) +
+"Это РЕАЛЬНЫЕ позиции из АКТУАЛЬНОГО прайса 01.05.2026 + их спецификации." + chr(10) +
 "⚡ ОБЯЗАТЕЛЬНО используй эти данные при подборе продуктов:" + chr(10) +
 "1. Ранжированы по релевантности к контексту клиента (задача + подсказки менеджера + сайт)" + chr(10) +
 "2. У каждого есть ЦЕНА — используй её в КП когда менеджер включил «с ценами»" + chr(10) +
 "3. У многих есть СПЕЦИФИКАЦИЯ (поле spec_purpose) — это техническое описание для аргументации" + chr(10) +
 "4. Соотноси спецификацию с тем что КЛИЕНТ ПРОИЗВОДИТ (из контекста сделки и сайта) — это твоя главная работа как продакт-маркетолога" + chr(10) +
 "5. НЕ подменяй конкретные продукты универсальными V Smart Plus если клиент явно ищет другую категорию" + chr(10) +
-"6. ⚠️ ВАЖНО про КРАСИТЕЛИ (поле archive_2024:true): эти позиции — из архивного прайса 14.10.2024," + chr(10) +
-"   красителей нет в актуальном прайсе 2026, мы активно разрабатываем эту категорию." + chr(10) +
-"   Когда клиент спрашивает про красители — упоминай позицию по имени и составу," + chr(10) +
-"   НО цену НЕ ставь как точную: пиши «ориентировочно X руб (прайс 14.10.2024, актуализируем менеджером»)" + chr(10) +
-"   или «точную стоимость уточнит технолог Вердэ при подготовке образца»." + chr(10) +
 json.dumps([
-    {k: v for k, v in {
+    {
         'name': p['name'],
         'category': p.get('cat', ''),
         'price_bulk_₽_no_vat': p.get('bulk_no_vat'),
         'price_small_₽_no_vat': p.get('small_no_vat'),
         'spec_purpose': (p.get('spec_purpose') or '')[:250],
-        'archive_2024': p.get('archive_2024'),
-        'price_archive_2024_₽_vat': p.get('price_archive_2024_vat'),
-        'archive_dosage': p.get('dosage'),
-        'archive_packing': p.get('packing'),
-        'archive_variant_note': p.get('variant_note'),
-    }.items() if v not in (None, '', False)}
+    }
     for p in pricelist_relevant_products
 ], ensure_ascii=False, indent=2)
 ) if pricelist_relevant_products else ''}
+
+{("=== АРХИВ КРАСИТЕЛЕЙ 14.10.2024 — ОТДЕЛЬНЫЙ ИСТОЧНИК, НЕ ПУТАТЬ С АКТУАЛЬНЫМ ПРАЙСОМ ===" + chr(10) +
+"⚠️ ЖЁСТКИЕ ПРАВИЛА для этого блока (нарушение = брак КП):" + chr(10) +
+"1. Этих позиций НЕТ в актуальном прайсе 2026. Мы активно разрабатываем категорию красителей." + chr(10) +
+"2. ЦЕН в этом блоке нет. И в КП ты тоже НЕ ставишь цены этих позиций — НИ ОРИЕНТИРОВОЧНО, НИ «от X руб», НИКАК." + chr(10) +
+"3. Используй позицию ТОЛЬКО как «есть рабочее решение под ваш запрос: <имя> с составом <состав>, дозировка <dosage>»." + chr(10) +
+"4. После упоминания позиции ОБЯЗАТЕЛЬНО пиши: «образец и стоимость подготовит технолог Вердэ после короткого брифа»." + chr(10) +
+"5. Не пиши «прайс 14.10.2024» в тексте КП клиенту — это внутренняя метка." + chr(10) +
+"6. Этот блок — резерв на случай прямого запроса клиента про цвет/окрашивание. Если клиент про красители не спрашивал, НЕ упоминай их вообще." + chr(10) +
+json.dumps(archive_colorants, ensure_ascii=False, indent=2)
+) if archive_colorants else ''}
 
 === КЛИЕНТ И СДЕЛКА ===
 Клиент: {data['client_name']}
