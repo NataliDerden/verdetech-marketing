@@ -1201,15 +1201,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (calls.length) {
             lines.push('');
-            lines.push('— ЗВОНКИ С КЛИЕНТОМ (с расшифровкой если есть) —');
+            lines.push('— ЗВОНКИ С КЛИЕНТОМ —');
+            lines.push('(если в Битриксе включено распознавание речи — текст разговора попадёт сюда автоматически.');
+            lines.push(' Если нет — менеджер прослушивает запись по ссылке и дописывает ключевые моменты вручную.)');
             calls.slice(0, 5).forEach(function(a) {
-                const date = (a.CREATED || '').slice(0, 10);
+                const date = (a.CREATED || '').slice(0, 16).replace('T', ' ');
                 const subj = a.SUBJECT || 'Звонок';
+                lines.push('');
                 lines.push('[' + date + '] ' + subj);
+                // Ссылка на запись — ищем в FILES или в DESCRIPTION (Битрикс часто кладёт <audio> там)
+                const audioUrls = [];
+                if (Array.isArray(a.FILES)) {
+                    a.FILES.forEach(function(f) {
+                        const url = (f && (f.urlMachine || f.url || f.SRC)) || '';
+                        if (url && /\.(mp3|wav|ogg|m4a)/i.test(url)) audioUrls.push(url);
+                    });
+                }
+                if (a.DESCRIPTION) {
+                    // вытаскиваем url-ы из <audio src="..."> или <a href="...mp3">
+                    const re = /(?:src|href)\s*=\s*["']([^"']+\.(?:mp3|wav|ogg|m4a)[^"']*)["']/gi;
+                    let m; while ((m = re.exec(a.DESCRIPTION)) !== null) audioUrls.push(m[1]);
+                }
+                if (audioUrls.length) {
+                    lines.push('🎤 Запись: ' + audioUrls[0]);
+                }
                 if (a.DESCRIPTION) {
                     const desc = a.DESCRIPTION.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
                                               .replace(/\s+/g, ' ').trim();
-                    if (desc) lines.push('  ' + desc.slice(0, 3000));
+                    if (desc && desc.length > 30) {
+                        // Не показываем «Входящий +7XXX 03:42» как полезный контекст —
+                        // только если есть осмысленный текст (вероятно расшифровка)
+                        lines.push('  ' + desc.slice(0, 3000));
+                    } else if (desc) {
+                        lines.push('  (мета: ' + desc + ')');
+                    }
                 }
             });
         }
