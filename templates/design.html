@@ -322,6 +322,7 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
                     <div class="form-group">
                         <label>Что нужно улучшить <span class="req">★</span></label>
                         <div class="chip-row">
+                            <label class="chip-pill"><input type="checkbox" name="improvements" value="знакомство с компанией"><span>Знакомство с компанией</span></label>
                             <label class="chip-pill"><input type="checkbox" name="improvements" value="вкус"><span>Вкус</span></label>
                             <label class="chip-pill"><input type="checkbox" name="improvements" value="аромат"><span>Аромат</span></label>
                             <label class="chip-pill"><input type="checkbox" name="improvements" value="цвет"><span>Цвет</span></label>
@@ -1062,18 +1063,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const activities = (r.activities && !r.activities.error()) ? (r.activities.data() || []) : [];
             const contactsLinks = (r.contacts && !r.contacts.error()) ? (r.contacts.data() || []) : [];
             const products = (r.products && !r.products.error()) ? (r.products.data() || []) : [];
-            console.log('[verde] контекст:', {
-                comments: comments.length, activities: activities.length,
-                contacts: contactsLinks.length, products: products.length,
-            });
-            // Догружаем компанию и детали контактов
+            // T1/T7/T2 контекст: для лида НЕТ привязанных контактов — данные лежат прямо в полях лида.
+            // Подгружаем дополнительно: компанию, контакты сделки, ответственного, и пробуем
+            // voximplant.statistic.get на случай записей звонков с расшифровкой.
             const detailBatch = {};
             if (deal.COMPANY_ID) detailBatch.company = ['crm.company.get', {ID: deal.COMPANY_ID}];
             contactsLinks.slice(0, 3).forEach(function(c, i) {
                 detailBatch['contact_' + i] = ['crm.contact.get', {ID: c.CONTACT_ID}];
             });
+            // T2: ответственный за сделку/лид (а НЕ текущий пользователь, который генерит КП)
+            if (deal.ASSIGNED_BY_ID) {
+                detailBatch.assigned = ['user.get', {ID: deal.ASSIGNED_BY_ID}];
+            }
+            // T1: для звонков пробуем достать voximplant-статистику (ссылки на запись + транскрипт)
+            const callIds = activities
+                .filter(function(a) { return parseInt(a.TYPE_ID, 10) === 2; })
+                .map(function(a) { return a.ASSOCIATED_ENTITY_ID; })
+                .filter(function(id) { return id; })
+                .slice(0, 5);
+            if (callIds.length) {
+                detailBatch.calls = ['voximplant.statistic.get', {
+                    filter: {ID: callIds},
+                    order: {CALL_START_DATE: 'DESC'},
+                }];
+            }
             if (Object.keys(detailBatch).length === 0) {
-                buildAndFillSituation(deal, null, [], comments, activities, products, entityType);
+                buildAndFillSituation(deal, null, [], comments, activities, products, entityType, null, []);
                 return;
             }
             BX24.callBatch(detailBatch, function(dr) {
@@ -1083,18 +1098,67 @@ document.addEventListener('DOMContentLoaded', () => {
                     const k = 'contact_' + i;
                     if (dr[k] && !dr[k].error()) contactList.push(dr[k].data());
                 }
-                buildAndFillSituation(deal, company, contactList, comments, activities, products, entityType);
+                const assigned = (dr.assigned && !dr.assigned.error()) ? (dr.assigned.data() || [])[0] : null;
+                const callsStat = (dr.calls && !dr.calls.error()) ? (dr.calls.data() || []) : [];
+                console.log('[verde] контекст:', {
+                    comments: comments.length, activities: activities.length,
+                    contacts: contactList.length, products: products.length,
+                    assigned: assigned ? assigned.NAME : null, calls: callsStat.length,
+                });
+                buildAndFillSituation(deal, company, contactList, comments, activities, products, entityType, assigned, callsStat);
             });
         });
     }
 
-    function buildAndFillSituation(deal, company, contacts, comments, activities, products, entityType) {
+    function buildAndFillSituation(deal, company, contacts, comments, activities, products, entityType, assigned, callsStat) {
+        // T2: ответственный за сделку/лид имеет приоритет над user.current и кэшем — это
+        // тот менеджер, от чьего имени пойдёт КП (а не залогиненный пользователь).
+        if (assigned) {
+            const fullName = [assigned.LAST_NAME, assigned.NAME, assigned.SECOND_NAME]
+                .filter(Boolean).join(' ').trim() || assigned.NAME || '';
+            const phone = assigned.PERSONAL_MOBILE || assigned.WORK_PHONE || assigned.PERSONAL_PHONE || '';
+            const email = assigned.EMAIL || assigned.WORK_EMAIL || '';
+            const n = document.querySelector('input[name="manager_name"]');
+            const p = document.querySelector('input[name="manager_phone"]');
+            const e = document.querySelector('input[name="manager_email"]');
+            if (n) n.value = fullName;       // перезаписываем — ответственный важнее кэша
+            if (p) p.value = phone;
+            if (e) e.value = email;
+            saveManagerToCache(fullName, phone, email);
+        }
+
+        // T7: для лида данные контакта/компании лежат прямо в полях лида (NAME, LAST_NAME,
+        // COMPANY_TITLE, PHONE, EMAIL и пр.) — нет привязанных entity. Делаем нормализацию:
+        // если entityType === 'lead' и нет company/contacts, конструируем «псевдо-объекты»
+        // из полей лида, чтобы дальше код работал единообразно.
+        const isLead = entityType === 'lead';
+        if (isLead && !company && deal.COMPANY_TITLE) {
+            company = {
+                TITLE: deal.COMPANY_TITLE,
+                INDUSTRY: deal.INDUSTRY || '',
+                ADDRESS_CITY: deal.ADDRESS_CITY || '',
+                WEB: Array.isArray(deal.WEB) ? deal.WEB : [],
+                COMMENTS: deal.COMMENTS || '',
+            };
+        }
+        if (isLead && !contacts.length && (deal.NAME || deal.LAST_NAME)) {
+            contacts = [{
+                NAME: deal.NAME || '',
+                LAST_NAME: deal.LAST_NAME || '',
+                SECOND_NAME: deal.SECOND_NAME || '',
+                POST: deal.POST || '',
+                PHONE: Array.isArray(deal.PHONE) ? deal.PHONE : [],
+                EMAIL: Array.isArray(deal.EMAIL) ? deal.EMAIL : [],
+            }];
+        }
+
         // === Блок 2: Клиент ===
         const clientField = document.querySelector('input[name="client_name"]');
         if (clientField && !clientField.value) {
-            // Приоритет: компания → ФИО контакта → заголовок сделки
+            // Приоритет: COMPANY_TITLE лида → компания сделки → ФИО контакта → TITLE
             let name = '';
-            if (company && company.TITLE) name = company.TITLE;
+            if (isLead && deal.COMPANY_TITLE) name = deal.COMPANY_TITLE;
+            else if (company && company.TITLE) name = company.TITLE;
             else if (contacts.length && (contacts[0].NAME || contacts[0].LAST_NAME)) {
                 name = [contacts[0].LAST_NAME, contacts[0].NAME, contacts[0].SECOND_NAME]
                     .filter(Boolean).join(' ');
@@ -1102,20 +1166,23 @@ document.addEventListener('DOMContentLoaded', () => {
             else name = deal.TITLE || '';
             if (name) clientField.value = name;
         }
-        // Сайт компании
+        // Сайт компании (для лида тоже может быть массив deal.WEB)
         const urlField = document.querySelector('input[name="client_url"]');
-        if (urlField && !urlField.value && company && Array.isArray(company.WEB) && company.WEB.length) {
-            urlField.value = company.WEB[0].VALUE || '';
+        if (urlField && !urlField.value) {
+            const webs = (company && Array.isArray(company.WEB) && company.WEB) || (Array.isArray(deal.WEB) ? deal.WEB : []);
+            if (webs.length) urlField.value = webs[0].VALUE || '';
         }
-        // Город (из адреса компании если есть, либо из контакта)
+        // Город (из адреса компании / контакта / самого лида)
         const cityField = document.querySelector('input[name="client_city"]');
         if (cityField && !cityField.value) {
             const cityVal = (company && (company.ADDRESS_CITY || company.CITY))
-                          || (contacts[0] && (contacts[0].ADDRESS_CITY || contacts[0].CITY)) || '';
+                          || (contacts[0] && (contacts[0].ADDRESS_CITY || contacts[0].CITY))
+                          || deal.ADDRESS_CITY || '';
             if (cityVal) cityField.value = cityVal;
         }
-        // Отрасль
-        if (company && company.INDUSTRY) applyIndustryFromBitrix(company.INDUSTRY);
+        // Отрасль (для лида может быть в deal.INDUSTRY)
+        const industryRaw = (company && company.INDUSTRY) || deal.INDUSTRY || '';
+        if (industryRaw) applyIndustryFromBitrix(industryRaw);
 
         // === Блок 3: Контактное лицо ===
         if (contacts.length) {
@@ -1204,13 +1271,25 @@ document.addEventListener('DOMContentLoaded', () => {
             lines.push('— ЗВОНКИ С КЛИЕНТОМ —');
             lines.push('(если в Битриксе включено распознавание речи — текст разговора попадёт сюда автоматически.');
             lines.push(' Если нет — менеджер прослушивает запись по ссылке и дописывает ключевые моменты вручную.)');
+            // Индексируем voximplant-статистику по ID звонка (ASSOCIATED_ENTITY_ID активити = ID в voximplant)
+            const voxById = {};
+            (callsStat || []).forEach(function(s) { if (s && s.ID) voxById[String(s.ID)] = s; });
+
             calls.slice(0, 5).forEach(function(a) {
                 const date = (a.CREATED || '').slice(0, 16).replace('T', ' ');
                 const subj = a.SUBJECT || 'Звонок';
                 lines.push('');
                 lines.push('[' + date + '] ' + subj);
-                // Ссылка на запись — ищем в FILES или в DESCRIPTION (Битрикс часто кладёт <audio> там)
+
+                // Ссылка на запись — приоритет: voximplant.RECORD_FILE_ID/CALL_RECORD_URL → FILES → DESCRIPTION
                 const audioUrls = [];
+                const stat = voxById[String(a.ASSOCIATED_ENTITY_ID || '')];
+                if (stat) {
+                    if (stat.CALL_WEBDAV_URL) audioUrls.push(stat.CALL_WEBDAV_URL);
+                    if (stat.RECORD_FILE_ID && BX24 && BX24.disk) {
+                        // Disk-ссылка нечасто, обычно WEBDAV выше срабатывает
+                    }
+                }
                 if (Array.isArray(a.FILES)) {
                     a.FILES.forEach(function(f) {
                         const url = (f && (f.urlMachine || f.url || f.SRC)) || '';
@@ -1218,25 +1297,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 if (a.DESCRIPTION) {
-                    // вытаскиваем url-ы из <audio src="..."> или <a href="...mp3">
                     const re = /(?:src|href)\s*=\s*["']([^"']+\.(?:mp3|wav|ogg|m4a)[^"']*)["']/gi;
                     let m; while ((m = re.exec(a.DESCRIPTION)) !== null) audioUrls.push(m[1]);
                 }
                 if (audioUrls.length) {
                     lines.push('🎤 Запись: ' + audioUrls[0]);
                 }
+
+                // T1: расшифровка может быть в DESCRIPTION звонка (если в Битриксе включена)
+                // или в timeline-комментарии (некоторые VATS постят туда). Тянем оба варианта.
                 if (a.DESCRIPTION) {
                     const desc = a.DESCRIPTION.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
                                               .replace(/\s+/g, ' ').trim();
                     if (desc && desc.length > 30) {
-                        // Не показываем «Входящий +7XXX 03:42» как полезный контекст —
-                        // только если есть осмысленный текст (вероятно расшифровка)
                         lines.push('  ' + desc.slice(0, 3000));
                     } else if (desc) {
                         lines.push('  (мета: ' + desc + ')');
                     }
                 }
             });
+
+            // T1: расшифровка часто ложится в timeline-комментарий с пометкой
+            // «Расшифровка», «Транскрибация», «Стенограмма» — вытаскиваем такие комменты
+            // и подмешиваем к секции звонков (а не в общие комментарии ниже).
+            const transcripts = (comments || []).filter(function(c) {
+                const t = (c.COMMENT || '').toLowerCase();
+                return /расшифров|транскрибац|стенограмм|transcript/.test(t);
+            });
+            if (transcripts.length) {
+                lines.push('');
+                lines.push('  --- расшифровки звонков из timeline ---');
+                transcripts.slice(0, 5).forEach(function(c) {
+                    const text = (c.COMMENT || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')
+                                                  .replace(/\s+/g, ' ').trim();
+                    if (text) lines.push('  • ' + text.slice(0, 3000));
+                });
+            }
         }
         // 5б. Остальные активности (встречи, задачи, email) — короткой строкой
         if (otherActs.length) {
