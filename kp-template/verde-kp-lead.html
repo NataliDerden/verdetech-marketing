@@ -146,6 +146,15 @@
   .next-step-headline .ns-eyebrow { font-size:10px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.85; margin-bottom:4px; }
   .next-step-headline h3 { color:var(--white); font-size:17px; font-weight:600; line-height:1.25; letter-spacing:-0.01em; }
 
+  .samples-block { margin-top:14px; }
+  .samples-table { width:100%; border-collapse:collapse; background:var(--green-soft); border-radius:6px; overflow:hidden; }
+  .samples-table thead th { text-align:left; padding:9px 14px; background:var(--green); color:var(--white); font-size:10.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; }
+  .samples-table tbody td { padding:10px 14px; border-top:1px solid rgba(15,191,0,0.15); vertical-align:top; font-size:13px; }
+  .samples-table tbody tr:first-child td { border-top:0; }
+  .samples-table .sample-name { font-weight:700; color:var(--ink); width:36%; }
+  .samples-table .sample-qty { color:var(--green-dark); font-weight:600; white-space:nowrap; width:18%; }
+  .samples-table .sample-purpose { color:var(--body); font-size:12.5px; }
+
   .step-grid { margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
   .step-col h3 { font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--faint); margin-bottom:6px; font-weight:600; }
   .step-list { display:flex; flex-direction:column; gap:0; }
@@ -437,12 +446,26 @@
   <div class="slide">
     <div class="slide-inner">
       <div class="eyebrow">Слайд 6 · Следующий шаг</div>
-      <h2>Оффер и следующий шаг</h2>
+      <h2>Что положим в тестовую посылку</h2>
 
-      <div class="next-step-headline">
-        <div class="ns-eyebrow">Что предлагаем протестировать</div>
-        <h3>{{ next_what_to_test }}</h3>
+      {% if next_samples %}
+      <div class="samples-block">
+        <table class="samples-table">
+          <thead>
+            <tr><th>Позиция</th><th>На тест</th><th>Зачем</th></tr>
+          </thead>
+          <tbody>
+            {% for s in next_samples %}
+            <tr>
+              <td class="sample-name">{{ s.name }}</td>
+              <td class="sample-qty">{{ s.qty }}</td>
+              <td class="sample-purpose">{{ s.purpose }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+      {% endif %}
 
       <div class="step-grid">
         <div class="step-col">
