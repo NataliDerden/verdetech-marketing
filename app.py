@@ -2400,7 +2400,9 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
                         dissatisfaction, documents_needed,
                         objections, objections_comment, client_site_context,
                         production_recommendations, kb_relevant,
-                        industry_brief, real_cases):
+                        industry_brief, real_cases,
+                        add_assortment_slide=False, add_case_slide=False,
+                        generate_cover_letter=False):
     """Собирает промпт для КП-лида: 7 слайдов, без цен, фокус на "услышали → решение → быстрый тест"."""
 
     role_guidance = LEAD_ROLE_GUIDANCE.get(contact_role, LEAD_ROLE_GUIDANCE[''])
@@ -2580,7 +2582,26 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
       ],
       "verde_proposal": "Адаптированный под ситуацию клиента вариант: «Готовы разработать аналогичное направление под вашу рецептуру. ⭐ Гарантируем фиксированную цену на 6 месяцев — стабильнее импортного контракта, защита от валютных колебаний.»",
       "cta": "Выбрать идею и согласовать тестовый образец — отправим СДЭКом за 7 дней"
-    }
+    }''' + (''',
+    "assortment_slide": {
+      "intro": "1 короткое предложение про то, что у Вердэ есть в линейке по теме запроса",
+      "items": [
+        {"name": "ТОЧНОЕ имя из АКТУАЛЬНОГО ПРАЙСА VERDE 2026 (без выдумок). 3-6 позиций.", "composition": "Состав / ключевые компоненты — 1 строка из spec_purpose БЗ", "purpose": "Под какую задачу — 1 короткая строка"},
+        {"name": "...", "composition": "...", "purpose": "..."},
+        {"name": "...", "composition": "...", "purpose": "..."}
+      ]
+    }''' if add_assortment_slide else '') + (''',
+    "case_slide": {
+      "case_title": "Заголовок кейса в формате «Помогли [тип производителя] [решить задачу]» — без названия клиента-кейса (анонимно)",
+      "challenge": "1-2 предложения про задачу клиента из кейса (та же категория и боль что у нашего лида)",
+      "solution": "1-2 предложения о применённом решении Verde (направление, не SKU)",
+      "result": "Качественный результат БЕЗ выдуманных цифр (если в real_cases есть конкретная цифра — можно её, иначе общими словами)",
+      "why_relevant": "1 короткое предложение «почему этот кейс показателен для вас» — связь с client_product и request_summary"
+    }''' if add_case_slide else '') + (''',
+    "cover_letter": {
+      "subject": "Короткая тема письма для менеджера: «Решение по вашему запросу — Вердэ» (или адаптируй под суть)",
+      "body": "Текст из 3-5 коротких строк для копирования в email/Битрикс. Структура: 1) Приветствие по имени из contact_name (если есть, иначе 'Добрый день'). 2) 'Спасибо за общение и Ваш запрос по [сжатый запрос — 3-5 слов].' 3) 'Во вложении КП с предложениями: [1-2 ключевых направления из primary_solution / samples].' 4) 'Готовы подготовить образцы по 100 г бесплатно — пришлите адрес и продукт для теста.' 5) 'С уважением, [manager_name из формы].' БЕЗ КАВЫЧЕК И HTML — только plain-text."
+    }''' if generate_cover_letter else '') + '''
   }
 }'''
 
@@ -2779,6 +2800,11 @@ def _generate_kp_lead(data):
     manager_phone = data['manager_phone'].strip()
     manager_email = data['manager_email'].strip()
 
+    # I1+I2+I3: опциональные доп.слайды и сопроводительное письмо
+    add_assortment_slide = bool(data.get('add_assortment_slide'))
+    add_case_slide = bool(data.get('add_case_slide'))
+    generate_cover_letter = bool(data.get('generate_cover_letter'))
+
     # Кепаем длинные текстовые поля чтобы промпт не разбух (Битрикс может пихнуть простыни)
     if len(communication_summary) > 4000:
         communication_summary = communication_summary[:4000] + '\n\n[...текст обрезан]'
@@ -2859,6 +2885,9 @@ def _generate_kp_lead(data):
         client_site_context=client_site_context,
         production_recommendations=production_recommendations,
         kb_relevant=kb_relevant, industry_brief=industry_brief, real_cases=real_cases,
+        add_assortment_slide=add_assortment_slide,
+        add_case_slide=add_case_slide,
+        generate_cover_letter=generate_cover_letter,
     )
 
     # Вызов Claude
@@ -2957,6 +2986,24 @@ def _generate_kp_lead(data):
     bonus_observations = bonus.get('observations') or []
     observation_ideas = obs.get('additional_ideas') or []
 
+    # I1+I2+I3: опциональные слайды и письмо
+    assortment = slides.get('assortment_slide') or {}
+    assortment_items = assortment.get('items') or []
+    if isinstance(assortment_items, list):
+        assortment_items = [
+            {
+                'name':        str(it.get('name', '')).strip(),
+                'composition': str(it.get('composition', '')).strip(),
+                'purpose':     str(it.get('purpose', '')).strip(),
+            }
+            for it in assortment_items if isinstance(it, dict) and (it.get('name') or '').strip()
+        ][:6]
+    else:
+        assortment_items = []
+
+    case = slides.get('case_slide') or {}
+    cover_letter = slides.get('cover_letter') or {}
+
     # Подпись «Подготовлено для…» на обложке: ТОЛЬКО ФИО (без должности, чтобы
     # не попасть в просак — иногда КП заказывает руководитель, иногда директор).
     # Автокапитализация имени — менеджер мог ввести в нижнем регистре.
@@ -3013,10 +3060,28 @@ def _generate_kp_lead(data):
         'bonus_observations': bonus_observations,
         'bonus_verde_proposal': bonus.get('verde_proposal', ''),
         'bonus_cta': bonus.get('cta', ''),
+        # I1+I3: опциональные слайды
+        'assortment_intro': assortment.get('intro', ''),
+        'assortment_items': assortment_items,
+        'show_assortment_slide': bool(add_assortment_slide and assortment_items),
+        'case_title':       case.get('case_title', ''),
+        'case_challenge':   case.get('challenge', ''),
+        'case_solution':    case.get('solution', ''),
+        'case_result':      case.get('result', ''),
+        'case_why_relevant': case.get('why_relevant', ''),
+        'show_case_slide':  bool(add_case_slide and case.get('case_title')),
     }
 
     rendered = render_template_string(tpl, **context)
-    return jsonify({'html': rendered})
+
+    # I2: сопроводительное письмо отдаётся отдельным полем (не вшито в КП)
+    response_data = {'html': rendered}
+    if generate_cover_letter and cover_letter.get('body'):
+        response_data['cover_letter'] = {
+            'subject': cover_letter.get('subject', f'Решение по вашему запросу — Вердэ'),
+            'body':    cover_letter.get('body', '').strip(),
+        }
+    return jsonify(response_data)
 
 
 def _bridge_new_form_to_legacy(data):

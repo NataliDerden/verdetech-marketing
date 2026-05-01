@@ -476,6 +476,30 @@ h2 { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.0
                 </div>
             </details>
 
+            <!-- БЛОК 8: ДОПОЛНИТЕЛЬНЫЕ СЛАЙДЫ И ПИСЬМО -->
+            <details class="kp-block" open>
+                <summary><span><span class="block-num">8</span>Дополнительно</span></summary>
+                <div class="kp-block-body">
+                    <label class="chip-pill" style="display:inline-flex; align-items:center; gap:8px; margin-right:6px; margin-bottom:6px;">
+                        <input type="checkbox" name="add_assortment_slide" value="1">
+                        <span>📋 Добавить слайд с ассортиментом (3-6 позиций по запросу)</span>
+                    </label>
+                    <small style="display:block; margin:4px 0 12px; color:#777;">Включи если запросу нужно показать линейку — слайд без цен, имя + состав + назначение.</small>
+
+                    <label class="chip-pill" style="display:inline-flex; align-items:center; gap:8px; margin-right:6px; margin-bottom:6px;">
+                        <input type="checkbox" name="add_case_slide" value="1">
+                        <span>📌 Добавить слайд с подходящим кейсом</span>
+                    </label>
+                    <small style="display:block; margin:4px 0 12px; color:#777;">AI выберет кейс из базы по отрасли и запросу — отдельным слайдом перед бонусом.</small>
+
+                    <label class="chip-pill" style="display:inline-flex; align-items:center; gap:8px; margin-right:6px; margin-bottom:6px;">
+                        <input type="checkbox" name="generate_cover_letter" value="1" checked>
+                        <span>✉️ Сгенерировать текст сопроводительного письма</span>
+                    </label>
+                    <small style="display:block; margin:4px 0 0; color:#777;">Короткий текст для копирования: «Добрый день, [имя]. Спасибо за общение и Ваш запрос. Во вложении — решения по вашей задаче».</small>
+                </div>
+            </details>
+
             <button type="button" class="btn-generate" id="generateBtn" onclick="generateKP(event)">⚡ Сгенерировать КП</button>
         </form>
 
@@ -1488,6 +1512,21 @@ function copyKpHtml() {
         fallbackCopy(html);
     }
 }
+
+function copyCoverLetter() {
+    const ta = document.getElementById('coverLetterText');
+    if (!ta) return;
+    const txt = ta.value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(
+            () => { const btn = event && event.target; if (btn) { const old = btn.innerHTML; btn.innerHTML = '✓ Скопировано'; setTimeout(() => btn.innerHTML = old, 1500); } },
+            () => fallbackCopy(txt)
+        );
+    } else {
+        ta.select();
+        document.execCommand('copy');
+    }
+}
 function fallbackCopy(text) {
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -1745,9 +1784,22 @@ async function generateKP(e) {
         btn.dataset.mode = 'update';
         btn.classList.add('btn-update-kp');
         btn.classList.remove('btn-generate');
+        // I2: сопроводительное письмо (если AI его сгенерировал)
+        const cl = json.cover_letter;
+        const coverLetterBlock = cl && cl.body ? `
+            <div id="coverLetterBlock" style="margin-bottom:18px; padding:16px 18px; background:#f5fcf3; border:1px solid #c8eebf; border-radius:10px;">
+                <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#0a8800; margin-bottom:6px;">✉️ Сопроводительное письмо для отправки клиенту</div>
+                <div style="font-size:12px; color:#666; margin-bottom:6px;"><b>Тема:</b> ${escapeHtml(cl.subject || '')}</div>
+                <textarea id="coverLetterText" readonly style="width:100%; min-height:150px; padding:10px; border:1px solid #d5e8d0; border-radius:6px; font-family:inherit; font-size:13px; line-height:1.5; background:#fff; resize:vertical;">${escapeHtml(cl.body)}</textarea>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="btn btn-secondary" onclick="copyCoverLetter()" style="font-size:12px;">📋 Скопировать письмо</button>
+                </div>
+            </div>` : '';
+
         result.innerHTML = `
             <h3 style="margin-bottom:12px;">✅ КП готово</h3>
             <p style="color:#666; margin-bottom:16px;">Поправь любое поле в форме слева и жми <b>«🔄 Обновить КП»</b> — соберу новую версию. Открой в новой вкладке и Ctrl+P → «Сохранить в PDF».</p>
+            ${coverLetterBlock}
             <div class="result-actions">
                 <a class="btn btn-primary" href="${url}" download="${fileName}">⬇ Скачать HTML</a>
                 <a class="btn btn-secondary" href="${url}" target="_blank">👁 Открыть в новой вкладке</a>

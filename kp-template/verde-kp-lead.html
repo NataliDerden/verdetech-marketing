@@ -146,6 +146,11 @@
   .next-step-headline .ns-eyebrow { font-size:10px; font-weight:700; letter-spacing:0.22em; text-transform:uppercase; opacity:0.85; margin-bottom:4px; }
   .next-step-headline h3 { color:var(--white); font-size:17px; font-weight:600; line-height:1.25; letter-spacing:-0.01em; }
 
+  .case-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:14px; }
+  .case-block { background:var(--green-soft); border-radius:6px; padding:12px 14px; }
+  .case-block .case-label { font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--green-dark); margin-bottom:4px; }
+  .case-block .case-text { font-size:13px; color:var(--ink); line-height:1.45; }
+
   .samples-block { margin-top:14px; }
   .samples-table { width:100%; border-collapse:collapse; background:var(--green-soft); border-radius:6px; overflow:hidden; }
   .samples-table thead th { text-align:left; padding:9px 14px; background:var(--green); color:var(--white); font-size:10.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; }
@@ -442,6 +447,37 @@
     </div>
   </div>
 
+  {% if show_assortment_slide %}
+  <!-- ============== ОПЦ. СЛАЙД: АССОРТИМЕНТ ПО ЗАПРОСУ ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Ассортимент Вердэ по вашему запросу</div>
+      <h2>Что у нас уже есть в линейке</h2>
+      {% if assortment_intro %}
+      <p class="bonus-intro">{{ assortment_intro }}</p>
+      {% endif %}
+      <table class="samples-table" style="margin-top:12px;">
+        <thead>
+          <tr><th>Позиция</th><th>Состав</th><th>Под задачу</th></tr>
+        </thead>
+        <tbody>
+          {% for it in assortment_items %}
+          <tr>
+            <td class="sample-name">{{ it.name }}</td>
+            <td class="sample-purpose">{{ it.composition }}</td>
+            <td class="sample-purpose">{{ it.purpose }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="slide-footer">
+      <span>Цены и точные характеристики уточнит технолог Вердэ</span>
+      <span class="stamp">ВЕРДЭ</span>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ============== СЛАЙД 6: ОФФЕР И СЛЕДУЮЩИЙ ШАГ ============== -->
   <div class="slide">
     <div class="slide-inner">
@@ -495,6 +531,40 @@
       <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
+
+  {% if show_case_slide %}
+  <!-- ============== ОПЦ. СЛАЙД: КЕЙС ПОД ЗАПРОС ============== -->
+  <div class="slide">
+    <div class="slide-inner">
+      <div class="eyebrow">Кейс Вердэ под ваш запрос</div>
+      <h2>{{ case_title }}</h2>
+      <div class="case-grid">
+        <div class="case-block">
+          <div class="case-label">Задача клиента</div>
+          <div class="case-text">{{ case_challenge }}</div>
+        </div>
+        <div class="case-block">
+          <div class="case-label">Решение Вердэ</div>
+          <div class="case-text">{{ case_solution }}</div>
+        </div>
+        <div class="case-block">
+          <div class="case-label">Результат</div>
+          <div class="case-text">{{ case_result }}</div>
+        </div>
+      </div>
+      {% if case_why_relevant %}
+      <div class="bonus-proposal" style="margin-top:14px;">
+        <b>Почему этот кейс показателен для вас:</b><br>
+        {{ case_why_relevant }}
+      </div>
+      {% endif %}
+    </div>
+    <div class="slide-footer">
+      <span>Кейс анонимизирован по соглашению о конфиденциальности</span>
+      <span class="stamp">ВЕРДЭ</span>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- ============== СЛАЙД 7: БОНУС — ЧТО ДЕЛАЮТ ЛИДЕРЫ ============== -->
   <div class="slide">
