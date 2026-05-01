@@ -132,6 +132,7 @@
   .direction-item { padding:8px 12px; background:var(--paper); border-radius:4px; border-left:2px solid var(--green); margin-bottom:5px; list-style:none; }
   .direction-item .d-name { font-size:12.5px; font-weight:600; color:var(--ink); margin-bottom:2px; line-height:1.28; }
   .direction-item .d-why { font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .direction-item .d-verde { display:inline-block; margin-top:4px; padding:2px 8px; background:var(--green-soft); color:var(--green-dark); border-radius:3px; font-size:10.5px; font-weight:700; letter-spacing:0.04em; }
 
   .verde-fact { padding:6px 0; border-bottom:1px solid var(--hair); font-size:12.5px; color:var(--body); display:grid; grid-template-columns:16px 1fr; gap:8px; align-items:baseline; list-style:none; }
   .verde-fact:first-child { border-top:1px solid var(--ink); padding-top:6px; }
@@ -420,6 +421,7 @@
             <li class="direction-item">
               <div class="d-name">{{ d.name }}</div>
               <div class="d-why">{{ d.why }}</div>
+              {% if d.verde_product %}<span class="d-verde">{{ d.verde_product }}</span>{% endif %}
             </li>
             {% endfor %}
           </ul>

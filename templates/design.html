@@ -1796,9 +1796,15 @@ async function generateKP(e) {
                 </div>
             </div>` : '';
 
+        // Метрики обучения: сколько фидбэков учёл AI в этой генерации
+        const learnLine = (typeof json.feedback_lessons_used === 'number' && json.feedback_lessons_used > 0)
+            ? `<div style="font-size:12px; color:#0a8800; margin-bottom:14px;">🧠 Учёл ${json.feedback_lessons_used} урок${json.feedback_lessons_used === 1 ? '' : 'а/ов'} из прошлых 👎-фидбэков (всего фидбэков в базе: ${json.feedback_total || 0})</div>`
+            : (json.feedback_total ? `<div style="font-size:12px; color:#888; margin-bottom:14px;">🧠 Фидбэков в базе: ${json.feedback_total}. Чтобы AI учился — оценивай КП кнопкой 👎 с комментарием.</div>` : '');
+
         result.innerHTML = `
             <h3 style="margin-bottom:12px;">✅ КП готово</h3>
-            <p style="color:#666; margin-bottom:16px;">Поправь любое поле в форме слева и жми <b>«🔄 Обновить КП»</b> — соберу новую версию. Открой в новой вкладке и Ctrl+P → «Сохранить в PDF».</p>
+            <p style="color:#666; margin-bottom:8px;">Поправь любое поле в форме слева и жми <b>«🔄 Обновить КП»</b> — соберу новую версию. Открой в новой вкладке и Ctrl+P → «Сохранить в PDF».</p>
+            ${learnLine}
             ${coverLetterBlock}
             <div class="result-actions">
                 <a class="btn btn-primary" href="${url}" download="${fileName}">⬇ Скачать HTML</a>

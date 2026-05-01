@@ -2183,10 +2183,78 @@ def load_recent_feedback(limit=20):
     try:
         with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-        recent = [json.loads(line) for line in lines[-limit:]]
+        recent = []
+        for line in lines[-limit:]:
+            try:
+                recent.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue  # битая строка — пропустим, не валим всё
         return recent
-    except (FileNotFoundError, json.JSONDecodeError):
+    except FileNotFoundError:
         return []
+
+
+def build_feedback_lessons_block(industry='', max_total_chars=2500, max_items=10):
+    """Собирает блок «УРОКИ ИЗ ФИДБЭКОВ» для промпта.
+
+    Логика:
+    - Берём только bad-фидбэки с непустым комментом (это «не делай так»).
+    - Приоритет фидбэков по СОВПАДАЮЩЕЙ отрасли (если задана).
+    - Анонимизируем — никаких имён клиентов в промпт не уходит.
+    - Кепаем по числу записей и по суммарной длине, чтобы не раздувать промпт.
+
+    Возвращает (block_text, used_count) — где used_count это сколько уроков
+    реально влили в промпт (для отображения менеджеру).
+    """
+    all_fb = load_recent_feedback(limit=200)
+    if not all_fb:
+        return '', 0
+
+    bad = [
+        f for f in all_fb
+        if f.get('rating') == 'bad' and (f.get('comment') or '').strip()
+    ]
+    if not bad:
+        return '', 0
+
+    # Сортировка: сначала по совпадению отрасли (если задана), потом — последние сверху
+    industry_lc = (industry or '').lower().strip()
+
+    def sort_key(f):
+        same_ind = bool(industry_lc) and (f.get('industry') or '').lower() == industry_lc
+        return (0 if same_ind else 1, -all_fb.index(f) if f in all_fb else 0)
+
+    bad_sorted = sorted(bad, key=sort_key)
+
+    lines = []
+    used = 0
+    total_chars = 0
+    for f in bad_sorted:
+        if used >= max_items:
+            break
+        comment = (f.get('comment') or '').strip()
+        if len(comment) > 350:
+            comment = comment[:350] + '…'
+        ind = (f.get('industry') or '?')
+        # ВАЖНО: client_name НЕ выводим — анонимизация
+        line = f"• [{ind}] {comment}"
+        if total_chars + len(line) > max_total_chars:
+            break
+        lines.append(line)
+        total_chars += len(line)
+        used += 1
+
+    if not lines:
+        return '', 0
+
+    block = (
+        "=== УРОКИ ИЗ ФИДБЭКОВ МЕНЕДЖЕРОВ (что НЕ нужно повторять) ===\n"
+        "Это реальные комментарии менеджеров Вердэ к ранее сгенерированным КП, "
+        "которые они оценили как 👎 «не то». Прочитай и НЕ повторяй те же ошибки. "
+        "Не упоминай эти комментарии в КП — это внутренний фидбэк. Просто учти.\n"
+        + "\n".join(lines)
+    )
+    return block, used
 
 
 @app.route('/api/attach-kp-to-deal', methods=['POST'])
@@ -2402,7 +2470,8 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
                         production_recommendations, kb_relevant,
                         industry_brief, real_cases,
                         add_assortment_slide=False, add_case_slide=False,
-                        generate_cover_letter=False):
+                        generate_cover_letter=False,
+                        feedback_lessons_block=''):
     """Собирает промпт для КП-лида: 7 слайдов, без цен, фокус на "услышали → решение → быстрый тест"."""
 
     role_guidance = LEAD_ROLE_GUIDANCE.get(contact_role, LEAD_ROLE_GUIDANCE[''])
@@ -2541,9 +2610,9 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
     },
     "additional_offers": {
       "directions": [
-        {"name": "ВАЖНО: направления для ДРУГИХ продуктовых линеек клиента ВНУТРИ ТОЙ ЖЕ ОТРАСЛИ. Если client_product='котлеты' (отрасль Мясо/Полуфабрикаты) — здесь предлагай 'пельмени', 'фарши', 'купаты', 'рулеты', 'колбасы', 'сосиски'. ЗАПРЕЩЕНО предлагать продукты из других отраслей (детское питание, напитки, выпечку, кондитерку и т.п.). НЕ дублируй additional_ideas из slide 3.", "why": "1 строка почему логично для расширения линейки в той же отрасли"},
-        {"name": "Направление 2 — другая линейка той же отрасли", "why": "..."},
-        {"name": "Направление 3 — другая линейка той же отрасли", "why": "..."}
+        {"name": "ФОРМАТ: «<их линейка>: <НАШЕ конкретное решение из БЗ>». Пример: 'Для пельменной линейки: V Эмультек Премиум (стабилизатор фарша)' или 'Для варёных колбас: V Колор RP (натуральный краситель кармином)'. Линейка — ДРУГОЙ продукт ВНУТРИ ТОЙ ЖЕ отрасли клиента (если client_product='котлеты' → 'пельмени', 'купаты', 'колбасы'). Решение — ТОЧНОЕ имя из БЗ выше. ⚠️ ЗАПРЕЩЕНО: предложения без имени продукта Verde ('развитие линейки X', 'запустите Y', 'добавьте новую категорию') — это пустые слова. ⚠️ ЗАПРЕЩЕНО: продукты из других отраслей. ⚠️ НЕ дублируй additional_ideas со слайда 3.", "why": "1 строка: какой эффект для линейки даёт это решение Verde", "verde_product": "ТОЧНОЕ имя позиции из БЗ выше — то что подаём на тест"},
+        {"name": "Линейка 2: <решение Verde из БЗ>", "why": "...", "verde_product": "..."},
+        {"name": "Линейка 3: <решение Verde из БЗ>", "why": "...", "verde_product": "..."}
       ],
       "verde_facts": [
         "Выбери 3-4 факта из пула ниже (см. блок 'VERDE-ФАКТЫ ДЛЯ СЛАЙДА 5'), наиболее релевантные под отрасль клиента и роль контакта.",
@@ -2656,6 +2725,14 @@ def _build_lead_prompt(*, client_name, client_url, client_city, client_product, 
 Имя — точно как в БЗ (можешь чуть сократить, но узнаваемо).
 Количество для теста — 100 г по умолчанию (если категория не предполагает большую упаковку — например жидкие концентраты в бутылках 1 л).
 Самый плохой вариант — пустой samples: тогда менеджер не знает что класть в посылку.
+
+⛔ ЖЁСТКОЕ ПРАВИЛО ДЛЯ additional_offers.directions (Слайд 5):
+Каждое направление ОБЯЗАТЕЛЬНО содержит конкретное имя продукта Verde из БЗ.
+Формат: «<их линейка>: <НАШЕ решение>». Поле verde_product = точное имя из БЗ.
+Никаких воздушных «развитие линейки», «расширение ассортимента», «новые направления»
+без привязки к конкретному SKU из прайса.
+
+{feedback_lessons_block}
 
 === ЗАДАЧА КЛИЕНТА (главный приоритет) ===
 Запрос одной фразой:        {request_summary}
@@ -2869,6 +2946,11 @@ def _generate_kp_lead(data):
     industry_brief = load_industry_brief(industry_legacy) or ''
     real_cases = get_cases_for_industry(industry_legacy) or []
 
+    # 🧠 Уроки из фидбэков менеджеров — реальное обучение из 👎-оценок
+    feedback_lessons_block, feedback_used = build_feedback_lessons_block(industry=industry)
+    if feedback_used:
+        print(f'[generate_kp_lead] Подмешано {feedback_used} уроков из фидбэков', flush=True)
+
     # Сбор промпта
     prompt = _build_lead_prompt(
         client_name=client_name, client_url=client_url, client_city=client_city, client_product=client_product,
@@ -2888,6 +2970,7 @@ def _generate_kp_lead(data):
         add_assortment_slide=add_assortment_slide,
         add_case_slide=add_case_slide,
         generate_cover_letter=generate_cover_letter,
+        feedback_lessons_block=feedback_lessons_block,
     )
 
     # Вызов Claude
@@ -3081,6 +3164,9 @@ def _generate_kp_lead(data):
             'subject': cover_letter.get('subject', f'Решение по вашему запросу — Вердэ'),
             'body':    cover_letter.get('body', '').strip(),
         }
+    # Метрики обучения для менеджера
+    response_data['feedback_lessons_used'] = feedback_used
+    response_data['feedback_total'] = _count_feedback()
     return jsonify(response_data)
 
 
