@@ -484,6 +484,19 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 MARKETER_PASSWORD = os.environ.get('MARKETER_PASSWORD', 'verde2025')
 
+# Параллельный пароль для команды менеджеров Verde — работает ВСЕГДА (вне зависимости
+# от значения MARKETER_PASSWORD из Railway env). Введён 2026-05-01 после того, как
+# менеджеры не смогли зайти ни через Битрикс-вкладку (нет прав на Local App), ни по
+# прямой ссылке (env-пароль был забыт). Меняй периодически в коде.
+TEAM_PASSWORD = 'verde-team-2026'
+
+
+def is_valid_team_password(pwd: str) -> bool:
+    """True если пароль совпадает с основным MARKETER_PASSWORD или с командным TEAM_PASSWORD."""
+    if not pwd:
+        return False
+    return pwd == MARKETER_PASSWORD or pwd == TEAM_PASSWORD
+
 VERDETECH_CONTEXT = """
 Ты — AI-маркетолог компании Вердэ Ингредиенты (verdetech.ru). Твоя задача — помогать маркетологу.
 
@@ -626,7 +639,7 @@ def index():
 def login():
     error = None
     if request.method == 'POST':
-        if request.form.get('password') == MARKETER_PASSWORD:
+        if is_valid_team_password(request.form.get('password')):
             session['logged_in'] = True
             return redirect(url_for('dashboard'))
         error = 'Неверный пароль. Попробуйте ещё раз.'
@@ -834,7 +847,7 @@ TEAM_TASKS = [
 @app.route('/team', methods=['GET', 'POST'])
 def team_dashboard():
     if request.method == 'POST':
-        if request.form.get('password') == MARKETER_PASSWORD:
+        if is_valid_team_password(request.form.get('password')):
             session['team_logged_in'] = True
             return redirect(url_for('team_dashboard'))
         return render_template('team_login.html', error='Неверный пароль')
@@ -972,7 +985,7 @@ def auto_login_team_for_bitrix():
 def design_hub():
     # Обработка логина прямо с /design
     if request.method == 'POST' and request.form.get('password'):
-        if request.form.get('password') == MARKETER_PASSWORD:
+        if is_valid_team_password(request.form.get('password')):
             session['team_logged_in'] = True
             return redirect(url_for('design_hub'))
         return render_template('team_login.html', error='Неверный пароль')
@@ -1026,7 +1039,7 @@ def design_hub():
 def sales_hub():
     """Хаб продаж — план 12 недель для директора, РОП, активных менеджеров и АМ."""
     if request.method == 'POST' and request.form.get('password'):
-        if request.form.get('password') == MARKETER_PASSWORD:
+        if is_valid_team_password(request.form.get('password')):
             session['team_logged_in'] = True
             return redirect(url_for('sales_hub'))
         return render_template('team_login.html', error='Неверный пароль')
