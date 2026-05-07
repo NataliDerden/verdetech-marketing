@@ -907,6 +907,16 @@ document.addEventListener('DOMContentLoaded', () => {
             BX24.init(function() {
                 console.log('[verde] BX24.init() callback сработал');
 
+                // 0. Завершить установку приложения для текущего пользователя.
+                // Без этого Битрикс показывает «Приложение ещё не установлено до конца»
+                // всем сотрудникам, кроме того, кто изначально установил приложение.
+                try {
+                    BX24.installFinish();
+                    console.log('[verde] BX24.installFinish() вызван — установка завершена для текущего юзера');
+                } catch (e) {
+                    console.warn('[verde] BX24.installFinish() ошибка (норм если не в installation context):', e);
+                }
+
                 // 1. Чистая регистрация вкладок: один раз за всё время этого браузера
                 cleanRebindPlacements();
 
