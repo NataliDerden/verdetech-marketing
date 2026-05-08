@@ -387,6 +387,40 @@
   }
   .docs-list .doc .name { font-size: 17px; font-weight: 500; }
 
+  /* Academy block — бесплатные инструменты для технолога клиента */
+  .academy-block {
+    margin-top: 28px;
+    padding: 22px 24px;
+    background: linear-gradient(135deg, #f0faf0 0%, #e8f7e8 100%);
+    border-radius: 12px;
+    border-left: 4px solid var(--green);
+  }
+  .academy-block .ab-h {
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #0a8a00;
+  }
+  .academy-block .ab-d {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 16px;
+  }
+  .academy-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .atool {
+    background: var(--white);
+    padding: 11px 14px;
+    border-radius: 8px;
+    border: 1px solid #d0ead0;
+  }
+  .atool .at-n { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .atool .at-de { font-size: 12px; color: #555; margin-bottom: 3px; line-height: 1.35; }
+  .atool .at-u { font-size: 11px; color: var(--green); font-weight: 600; }
+
   /* Next steps */
   .steps {
     display: grid;
@@ -810,12 +844,40 @@
         <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">Сертификат Халяль</div></div>
         <div class="doc"><div class="check">✓</div><div class="name" contenteditable="true">Паспорт безопасности</div></div>
       </div>
-      <p class="tiny" style="margin-top:24px;" contenteditable="true">
+      <p class="tiny" style="margin-top:18px;" contenteditable="true">
         Запросить полный пакет: <span class="accent">docs@verdetech.ru</span> или через менеджера.
       </p>
+
+      <!-- Академия Вердэ — бесплатные инструменты для технолога клиента -->
+      <div class="academy-block">
+        <div class="ab-h">🎓 Академия Вердэ — бесплатные инструменты вашему технологу</div>
+        <div class="ab-d">Доступно 24/7 без регистрации. Помогает быстрее запустить продукт с нашими ингредиентами.</div>
+        <div class="academy-tools">
+          <div class="atool">
+            <div class="at-n">🤖 Спроси технолога</div>
+            <div class="at-de">Бот по нормативке, ТР ТС, маркировке — ответ за 10 секунд</div>
+            <div class="at-u">academy.verdetech.ru/ask.html</div>
+          </div>
+          <div class="atool">
+            <div class="at-n">🧮 Калькулятор обогащения</div>
+            <div class="at-de">Точная дозировка V Smart Plus + статус по ТР ТС</div>
+            <div class="at-u">academy.verdetech.ru/enrich.html</div>
+          </div>
+          <div class="atool">
+            <div class="at-n">📋 Помощник по ТУ</div>
+            <div class="at-de">Черновик ТУ за 30 минут по ГОСТ Р 51740-2016</div>
+            <div class="at-u">academy.verdetech.ru/tu.html</div>
+          </div>
+          <div class="atool">
+            <div class="at-n">🏷️ Конструктор маркировки</div>
+            <div class="at-de">Этикетка по ТР ТС 022/027 с автопроверкой</div>
+            <div class="at-u">academy.verdetech.ru/label.html</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="slide__footer">
-      <span>Документация</span>
+      <span>Документация · Академия Вердэ</span>
       <span>verdetech.ru · +7 812 607 64 28</span>
     </div>
   </div>

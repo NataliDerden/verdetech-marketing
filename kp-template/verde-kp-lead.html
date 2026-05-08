@@ -183,6 +183,16 @@
   .bonus-proposal { margin-top:12px; padding:10px 16px; background:var(--paper); border-left:3px solid var(--green); border-radius:4px; font-size:13px; color:var(--ink); line-height:1.45; }
   .bonus-proposal b { color:var(--green-dark); font-weight:700; }
 
+  /* Академия Вердэ — бесплатные инструменты для технолога */
+  .academy-strip { margin-top:14px; padding:14px 16px; background:linear-gradient(135deg,#f0faf0,#e8f7e8); border-left:3px solid var(--green); border-radius:4px; }
+  .academy-strip .as-h { font-size:13px; font-weight:700; color:var(--green-dark); margin-bottom:3px; }
+  .academy-strip .as-d { font-size:11.5px; color:var(--ink); margin-bottom:10px; line-height:1.4; }
+  .academy-tools-strip { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .as-tool { background:var(--white); padding:8px 11px; border-radius:4px; border:1px solid #d0ead0; }
+  .as-tool .ast-n { font-weight:700; font-size:11.5px; margin-bottom:1px; color:var(--ink); }
+  .as-tool .ast-d { font-size:10.5px; color:var(--muted); line-height:1.35; margin-bottom:2px; }
+  .as-tool .ast-u { font-size:10px; color:var(--green-dark); font-weight:600; }
+
   /* ============== ПЕЧАТЬ — АГРЕССИВНОЕ СЖАТИЕ ============== */
   /* Цель: КП должен влезть в 3-4 страницы A4 (вместо 7), чтобы клиент не тратил бумагу */
   @media print {
@@ -592,12 +602,40 @@
         {{ bonus_verde_proposal }}
       </div>
 
-      <div class="cta-block" style="margin-top:18px;">
+      <!-- Академия Вердэ — бесплатные инструменты вашему технологу -->
+      <div class="academy-strip">
+        <div class="as-h">🎓 Академия Вердэ — бесплатные инструменты вашему технологу</div>
+        <div class="as-d">Доступно 24/7 без регистрации. Помогает быстрее запустить продукт с нашими решениями.</div>
+        <div class="academy-tools-strip">
+          <div class="as-tool">
+            <div class="ast-n">🤖 Спроси технолога</div>
+            <div class="ast-d">Бот по нормативке и ТР ТС — ответ за 10 секунд</div>
+            <div class="ast-u">academy.verdetech.ru/ask.html</div>
+          </div>
+          <div class="as-tool">
+            <div class="ast-n">🧮 Калькулятор обогащения</div>
+            <div class="ast-d">Точная дозировка V Smart Plus + статус по ТР ТС</div>
+            <div class="ast-u">academy.verdetech.ru/enrich.html</div>
+          </div>
+          <div class="as-tool">
+            <div class="ast-n">📋 Помощник по ТУ</div>
+            <div class="ast-d">Шаблон ТУ за 30 минут по ГОСТ Р 51740-2016</div>
+            <div class="ast-u">academy.verdetech.ru/tu.html</div>
+          </div>
+          <div class="as-tool">
+            <div class="ast-n">🏷️ Конструктор маркировки</div>
+            <div class="ast-d">Этикетка по ТР ТС 022/027 с автопроверкой</div>
+            <div class="ast-u">academy.verdetech.ru/label.html</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-block" style="margin-top:14px;">
         <div class="cta-text">{{ bonus_cta }}</div>
       </div>
     </div>
     <div class="slide-footer">
-      <span>Анализ открытых источников</span>
+      <span>Анализ · Академия Вердэ</span>
       <span class="stamp">ВЕРДЭ</span>
     </div>
   </div>
