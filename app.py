@@ -2998,7 +2998,11 @@ def _generate_kp_lead(data):
                 'model': 'anthropic/claude-sonnet-4',
                 'messages': [
                     {'role': 'system', 'content': 'Ты выдаёшь строго JSON. Никакого markdown, никаких пояснений, только JSON-объект.'},
-                    {'role': 'user', 'content': prompt},
+                    # cache_control: ephemeral → user prompt (~9K токенов) кэшируется на 5 мин.
+                    # Если в течение 5 мин запускают второй КП — cache hit даёт ~90% скидку на input.
+                    {'role': 'user', 'content': [
+                        {'type': 'text', 'text': prompt, 'cache_control': {'type': 'ephemeral'}},
+                    ]},
                 ],
                 'max_tokens': 4500,
                 'temperature': 0.4,
@@ -3008,6 +3012,9 @@ def _generate_kp_lead(data):
         if response.status_code != 200:
             print(f'[generate_kp_lead] OpenRouter ошибка {response.status_code}: {response.text[:500]}', flush=True)
             return jsonify({'error': f'OpenRouter HTTP {response.status_code}: {response.text[:300]}'}), 500
+        _usage = response.json().get('usage') or {}
+        print(f'[generate_kp_lead] tokens: in={_usage.get("prompt_tokens",0)} out={_usage.get("completion_tokens",0)} '
+              f'cache_write={_usage.get("cache_creation_input_tokens",0)} cache_read={_usage.get("cache_read_input_tokens",0)}', flush=True)
         ai_reply = response.json()['choices'][0]['message']['content'].strip()
         ai_reply = re.sub(r'^```(?:json)?\s*|\s*```$', '', ai_reply, flags=re.MULTILINE).strip()
         ai_data = json.loads(ai_reply)
@@ -3735,7 +3742,10 @@ json.dumps(archive_colorants, ensure_ascii=False, indent=2)
                 'model': 'anthropic/claude-sonnet-4',
                 'messages': [
                     {'role': 'system', 'content': 'Ты выдаёшь строго JSON по шаблону. Никакого markdown, никаких пояснений, только JSON-объект.'},
-                    {'role': 'user', 'content': prompt},
+                    # cache_control: ephemeral → user prompt кэшируется на 5 мин (повторный КП = ~90% скидка на input)
+                    {'role': 'user', 'content': [
+                        {'type': 'text', 'text': prompt, 'cache_control': {'type': 'ephemeral'}},
+                    ]},
                 ],
                 'max_tokens': 4000,
                 'temperature': 0.4,
@@ -3745,6 +3755,9 @@ json.dumps(archive_colorants, ensure_ascii=False, indent=2)
         if response.status_code != 200:
             print(f'[generate_kp] OpenRouter ошибка {response.status_code}: {response.text[:500]}', flush=True)
             return jsonify({'error': f'OpenRouter HTTP {response.status_code}: {response.text[:300]}'}), 500
+        _usage = response.json().get('usage') or {}
+        print(f'[generate_kp] tokens: in={_usage.get("prompt_tokens",0)} out={_usage.get("completion_tokens",0)} '
+              f'cache_write={_usage.get("cache_creation_input_tokens",0)} cache_read={_usage.get("cache_read_input_tokens",0)}', flush=True)
         ai_reply = response.json()['choices'][0]['message']['content'].strip()
 
         # strip markdown fences if AI added them
@@ -4321,7 +4334,11 @@ def ask_technologist():
             json={
                 'model': 'anthropic/claude-sonnet-4-5',
                 'messages': [
-                    {'role': 'system', 'content': TECHNOLOGIST_SYSTEM_PROMPT},
+                    # cache_control: ephemeral → стабильный system (~1K токенов нормативки)
+                    # кэшируется на 5 мин, повторные вопросы платят ~10% input цены
+                    {'role': 'system', 'content': [
+                        {'type': 'text', 'text': TECHNOLOGIST_SYSTEM_PROMPT, 'cache_control': {'type': 'ephemeral'}},
+                    ]},
                     {'role': 'user', 'content': question},
                 ],
                 'max_tokens': 700,
@@ -4329,6 +4346,9 @@ def ask_technologist():
             timeout=30,
         )
         api_resp.raise_for_status()
+        _usage_t = api_resp.json().get('usage') or {}
+        print(f'[ask-technologist] tokens: in={_usage_t.get("prompt_tokens",0)} out={_usage_t.get("completion_tokens",0)} '
+              f'cache_write={_usage_t.get("cache_creation_input_tokens",0)} cache_read={_usage_t.get("cache_read_input_tokens",0)}', flush=True)
         answer = api_resp.json()['choices'][0]['message']['content']
     except requests.exceptions.Timeout:
         return _ask_cors(jsonify({'error': 'Сервер думает дольше обычного. Попробуйте ещё раз.'})), 504
